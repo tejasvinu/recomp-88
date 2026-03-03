@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    background-color: var(--color-neutral-950);
+    color: white;
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+    font-family: "Inter", system-ui, -apple-system, sans-serif;
+  }
+
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Scrollbar hide utility */
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+@layer utilities {
+
+  /* Slide-up animation for modals */
+  @keyframes slide-up {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .animate-slide-up {
+    animation: slide-up 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
