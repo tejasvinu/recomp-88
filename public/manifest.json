@@ -1,0 +1,18 @@
+{
+  "name": "Recomp 88",
+  "short_name": "Recomp 88",
+  "description": "7-day body recomposition workout tracker with exercise wiki and progress charts",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#080808",
+  "theme_color": "#080808",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/vite.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

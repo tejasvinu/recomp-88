@@ -1,20 +1,26 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap');
+
 @import "tailwindcss";
+
+@theme {
+  --font-sans: 'Barlow Condensed', system-ui, -apple-system, sans-serif;
+  --font-mono: 'DM Mono', 'SF Mono', 'Fira Code', monospace;
+}
 
 @layer base {
   body {
-    background-color: var(--color-neutral-950);
+    background-color: #080808;
     color: white;
     margin: 0;
     padding: 0;
     -webkit-font-smoothing: antialiased;
-    font-family: "Inter", system-ui, -apple-system, sans-serif;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   * {
     -webkit-tap-highlight-color: transparent;
   }
 
-  /* Scrollbar hide utility */
   .scrollbar-none::-webkit-scrollbar {
     display: none;
   }
@@ -26,21 +32,33 @@
 }
 
 @layer utilities {
-
-  /* Slide-up animation for modals */
   @keyframes slide-up {
     from {
       transform: translateY(100%);
       opacity: 0;
     }
-
     to {
       transform: translateY(0);
       opacity: 1;
     }
   }
 
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
   .animate-slide-up {
     animation: slide-up 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.25s ease-out both;
   }
 }

@@ -1,6 +1,6 @@
-import type { DayRoutine, Exercise } from "./types";
+import type { DayRoutine, Exercise, SetData } from "./types";
 
-const makeSets = (count: number, targetReps: string): any[] => {
+const makeSets = (count: number, targetReps: string): SetData[] => {
     return Array.from({ length: count }, (_, i) => ({
         id: `set-${i + 1}`,
         targetReps,
