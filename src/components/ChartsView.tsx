@@ -39,6 +39,7 @@ interface ChartsViewProps {
   onDeleteSession: (id: string) => void;
   bodyWeightEntries: BodyWeightEntry[];
   onLogBodyWeight: (weight: number) => void;
+  weightUnit?: "kg" | "lbs";
 }
 
 const TRAINING_DAYS = WorkoutTemplate.filter((d) => d.id !== "day-7");
@@ -50,6 +51,7 @@ export default function ChartsView({
   onDeleteSession,
   bodyWeightEntries,
   onLogBodyWeight,
+  weightUnit = "kg",
 }: ChartsViewProps) {
   const [selectedDayIdx, setSelectedDayIdx] = useState(0);
   const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);
@@ -57,64 +59,94 @@ export default function ChartsView({
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const activeDay = TRAINING_DAYS[selectedDayIdx];
 
+  // Use most recent saved session for exercise stats (not live progress which resets)
   const exerciseStats = useMemo(() => {
-    const dayProgress = progress[activeDay.id];
-    if (!dayProgress) return [];
+    // Find the most recent session for this day
+    const daySessions = sessions
+      .filter((s) => s.dayId === activeDay.id)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const latestSession = daySessions[0];
 
-    return activeDay.exercises
-      .filter((ex) => ex.type !== "other")
-      .map((exercise) => {
-        const exProgress = dayProgress[exercise.id];
-        if (!exProgress) return { name: exercise.name, totalVolume: 0, maxWeight: 0, avgReps: 0, sets: 0 };
-
-        let totalVolume = 0;
-        let maxWeight = 0;
-        let totalReps = 0;
-        let setsWithData = 0;
-
-        Object.values(exProgress).forEach((setData) => {
-          const weight = parseFloat(setData.loggedWeight) || 0;
-          const reps = parseFloat(setData.loggedReps) || 0;
-          if (weight > 0 || reps > 0) {
-            totalVolume += weight * reps;
-            maxWeight = Math.max(maxWeight, weight);
-            totalReps += reps;
-            setsWithData++;
-          }
+    // Fallback: use live progress if no session has been saved yet
+    if (!latestSession) {
+      const dayProgress = progress[activeDay.id];
+      if (!dayProgress) return [];
+      return activeDay.exercises
+        .filter((ex) => ex.type !== "other")
+        .map((exercise) => {
+          const exProgress = dayProgress[exercise.id];
+          if (!exProgress) return { name: exercise.name, totalVolume: 0, maxWeight: 0, avgReps: 0, sets: 0 };
+          let totalVolume = 0, maxWeight = 0, totalReps = 0, setsWithData = 0;
+          Object.values(exProgress).forEach((setData) => {
+            const weight = parseFloat(setData.loggedWeight) || 0;
+            const reps = parseFloat(setData.loggedReps) || 0;
+            if (weight > 0 || reps > 0) {
+              totalVolume += weight * reps;
+              maxWeight = Math.max(maxWeight, weight);
+              totalReps += reps;
+              setsWithData++;
+            }
+          });
+          return {
+            name: exercise.name.length > 14 ? exercise.name.substring(0, 12) + "…" : exercise.name,
+            fullName: exercise.name,
+            totalVolume: Math.round(totalVolume),
+            maxWeight, avgReps: setsWithData > 0 ? Math.round(totalReps / setsWithData) : 0,
+            sets: setsWithData,
+          };
         });
+    }
 
-        return {
-          name: exercise.name.length > 14 ? exercise.name.substring(0, 12) + "…" : exercise.name,
-          fullName: exercise.name,
-          totalVolume: Math.round(totalVolume),
-          maxWeight,
-          avgReps: setsWithData > 0 ? Math.round(totalReps / setsWithData) : 0,
-          sets: setsWithData,
-        };
+    // Use latest session data
+    return latestSession.exercises.map((ex) => {
+      let totalVolume = 0, maxWeight = 0, totalReps = 0, setsWithData = 0;
+      ex.sets.forEach((set) => {
+        const weight = parseFloat(set.loggedWeight) || 0;
+        const reps = parseFloat(set.loggedReps) || 0;
+        if (weight > 0 || reps > 0) {
+          totalVolume += weight * reps;
+          maxWeight = Math.max(maxWeight, weight);
+          totalReps += reps;
+          setsWithData++;
+        }
       });
-  }, [progress, activeDay]);
+      return {
+        name: ex.name.length > 14 ? ex.name.substring(0, 12) + "…" : ex.name,
+        fullName: ex.name,
+        totalVolume: Math.round(totalVolume),
+        maxWeight,
+        avgReps: setsWithData > 0 ? Math.round(totalReps / setsWithData) : 0,
+        sets: setsWithData,
+      };
+    });
+  }, [sessions, progress, activeDay]);
 
   const estimatedMaxes = useMemo(() => {
-    const dayProgress = progress[activeDay.id];
-    if (!dayProgress) return [];
+    const daySessions = sessions
+      .filter((s) => s.dayId === activeDay.id)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    if (daySessions.length === 0) return [];
+
+    const latestSession = daySessions[0];
 
     return activeDay.exercises
       .filter((ex) => ex.type === "strength")
       .map((exercise) => {
-        const exProgress = dayProgress[exercise.id];
-        if (!exProgress) return { name: exercise.name, estimated1RM: 0, bestSet: "" };
+        const sessionEx = latestSession.exercises.find((e) => e.exerciseId === exercise.id || e.name === exercise.name);
+        if (!sessionEx) return { name: exercise.name, estimated1RM: 0, bestSet: "" };
 
         let best1RM = 0;
         let bestSet = "";
 
-        Object.values(exProgress).forEach((setData) => {
-          const weight = parseFloat(setData.loggedWeight) || 0;
-          const reps = parseFloat(setData.loggedReps) || 0;
+        sessionEx.sets.forEach((set) => {
+          const weight = parseFloat(set.loggedWeight) || 0;
+          const reps = parseFloat(set.loggedReps) || 0;
           if (weight > 0 && reps > 0) {
             const estimated = weight * (1 + reps / 30);
             if (estimated > best1RM) {
               best1RM = estimated;
-              bestSet = `${weight}kg × ${reps}`;
+              bestSet = `${weight}${weightUnit} × ${reps}`;
             }
           }
         });
@@ -126,17 +158,21 @@ export default function ChartsView({
         };
       })
       .filter((e) => e.estimated1RM > 0);
-  }, [progress, activeDay]);
+  }, [sessions, activeDay, weightUnit]);
 
   const dayVolumeSummary = useMemo(() => {
     return TRAINING_DAYS.map((day) => {
-      const dayProgress = progress[day.id];
+      const daySessions = sessions
+        .filter((s) => s.dayId === day.id)
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
       let totalVolume = 0;
-      if (dayProgress) {
-        Object.values(dayProgress).forEach((exProgress) => {
-          Object.values(exProgress).forEach((setData) => {
-            const weight = parseFloat(setData.loggedWeight) || 0;
-            const reps = parseFloat(setData.loggedReps) || 0;
+      if (daySessions.length > 0) {
+        const latestSession = daySessions[0];
+        latestSession.exercises.forEach((ex) => {
+          ex.sets.forEach((set) => {
+            const weight = parseFloat(set.loggedWeight) || 0;
+            const reps = parseFloat(set.loggedReps) || 0;
             totalVolume += weight * reps;
           });
         });
@@ -147,7 +183,7 @@ export default function ChartsView({
         volume: Math.round(totalVolume),
       };
     });
-  }, [progress]);
+  }, [sessions]);
 
   // ─── PR Tracker: 1RM history per strength exercise ─────────────────────
   const prHistory = useMemo(() => {
@@ -284,7 +320,7 @@ export default function ChartsView({
           {todayBw && (
             <div className="flex items-baseline gap-0.5">
               <span className="text-lg font-mono font-bold text-lime-400 tabular-nums">{todayBw.weight}</span>
-              <span className="text-[9px] text-neutral-500 font-bold uppercase tracking-widest ml-1">kg today</span>
+              <span className="text-[9px] text-neutral-500 font-bold uppercase tracking-widest ml-1">{weightUnit} today</span>
             </div>
           )}
         </div>
@@ -298,7 +334,7 @@ export default function ChartsView({
             onChange={(e) => setBwInput(e.target.value)}
             className="flex-1 bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm font-mono font-bold text-white placeholder-neutral-600 outline-none focus:ring-1 focus:ring-lime-400/40 focus:border-lime-400/30 transition-all"
           />
-          <span className="flex items-center text-[11px] font-bold text-neutral-600 shrink-0">kg</span>
+          <span className="flex items-center text-[11px] font-bold text-neutral-600 shrink-0">{weightUnit}</span>
           <button
             onClick={() => {
               const w = parseFloat(bwInput);
@@ -346,7 +382,7 @@ export default function ChartsView({
                     fontSize: 10,
                     letterSpacing: "0.1em",
                   }}
-                  formatter={(value: unknown) => [`${value} kg`, "Weight"]}
+                  formatter={(value: unknown) => [`${value} ${weightUnit}`, "Weight"]}
                   cursor={{ stroke: "rgba(255,255,255,0.06)" }}
                 />
                 <Line
@@ -376,7 +412,7 @@ export default function ChartsView({
             <span className="text-xl font-mono font-bold text-lime-400 tabular-nums">
               {totalWeeklyVolume.toLocaleString()}
             </span>
-            <span className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest">kg</span>
+            <span className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest">{weightUnit}</span>
           </div>
         </div>
 
@@ -407,7 +443,7 @@ export default function ChartsView({
                     fontSize: 10,
                     letterSpacing: "0.1em",
                   }}
-                  formatter={(value: unknown) => [`${Number(value).toLocaleString()} kg`, "Volume"]}
+                  formatter={(value: unknown) => [`${Number(value).toLocaleString()} ${weightUnit}`, "Volume"]}
                   labelFormatter={(label: unknown) => {
                     const day = dayVolumeSummary.find((d) => d.name === String(label));
                     return day ? day.fullName : String(label);
@@ -446,8 +482,8 @@ export default function ChartsView({
                   weekComparison.change > 0
                     ? "text-lime-400 bg-lime-400/10 border-lime-400/20"
                     : weekComparison.change < 0
-                    ? "text-red-400 bg-red-400/10 border-red-400/20"
-                    : "text-neutral-400 bg-white/5 border-white/8"
+                      ? "text-red-400 bg-red-400/10 border-red-400/20"
+                      : "text-neutral-400 bg-white/5 border-white/8"
                 )}
               >
                 {weekComparison.change > 0 ? (
@@ -470,7 +506,7 @@ export default function ChartsView({
               <p className="text-xl font-mono font-bold text-lime-400 tabular-nums leading-none">
                 {weekComparison.thisWeek.toLocaleString()}
                 <span className="text-[9px] text-lime-400/60 font-bold uppercase tracking-widest ml-1">
-                  kg
+                  {weightUnit}
                 </span>
               </p>
               <p className="text-[10px] text-lime-400/50 font-medium mt-1.5">
@@ -486,7 +522,7 @@ export default function ChartsView({
                 {weekComparison.lastWeek > 0 ? weekComparison.lastWeek.toLocaleString() : "—"}
                 {weekComparison.lastWeek > 0 && (
                   <span className="text-[9px] text-neutral-600 font-bold uppercase tracking-widest ml-1">
-                    kg
+                    {weightUnit}
                   </span>
                 )}
               </p>
@@ -569,7 +605,7 @@ export default function ChartsView({
                     fontFamily: "DM Mono, monospace",
                   }}
                   labelStyle={{ color: "#fff", fontWeight: 800, fontSize: 11 }}
-                  formatter={(value: unknown) => [`${Number(value).toLocaleString()} kg`, "Volume"]}
+                  formatter={(value: unknown) => [`${Number(value).toLocaleString()} ${weightUnit}`, "Volume"]}
                   cursor={{ fill: "rgba(163,230,53,0.04)" }}
                 />
                 <Bar dataKey="totalVolume" fill="#a3e635" radius={[0, 4, 4, 0]} fillOpacity={0.85} />
@@ -585,12 +621,12 @@ export default function ChartsView({
             <StatCard
               label="Total Vol"
               value={`${exerciseStats.reduce((a, e) => a + e.totalVolume, 0).toLocaleString()}`}
-              unit="kg"
+              unit={weightUnit}
             />
             <StatCard
               label="Top Weight"
               value={`${Math.max(...exerciseStats.map((e) => e.maxWeight))}`}
-              unit="kg"
+              unit={weightUnit}
             />
             <StatCard
               label="Sets"
@@ -644,7 +680,7 @@ export default function ChartsView({
                     {entry.estimated1RM}
                   </span>
                   <span className="text-[9px] text-neutral-500 font-bold uppercase tracking-widest ml-1">
-                    kg
+                    {weightUnit}
                   </span>
                 </div>
               </div>
@@ -705,7 +741,7 @@ export default function ChartsView({
                     fontSize: 9,
                     letterSpacing: "0.1em",
                   }}
-                  formatter={(value: unknown, name: unknown) => [`${value} kg`, String(name)]}
+                  formatter={(value: unknown, name: unknown) => [`${value} ${weightUnit}`, String(name)]}
                   cursor={{ stroke: "rgba(255,255,255,0.06)" }}
                 />
                 {prHistory.exercises.map((exName, i) => (
@@ -810,7 +846,7 @@ export default function ChartsView({
                         <p className="text-[13px] font-mono font-bold text-lime-400 tabular-nums">
                           {Math.round(totalVol).toLocaleString()}{" "}
                           <span className="text-[9px] text-neutral-500 font-bold uppercase tracking-widest">
-                            kg
+                            {weightUnit}
                           </span>
                         </p>
                         <p className="text-[10px] text-neutral-600 font-medium mt-0.5">
@@ -845,7 +881,7 @@ export default function ChartsView({
                                   </span>
                                   <span className="text-[10px] font-mono font-bold text-white">
                                     {set.loggedWeight || "—"}
-                                    {set.loggedWeight && set.loggedWeight !== "BW" ? "kg" : ""}{" "}
+                                    {set.loggedWeight && set.loggedWeight !== "BW" ? weightUnit : ""}{" "}
                                     × {set.loggedReps || "—"}
                                   </span>
                                 </div>

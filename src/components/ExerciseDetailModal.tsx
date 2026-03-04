@@ -1,6 +1,7 @@
 import { useState } from "react";
 import type { ExerciseWiki } from "../wikiData";
 import { cn } from "../utils";
+import { useModalEscape } from "../hooks/useModalEscape";
 import {
   X,
   Target,
@@ -18,6 +19,8 @@ interface ExerciseDetailModalProps {
 }
 
 export default function ExerciseDetailModal({ entry, onClose }: ExerciseDetailModalProps) {
+  useModalEscape(onClose);
+
   const [expandedSection, setExpandedSection] = useState<string | null>("biomechanics");
 
   const toggle = (section: string) => {
@@ -25,11 +28,11 @@ export default function ExerciseDetailModal({ entry, onClose }: ExerciseDetailMo
   };
 
   const categoryColor: Record<string, string> = {
-    Push:             "text-orange-400 bg-orange-400/10 border-orange-400/20",
-    Pull:             "text-sky-400 bg-sky-400/10 border-sky-400/20",
-    Legs:             "text-purple-400 bg-purple-400/10 border-purple-400/20",
-    Core:             "text-amber-400 bg-amber-400/10 border-amber-400/20",
-    "Cardio/Mobility":"text-emerald-400 bg-emerald-400/10 border-emerald-400/20",
+    Push: "text-orange-400 bg-orange-400/10 border-orange-400/20",
+    Pull: "text-sky-400 bg-sky-400/10 border-sky-400/20",
+    Legs: "text-purple-400 bg-purple-400/10 border-purple-400/20",
+    Core: "text-amber-400 bg-amber-400/10 border-amber-400/20",
+    "Cardio/Mobility": "text-emerald-400 bg-emerald-400/10 border-emerald-400/20",
   };
 
   return (

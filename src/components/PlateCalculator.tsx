@@ -1,45 +1,55 @@
 import { useState } from "react";
 import { X, Calculator, Flame } from "lucide-react";
 import { cn } from "../utils";
+import { useModalEscape } from "../hooks/useModalEscape";
 
-const AVAILABLE_PLATES = [25, 20, 15, 10, 5, 2.5, 1.25];
+interface PlateCalculatorProps {
+  onClose: () => void;
+  weightUnit: "kg" | "lbs";
+}
 
-const BAR_OPTIONS = [
+const AVAILABLE_PLATES_KG = [25, 20, 15, 10, 5, 2.5, 1.25];
+const AVAILABLE_PLATES_LBS = [45, 35, 25, 10, 5, 2.5];
+
+const BAR_OPTIONS_KG = [
   { label: "20kg", value: 20, desc: "Olympic" },
   { label: "15kg", value: 15, desc: "Women's" },
   { label: "10kg", value: 10, desc: "Training" },
 ];
 
+const BAR_OPTIONS_LBS = [
+  { label: "45lbs", value: 45, desc: "Olympic" },
+  { label: "35lbs", value: 35, desc: "Women's" },
+  { label: "25lbs", value: 25, desc: "Training" },
+];
+
 const PLATE_STYLES: Record<number, { bg: string; border: string; text: string; heightClass: string }> = {
-  25:   { bg: "bg-red-500/80",     border: "border-red-400",     text: "text-white",       heightClass: "h-16" },
-  20:   { bg: "bg-sky-500/80",     border: "border-sky-400",     text: "text-white",       heightClass: "h-14" },
-  15:   { bg: "bg-yellow-500/80",  border: "border-yellow-400",  text: "text-neutral-900", heightClass: "h-12" },
-  10:   { bg: "bg-green-500/80",   border: "border-green-400",   text: "text-white",       heightClass: "h-10" },
-  5:    { bg: "bg-neutral-200/80", border: "border-neutral-300", text: "text-neutral-900", heightClass: "h-8"  },
-  2.5:  { bg: "bg-neutral-500/80", border: "border-neutral-400", text: "text-white",       heightClass: "h-6"  },
-  1.25: { bg: "bg-neutral-700/80", border: "border-neutral-600", text: "text-white",       heightClass: "h-5"  },
+  45: { bg: "bg-red-500/80", border: "border-red-400", text: "text-white", heightClass: "h-16" },
+  35: { bg: "bg-sky-500/80", border: "border-sky-400", text: "text-white", heightClass: "h-14" },
+  25: { bg: "bg-red-500/80", border: "border-red-400", text: "text-white", heightClass: "h-16" },
+  20: { bg: "bg-sky-500/80", border: "border-sky-400", text: "text-white", heightClass: "h-14" },
+  15: { bg: "bg-yellow-500/80", border: "border-yellow-400", text: "text-neutral-900", heightClass: "h-12" },
+  10: { bg: "bg-green-500/80", border: "border-green-400", text: "text-white", heightClass: "h-10" },
+  5: { bg: "bg-neutral-200/80", border: "border-neutral-300", text: "text-neutral-900", heightClass: "h-8" },
+  2.5: { bg: "bg-neutral-500/80", border: "border-neutral-400", text: "text-white", heightClass: "h-6" },
+  1.25: { bg: "bg-neutral-700/80", border: "border-neutral-600", text: "text-white", heightClass: "h-5" },
 };
 
 const PLATE_LABEL: Record<number, string> = {
-  25: "25", 20: "20", 15: "15", 10: "10", 5: "5", 2.5: "2.5", 1.25: "1.25",
+  45: "45", 35: "35", 25: "25", 20: "20", 15: "15", 10: "10", 5: "5", 2.5: "2.5", 1.25: "1.25",
 };
 
-function calculatePlates(targetWeight: number, barWeight: number): number[] {
+function calculatePlates(targetWeight: number, barWeight: number, availablePlates: number[]): number[] {
   const plates: number[] = [];
   let remaining = Math.round(((targetWeight - barWeight) / 2) * 100) / 100;
   if (remaining <= 0) return [];
-  for (const plate of AVAILABLE_PLATES) {
+  for (const plate of availablePlates) {
     while (remaining >= plate - 0.001) {
       plates.push(plate);
       remaining = Math.round((remaining - plate) * 100) / 100;
     }
   }
   return plates;
-}
-
-// Round to nearest 2.5kg increment
-function roundTo2p5(weight: number): number {
-  return Math.round(weight / 2.5) * 2.5;
 }
 
 const WARMUP_STEPS = [
@@ -51,25 +61,32 @@ const WARMUP_STEPS = [
   { label: "100%", pct: 1.0, reps: "work" },
 ];
 
-interface PlateCalculatorProps {
-  onClose: () => void;
-}
+export default function PlateCalculator({ onClose, weightUnit }: PlateCalculatorProps) {
+  useModalEscape(onClose);
 
-export default function PlateCalculator({ onClose }: PlateCalculatorProps) {
+  const barOptions = weightUnit === "lbs" ? BAR_OPTIONS_LBS : BAR_OPTIONS_KG;
+  const availablePlates = weightUnit === "lbs" ? AVAILABLE_PLATES_LBS : AVAILABLE_PLATES_KG;
+  const interval = weightUnit === "lbs" ? 5 : 2.5;
+
   const [targetWeight, setTargetWeight] = useState("");
-  const [barWeight, setBarWeight] = useState(20);
+  const [barWeight, setBarWeight] = useState(barOptions[0].value);
   const [mode, setMode] = useState<"plates" | "warmup">("plates");
 
   const target = parseFloat(targetWeight) || 0;
-  const plates = target > barWeight ? calculatePlates(target, barWeight) : [];
+  const plates = target > barWeight ? calculatePlates(target, barWeight, availablePlates) : [];
   const achievable =
     Math.round((barWeight + plates.reduce((a, p) => a + p, 0) * 2) * 100) / 100;
   const isExact = target > 0 && Math.abs(achievable - target) < 0.01;
 
+  // Round to nearest interval
+  function roundToInterval(weight: number): number {
+    return Math.round(weight / interval) * interval;
+  }
+
   // Warm-up pyramid
   const warmupSets = WARMUP_STEPS.map(({ label, pct, reps }) => {
-    const rawWeight = pct === 0 ? barWeight : roundTo2p5(target * pct);
-    const setPlates = pct === 0 ? [] : calculatePlates(rawWeight, barWeight);
+    const rawWeight = pct === 0 ? barWeight : roundToInterval(target * pct);
+    const setPlates = pct === 0 ? [] : calculatePlates(rawWeight, barWeight, availablePlates);
     const achievableWeight =
       pct === 0
         ? barWeight
@@ -125,7 +142,7 @@ export default function PlateCalculator({ onClose }: PlateCalculatorProps) {
                 className="w-full bg-white/5 border border-white/8 rounded-xl py-3.5 pl-4 pr-14 text-2xl font-mono font-bold text-white placeholder-neutral-700 outline-none focus:ring-1 focus:ring-lime-400/40 focus:border-lime-400/30 transition-all"
               />
               <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[12px] font-bold text-neutral-500 uppercase tracking-widest">
-                kg
+                {weightUnit}
               </span>
             </div>
           </div>
@@ -136,7 +153,7 @@ export default function PlateCalculator({ onClose }: PlateCalculatorProps) {
               Bar Weight
             </label>
             <div className="flex gap-2">
-              {BAR_OPTIONS.map((opt) => (
+              {barOptions.map((opt) => (
                 <button
                   key={opt.value}
                   onClick={() => setBarWeight(opt.value)}
@@ -197,7 +214,7 @@ export default function PlateCalculator({ onClose }: PlateCalculatorProps) {
               {target > 0 && target <= barWeight && (
                 <div className="bg-white/3 border border-white/6 rounded-xl p-4 text-center">
                   <p className="text-[12px] text-neutral-400 font-medium">
-                    Target must be greater than bar weight ({barWeight}kg)
+                    Target must be greater than bar weight ({barWeight}{weightUnit})
                   </p>
                 </div>
               )}
@@ -223,7 +240,7 @@ export default function PlateCalculator({ onClose }: PlateCalculatorProps) {
                       >
                         {achievable}
                         <span className="text-[11px] text-neutral-500 ml-1 font-bold uppercase tracking-widest">
-                          kg
+                          {weightUnit}
                         </span>
                       </p>
                     </div>
@@ -234,7 +251,7 @@ export default function PlateCalculator({ onClose }: PlateCalculatorProps) {
                       <p className="text-xl font-mono font-bold text-white tabular-nums mt-0.5">
                         {Math.round(plates.reduce((a, p) => a + p, 0) * 10) / 10}
                         <span className="text-[11px] text-neutral-500 ml-1 font-bold uppercase tracking-widest">
-                          kg
+                          {weightUnit}
                         </span>
                       </p>
                     </div>
@@ -315,7 +332,7 @@ export default function PlateCalculator({ onClose }: PlateCalculatorProps) {
                             <div key={p} className="flex items-center gap-1.5">
                               <div className={cn("w-2.5 h-2.5 rounded-sm border", style.bg, style.border)} />
                               <span className="text-[9px] font-mono font-bold text-neutral-500">
-                                {p}kg
+                                {p}{weightUnit}
                               </span>
                             </div>
                           );
@@ -341,7 +358,7 @@ export default function PlateCalculator({ onClose }: PlateCalculatorProps) {
             <div className="flex flex-col gap-2">
               <p className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-1 flex items-center gap-2">
                 <Flame size={11} className="text-lime-400" />
-                Warm-Up Pyramid · Working: {target}kg
+                Warm-Up Pyramid · Working: {target}{weightUnit}
               </p>
 
               {warmupSets.map(({ label, reps, targetWeight: stepWeight, achievableWeight, plates: stepPlates }) => {
@@ -374,11 +391,11 @@ export default function PlateCalculator({ onClose }: PlateCalculatorProps) {
                             isWorkingSet ? "text-lime-400" : "text-white"
                           )}
                         >
-                          {achievableWeight}kg
+                          {achievableWeight}{weightUnit}
                         </span>
                         {stepWeight !== achievableWeight && (
                           <span className="text-[9px] text-neutral-600 font-medium">
-                            (target {stepWeight}kg)
+                            (target {stepWeight}{weightUnit})
                           </span>
                         )}
                       </div>
@@ -417,7 +434,7 @@ export default function PlateCalculator({ onClose }: PlateCalculatorProps) {
               })}
 
               <p className="text-[10px] text-neutral-600 text-center font-medium mt-1">
-                Plates shown per side · weights rounded to nearest 2.5kg
+                Plates shown per side · weights rounded to nearest {interval}{weightUnit}
               </p>
             </div>
           )}

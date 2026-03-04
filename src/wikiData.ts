@@ -841,8 +841,13 @@ export const WIKI_DATA: ExerciseWiki[] = [
     },
 ];
 
+// Pre-built Map for O(1) exercise lookup
+const WIKI_MAP = new Map<string, ExerciseWiki>(
+    WIKI_DATA.map((entry) => [entry.name.toLowerCase().trim(), entry])
+);
+
 // Helper to look up a wiki entry by exercise name
 export function findWikiEntry(exerciseName: string): ExerciseWiki | undefined {
-    const normalizedName = exerciseName.toLowerCase().trim();
-    return WIKI_DATA.find((entry) => entry.name.toLowerCase().trim() === normalizedName);
+    return WIKI_MAP.get(exerciseName.toLowerCase().trim());
 }
+
