@@ -52,6 +52,13 @@ export interface WorkoutSession {
     dayId: string;
     dayName: string;
     exercises: SessionExercise[];
+    duration?: number; // seconds
 }
 
 export type SessionHistory = WorkoutSession[];
+
+// ─── Body Weight ───────────────────────────────────────────────────────────
+export interface BodyWeightEntry {
+    date: string; // YYYY-MM-DD
+    weight: number;
+}
