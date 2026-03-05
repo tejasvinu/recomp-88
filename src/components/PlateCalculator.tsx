@@ -123,7 +123,7 @@ export default function PlateCalculator({ onClose, weightUnit }: PlateCalculator
           </div>
         </div>
 
-        <div className="p-5 flex flex-col gap-5 overflow-y-auto max-h-[80vh] overscroll-contain">
+        <div className="p-5 flex flex-col gap-5 overflow-y-auto max-h-[80vh] overscroll-contain pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
 
           {/* Target weight input */}
           <div>

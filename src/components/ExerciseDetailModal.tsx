@@ -88,6 +88,19 @@ export default function ExerciseDetailModal({ entry, onClose }: ExerciseDetailMo
 
         {/* Scrollable Body */}
         <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2 overscroll-contain">
+          {entry.youtubeId && (
+            <div className="w-full aspect-video rounded-xl overflow-hidden border border-white/10 mb-2 relative bg-black/50 shrink-0 shadow-lg">
+              <iframe
+                src={`https://www.youtube.com/embed/${entry.youtubeId}?modestbranding=1&rel=0`}
+                title={`${entry.name} Tutorial`}
+                className="absolute inset-0 w-full h-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                loading="lazy"
+                allowFullScreen
+              />
+            </div>
+          )}
+
           <AccordionSection
             id="biomechanics"
             title="Biomechanics"

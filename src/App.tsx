@@ -8,7 +8,7 @@ import type { WorkoutProgress, SessionHistory, WorkoutSession, BodyWeightEntry }
 import { cn, formatTime } from "./utils";
 import { findWikiEntry } from "./wikiData";
 import type { ExerciseWiki } from "./wikiData";
-import { Dumbbell, BookOpen, BarChart3, Settings, Calculator, Clock } from "lucide-react";
+import { Dumbbell, BookOpen, BarChart3, Settings, Calculator, Clock, Play } from "lucide-react";
 
 import ErrorBoundary from "./components/ErrorBoundary";
 import ExerciseDetailModal from "./components/ExerciseDetailModal";
@@ -175,6 +175,14 @@ export default function App() {
   const adjustWeight = useCallback(
     (exerciseId: string, setId: string, delta: number) => {
       const currentVal = progress[activeDay.id]?.[exerciseId]?.[setId]?.loggedWeight || "";
+      if (currentVal.startsWith("BW")) {
+        const offsetStr = currentVal.replace("BW", "").replace("+", "");
+        const currentNum = offsetStr ? parseFloat(offsetStr) : 0;
+        const next = Math.round((currentNum + delta) * 100) / 100;
+        const newVal = next === 0 ? "BW" : (next > 0 ? `BW+${next}` : `BW${next}`);
+        updateSetData(activeDay.id, exerciseId, setId, "loggedWeight", newVal);
+        return;
+      }
       const currentNum = parseFloat(currentVal);
       const base = isNaN(currentNum) ? 0 : currentNum;
       const next = Math.max(0, Math.round((base + delta) * 100) / 100);
@@ -451,13 +459,20 @@ export default function App() {
               <span className="text-2xl font-black uppercase tracking-[0.12em] text-white/90">88</span>
             </div>
             <div className="flex items-center gap-2">
-              {activeTab === "workout" && workoutTimer.isRunning && (
-                <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/5 border border-white/8">
-                  <Clock size={12} className="text-lime-400" />
-                  <span className="text-[11px] font-mono font-bold text-lime-400 tabular-nums">
+              {activeTab === "workout" && (workoutTimer.isRunning || workoutTimer.isPaused) && (
+                <button
+                  onClick={workoutTimer.togglePause}
+                  className={cn(
+                    "flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border transition-all active:scale-95",
+                    workoutTimer.isPaused ? "bg-amber-400/10 border-amber-400/20 text-amber-400" : "bg-white/5 border-white/8 text-lime-400 hover:bg-white/10"
+                  )}
+                  aria-label={workoutTimer.isPaused ? "Resume workout" : "Pause workout"}
+                >
+                  {workoutTimer.isPaused ? <Play size={12} className="text-amber-400" /> : <Clock size={12} className="text-lime-400" />}
+                  <span className={cn("text-[11px] font-mono font-bold tabular-nums", workoutTimer.isPaused ? "text-amber-400" : "text-lime-400")}>
                     {formatTime(workoutTimer.elapsedSeconds)}
                   </span>
-                </div>
+                </button>
               )}
               {activeTab === "workout" && (
                 <button
@@ -526,7 +541,7 @@ export default function App() {
         {/* ═══ Content ═══ */}
         <main className="flex-1 p-4">
           <ErrorBoundary>
-            {activeTab === "workout" && (
+            <div className={activeTab === "workout" ? "block" : "hidden"}>
               <WorkoutTab
                 activeDay={activeDay}
                 activeDayIndex={activeDayIndex}
@@ -547,9 +562,9 @@ export default function App() {
                 onNoteChange={handleNoteChange}
                 onShowFinishConfirm={() => setShowFinishConfirm(true)}
               />
-            )}
+            </div>
 
-            {activeTab === "wiki" && (
+            <div className={activeTab === "wiki" ? "block" : "hidden"}>
               <Suspense
                 fallback={
                   <div className="flex items-center justify-center py-20">
@@ -559,9 +574,9 @@ export default function App() {
               >
                 <WikiView />
               </Suspense>
-            )}
+            </div>
 
-            {activeTab === "charts" && (
+            <div className={activeTab === "charts" ? "block" : "hidden"}>
               <Suspense
                 fallback={
                   <div className="flex items-center justify-center py-20">
@@ -579,7 +594,7 @@ export default function App() {
                   weightUnit={weightUnit}
                 />
               </Suspense>
-            )}
+            </div>
           </ErrorBoundary>
         </main>
 

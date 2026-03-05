@@ -6,15 +6,35 @@ interface UseRestTimerOptions {
     hypertrophyDuration: number;
 }
 
+interface RestState {
+    endTime: number | null;
+    duration: number;
+    type: "strength" | "hypertrophy" | null;
+    pausedRemaining: number | null;
+}
+
 export function useRestTimer({
     soundEnabled,
     strengthDuration,
     hypertrophyDuration,
 }: UseRestTimerOptions) {
+    const [state, setState] = useState<RestState>(() => {
+        try {
+            const val = localStorage.getItem("recomp88-rest-state");
+            if (val) {
+                const parsed = JSON.parse(val);
+                return {
+                    endTime: typeof parsed.endTime === "number" ? parsed.endTime : null,
+                    duration: typeof parsed.duration === "number" ? parsed.duration : 90,
+                    type: (parsed.type === "strength" || parsed.type === "hypertrophy") ? parsed.type : null,
+                    pausedRemaining: typeof parsed.pausedRemaining === "number" ? parsed.pausedRemaining : null
+                };
+            }
+        } catch { }
+        return { endTime: null, duration: 90, type: null, pausedRemaining: null };
+    });
+
     const [restTimer, setRestTimer] = useState<number | null>(null);
-    const [restTimerDuration, setRestTimerDuration] = useState(90);
-    const [restType, setRestType] = useState<"strength" | "hypertrophy" | null>(null);
-    const [isPaused, setIsPaused] = useState(false);
     const audioCtxRef = useRef<AudioContext | null>(null);
 
     const playSound = useCallback(() => {
@@ -45,51 +65,97 @@ export function useRestTimer({
         }
     }, []);
 
-    // Countdown tick
+    // Write to localStorage
     useEffect(() => {
-        if (restTimer === null || isPaused) return;
-        if (restTimer <= 0) {
-            setRestTimer(null);
-            setRestType(null);
-            if (soundEnabled) playSound();
-            if ("vibrate" in navigator) navigator.vibrate([100, 50, 100, 50, 150]);
+        try {
+            if (state.endTime === null && state.pausedRemaining === null) {
+                localStorage.removeItem("recomp88-rest-state");
+            } else {
+                localStorage.setItem("recomp88-rest-state", JSON.stringify(state));
+            }
+        } catch { }
+    }, [state]);
+
+    // calculate on state change and run timer
+    useEffect(() => {
+        // If it's paused or stopped, no interval required
+        if (state.pausedRemaining !== null) {
+            setRestTimer(state.pausedRemaining);
             return;
         }
-        const interval = setInterval(() => {
-            setRestTimer((t) => (t !== null && t > 0 ? t - 1 : null));
-        }, 1000);
+        if (state.endTime === null) {
+            setRestTimer(null);
+            return;
+        }
+
+        const calc = () => {
+            const now = Date.now();
+            const left = Math.ceil((state.endTime! - now) / 1000);
+            if (left <= 0) {
+                setState(s => ({ ...s, endTime: null, type: null, pausedRemaining: null }));
+                setRestTimer(null);
+                if (soundEnabled) playSound();
+                if ("vibrate" in navigator) navigator.vibrate([100, 50, 100, 50, 150]);
+            } else {
+                setRestTimer(left);
+            }
+        };
+
+        calc();
+        if (state.endTime! <= Date.now()) return;
+
+        const interval = setInterval(calc, 1000);
         return () => clearInterval(interval);
-    }, [restTimer, soundEnabled, isPaused, playSound]);
+    }, [state.endTime, state.pausedRemaining, soundEnabled, playSound]);
 
     const startTimer = useCallback(
         (type: "strength" | "hypertrophy") => {
             const duration = type === "strength" ? strengthDuration : hypertrophyDuration;
-            setRestTimerDuration(duration);
-            setRestTimer(duration);
-            setRestType(type);
-            setIsPaused(false);
+            setState({
+                endTime: Date.now() + duration * 1000,
+                duration,
+                type,
+                pausedRemaining: null
+            });
         },
         [strengthDuration, hypertrophyDuration]
     );
 
     const dismissTimer = useCallback(() => {
+        setState({ endTime: null, duration: 90, type: null, pausedRemaining: null });
         setRestTimer(null);
-        setRestType(null);
-        setIsPaused(false);
     }, []);
 
     const togglePause = useCallback(() => {
-        setIsPaused((p) => !p);
+        setState(s => {
+            if (s.pausedRemaining !== null) {
+                // resume
+                return {
+                    ...s,
+                    endTime: Date.now() + s.pausedRemaining * 1000,
+                    pausedRemaining: null
+                };
+            } else if (s.endTime !== null) {
+                // pause
+                const left = Math.max(0, Math.ceil((s.endTime - Date.now()) / 1000));
+                return {
+                    ...s,
+                    endTime: null,
+                    pausedRemaining: left
+                };
+            }
+            return s;
+        });
     }, []);
 
     const timerPercent =
-        restTimerDuration > 0 && restTimer !== null ? (restTimer / restTimerDuration) * 100 : 0;
+        state.duration > 0 && restTimer !== null ? (restTimer / state.duration) * 100 : 0;
 
     return {
         restTimer,
-        restTimerDuration,
-        restType,
-        isPaused,
+        restTimerDuration: state.duration,
+        restType: state.type,
+        isPaused: state.pausedRemaining !== null,
         timerPercent,
         startTimer,
         dismissTimer,

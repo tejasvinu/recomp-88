@@ -259,7 +259,7 @@ export default function SettingsModal({
                 </div>
 
                 {/* Danger Zone */}
-                <div className="pt-6 mt-2 border-t border-white/6 flex justify-center">
+                <div className="pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] mt-2 border-t border-white/6 flex justify-center">
                     <button
                         onClick={() => {
                             if (window.confirm("Are you sure you want to delete all workout history and preferences? This action cannot be undone.")) {

@@ -67,68 +67,72 @@ export default memo(function SetRow({
                 </div>
             )}
 
-            {exerciseType !== "other" &&
-                (isBwSet ? (
-                    <div
-                        className={cn(
-                            "w-full flex items-center justify-center rounded-lg py-2 px-2 border font-mono font-bold text-[11px] uppercase tracking-widest",
-                            isCompleted
-                                ? "bg-lime-400/10 border-lime-400/20 text-lime-400"
-                                : "bg-white/5 border-white/8 text-neutral-400"
-                        )}
+            {exerciseType !== "other" && (
+                <div className="flex items-center gap-0.5">
+                    <button
+                        onClick={() => onAdjustWeight(exerciseId, set.id, weightUnit === "lbs" ? -5 : -2.5)}
+                        className="shrink-0 w-5 h-8 flex items-center justify-center rounded-md bg-white/4 border border-white/7 text-neutral-500 hover:text-white hover:bg-white/10 active:scale-90 transition-all"
+                        aria-label={`Decrease weight by ${weightUnit === "lbs" ? 5 : 2.5} ${weightUnit}`}
                     >
-                        BW
-                    </div>
-                ) : (
-                    <div className="flex items-center gap-0.5">
-                        <button
-                            onClick={() => onAdjustWeight(exerciseId, set.id, weightUnit === "lbs" ? -5 : -2.5)}
-                            className="shrink-0 w-5 h-8 flex items-center justify-center rounded-md bg-white/4 border border-white/7 text-neutral-500 hover:text-white hover:bg-white/10 active:scale-90 transition-all"
-                            aria-label={`Decrease weight by ${weightUnit === "lbs" ? 5 : 2.5} ${weightUnit}`}
-                        >
-                            <Minus size={9} />
-                        </button>
-                        <div className="relative flex-1 min-w-0">
-                            <input
-                                type="text"
-                                inputMode="decimal"
-                                pattern="[0-9]*"
-                                placeholder={weightPlaceholder}
-                                value={weightVal}
-                                onChange={(e) =>
-                                    onUpdateSetData(dayId, exerciseId, set.id, "loggedWeight", e.target.value)
+                        <Minus size={9} />
+                    </button>
+                    <div className="relative flex-1 min-w-0 flex items-center">
+                        {isBwSet && (
+                            <span className="absolute left-1.5 text-[9px] font-black text-neutral-400 uppercase tracking-widest pointer-events-none">
+                                BW
+                            </span>
+                        )}
+                        <input
+                            type="text"
+                            inputMode="decimal"
+                            placeholder={isBwSet && weightPlaceholder !== "—" ? weightPlaceholder.replace("BW", "").replace("+", "") : weightPlaceholder}
+                            value={isBwSet ? weightVal.replace("BW", "").replace("+", "") : weightVal}
+                            onChange={(e) => {
+                                let val = e.target.value;
+                                if (isBwSet) {
+                                    if (val && !val.startsWith("-") && !val.startsWith("+")) {
+                                        val = "+" + val;
+                                    }
+                                    if (val === "" || val === "+" || val === "-") {
+                                        onUpdateSetData(dayId, exerciseId, set.id, "loggedWeight", "BW");
+                                    } else {
+                                        onUpdateSetData(dayId, exerciseId, set.id, "loggedWeight", "BW" + val);
+                                    }
+                                } else {
+                                    onUpdateSetData(dayId, exerciseId, set.id, "loggedWeight", val);
                                 }
-                                onFocus={(e) => e.target.select()}
-                                className={cn(
-                                    "w-full bg-white/6 border text-center font-mono font-medium outline-none rounded-lg py-2 px-1 text-sm transition-all text-white placeholder-neutral-600 focus:ring-1 focus:ring-lime-400/40 focus:bg-white/9",
-                                    isPR
-                                        ? "border-yellow-400/50 bg-yellow-400/5 focus:border-yellow-400/60"
-                                        : "border-white/8 focus:border-lime-400/30",
-                                    isCompleted && "text-lime-100/90"
-                                )}
-                                aria-label={`Weight for set ${setIdx + 1}`}
-                            />
-                            {isPR && (
-                                <span className="absolute -top-2 right-0 text-[8px] font-black bg-yellow-400 text-neutral-900 px-1 py-px rounded-sm leading-tight tracking-wide pointer-events-none">
-                                    PR
-                                </span>
+                            }}
+                            onFocus={(e) => e.target.select()}
+                            className={cn(
+                                "w-full bg-white/6 border text-center font-mono font-medium outline-none rounded-lg py-2 px-1 text-sm transition-all text-white placeholder-neutral-600 focus:ring-1 focus:ring-lime-400/40 focus:bg-white/9",
+                                isPR
+                                    ? "border-yellow-400/50 bg-yellow-400/5 focus:border-yellow-400/60"
+                                    : "border-white/8 focus:border-lime-400/30",
+                                isCompleted && "text-lime-100/90",
+                                isBwSet && "pl-[22px] text-left"
                             )}
-                        </div>
-                        <button
-                            onClick={() => onAdjustWeight(exerciseId, set.id, weightUnit === "lbs" ? 5 : 2.5)}
-                            className="shrink-0 w-5 h-8 flex items-center justify-center rounded-md bg-white/4 border border-white/7 text-neutral-500 hover:text-white hover:bg-white/10 active:scale-90 transition-all"
-                            aria-label={`Increase weight by ${weightUnit === "lbs" ? 5 : 2.5} ${weightUnit}`}
-                        >
-                            <Plus size={9} />
-                        </button>
+                            aria-label={`Weight for set ${setIdx + 1}`}
+                        />
+                        {isPR && (
+                            <span className="absolute -top-2 right-0 text-[8px] font-black bg-yellow-400 text-neutral-900 px-1 py-px rounded-sm leading-tight tracking-wide pointer-events-none">
+                                PR
+                            </span>
+                        )}
                     </div>
-                ))}
+                    <button
+                        onClick={() => onAdjustWeight(exerciseId, set.id, weightUnit === "lbs" ? 5 : 2.5)}
+                        className="shrink-0 w-5 h-8 flex items-center justify-center rounded-md bg-white/4 border border-white/7 text-neutral-500 hover:text-white hover:bg-white/10 active:scale-90 transition-all"
+                        aria-label={`Increase weight by ${weightUnit === "lbs" ? 5 : 2.5} ${weightUnit}`}
+                    >
+                        <Plus size={9} />
+                    </button>
+                </div>
+            )}
 
             {exerciseType !== "other" && (
                 <input
                     type="text"
                     inputMode="numeric"
-                    pattern="[0-9]*"
                     placeholder={repsPlaceholder}
                     value={setProgress?.loggedReps || ""}
                     onChange={(e) =>

@@ -11,6 +11,7 @@ export interface ExerciseWiki {
     commonMistakes: string[];
     alternatives: string[];
     notes: string;
+    youtubeId?: string;
 }
 
 export const WIKI_DATA: ExerciseWiki[] = [
@@ -25,6 +26,7 @@ export const WIKI_DATA: ExerciseWiki[] = [
             primary: ["Pectoralis Major (Sternal)"],
             secondary: ["Anterior Deltoids", "Triceps Brachii", "Serratus Anterior"],
         },
+        youtubeId: "rxD321l2svE",
         biomechanics:
             "A horizontal pressing movement that primarily loads the sternal head of the pec major through shoulder horizontal adduction and elbow extension. The flat angle biases the mid-chest. Grip width determines elbow flare and tricep involvement — wider grips increase pec stretch but also shoulder stress.",
         cues: [
@@ -52,6 +54,7 @@ export const WIKI_DATA: ExerciseWiki[] = [
             primary: ["Anterior Deltoids"],
             secondary: ["Lateral Deltoids", "Triceps Brachii", "Upper Trapezius"],
         },
+        youtubeId: "HzIiNhHhhtA",
         biomechanics:
             "A vertical pressing pattern that primarily targets the anterior deltoid via shoulder flexion and abduction with elbow extension. Using dumbbells allows a greater range of motion compared to a barbell and permits a more natural pressing arc, reducing shoulder impingement risk for many lifters.",
         cues: [
@@ -78,6 +81,7 @@ export const WIKI_DATA: ExerciseWiki[] = [
             primary: ["Pectoralis Major (Clavicular / Upper Chest)"],
             secondary: ["Anterior Deltoids", "Triceps Brachii"],
         },
+        youtubeId: "8iPEnn-ltC8",
         biomechanics:
             "An inclined pressing angle (30-45°) shifts mechanical tension from the sternal pecs to the clavicular head (upper chest). The steeper the incline, the more deltoid-dominant it becomes. 30° is the sweet spot for upper chest bias.",
         cues: [
@@ -103,6 +107,7 @@ export const WIKI_DATA: ExerciseWiki[] = [
             primary: ["Lateral Deltoids"],
             secondary: ["Upper Trapezius", "Supraspinatus"],
         },
+        youtubeId: "PPrzBWZDOhA",
         biomechanics:
             "Shoulder abduction in the scapular plane, isolating the lateral (side) deltoids. Cables maintain constant tension throughout the entire ROM, unlike dumbbells which lose tension at the bottom. This makes cables superior for lateral delt hypertrophy.",
         cues: [
@@ -128,6 +133,7 @@ export const WIKI_DATA: ExerciseWiki[] = [
             primary: ["Triceps Brachii (Lateral & Medial Heads)"],
             secondary: ["Anconeus"],
         },
+        youtubeId: "2-LAMcpzODU",
         biomechanics:
             "An elbow extension exercise. Because the shoulder is adducted (arm at your side), the long head of the triceps is slackened, meaning pushdowns primarily target the lateral and medial heads. Use an overhead extension to target the long head.",
         cues: [
@@ -153,6 +159,7 @@ export const WIKI_DATA: ExerciseWiki[] = [
             primary: ["Pectoralis Major (Clavicular)", "Anterior Deltoids"],
             secondary: ["Triceps Brachii", "Serratus Anterior"],
         },
+        youtubeId: "SrqOu55lrIU",
         biomechanics:
             "Same principle as incline DB press but with a barbell, allowing heavier loading. The fixed bar path limits the range of motion slightly but allows for greater absolute weight, making it an excellent strength-hypertrophy bridge for the upper chest.",
         cues: [
@@ -178,6 +185,7 @@ export const WIKI_DATA: ExerciseWiki[] = [
             primary: ["Pectoralis Major (Sternal & Clavicular)"],
             secondary: ["Anterior Deltoids"],
         },
+        youtubeId: "O-aQoOP6vAE",
         biomechanics:
             "An isolation movement for horizontal adduction of the shoulder. The machine stabilizes the movement, removing the need for stabilizer muscles and placing all tension directly on the pecs. Excellent for achieving a deep stretch at the open position and a peak contraction when arms are brought together.",
         cues: [
@@ -203,6 +211,7 @@ export const WIKI_DATA: ExerciseWiki[] = [
             primary: ["Anterior Deltoids", "Lateral Deltoids"],
             secondary: ["Triceps Brachii", "Upper Trapezius"],
         },
+        youtubeId: "6Z15_WdXmVw",
         biomechanics:
             "A rotational pressing variant invented by Arnold Schwarzenegger. The rotation from a supinated grip (palms facing you) to a pronated grip at the top increases time under tension for the anterior and lateral deltoids, hitting a greater portion of the deltoid than a standard press.",
         cues: [
@@ -228,6 +237,7 @@ export const WIKI_DATA: ExerciseWiki[] = [
             primary: ["Lateral Deltoids"],
             secondary: ["Upper Trapezius", "Supraspinatus"],
         },
+        youtubeId: "3VcKaXpzqRo",
         biomechanics:
             "Dumbbell shoulder abduction. Unlike cables, dumbbells provide peak tension at the top of the range of motion when the moment arm is longest. The bottom portion has minimal tension due to gravity's direction.",
         cues: [
@@ -253,6 +263,7 @@ export const WIKI_DATA: ExerciseWiki[] = [
             primary: ["Triceps Brachii (Long Head)"],
             secondary: ["Medial Head", "Lateral Head", "Anconeus"],
         },
+        youtubeId: "d_KZxkY_0cM",
         biomechanics:
             "An overhead extension pattern performed lying down. The shoulder is flexed (arms overhead at an angle), which puts the long head on a stretch. This makes skullcrushers one of the best exercises for the long head of the triceps, which is the biggest head and contributes most to arm size.",
         cues: [
@@ -282,6 +293,7 @@ export const WIKI_DATA: ExerciseWiki[] = [
             primary: ["Latissimus Dorsi", "Rhomboids", "Middle Trapezius"],
             secondary: ["Biceps Brachii", "Posterior Deltoids", "Erector Spinae"],
         },
+        youtubeId: "I00-7B-8zDk",
         biomechanics:
             "A horizontal pulling movement involving shoulder extension and scapular retraction. The bent-over position requires significant isometric strength from the erectors and core. Grip width and torso angle determine which muscles are emphasized — more upright targets upper back, more horizontal targets lats.",
         cues: [
@@ -308,6 +320,7 @@ export const WIKI_DATA: ExerciseWiki[] = [
             primary: ["Latissimus Dorsi"],
             secondary: ["Biceps Brachii", "Teres Major", "Lower Trapezius", "Infraspinatus"],
         },
+        youtubeId: "eGo4IYPNi4",
         biomechanics:
             "A vertical pulling movement — arguably the king of back exercises. Involves shoulder adduction and extension with elbow flexion. Pull-ups require you to move your entire body weight, making them an excellent relative strength indicator. Wider grip emphasizes lats; closer grip increases bicep involvement.",
         cues: [
@@ -334,6 +347,7 @@ export const WIKI_DATA: ExerciseWiki[] = [
             primary: ["Rhomboids", "Middle Trapezius", "Latissimus Dorsi"],
             secondary: ["Biceps Brachii", "Posterior Deltoids", "Erector Spinae"],
         },
+        youtubeId: "GZbfZ033f74",
         biomechanics:
             "A seated horizontal pull with constant cable tension. The fixed seated position removes lower back demands, isolating the upper back more effectively than bent-over rows. Different handles (V-bar, wide bar, rope) change muscle emphasis.",
         cues: [
@@ -359,6 +373,7 @@ export const WIKI_DATA: ExerciseWiki[] = [
             primary: ["Posterior Deltoids", "Rhomboids", "External Rotators"],
             secondary: ["Middle Trapezius", "Infraspinatus", "Teres Minor"],
         },
+        youtubeId: "V8dZ3pyiCBo",
         biomechanics:
             "A horizontal pull with external rotation at the shoulder. This unique combination targets the posterior deltoids and the rotator cuff simultaneously, making it one of the most important exercises for shoulder health and posture. It directly opposes the effects of bench pressing and sitting at a desk.",
         cues: [
@@ -384,6 +399,7 @@ export const WIKI_DATA: ExerciseWiki[] = [
             primary: ["Biceps Brachii (Short & Long Head)"],
             secondary: ["Brachialis", "Brachioradialis"],
         },
+        youtubeId: "kwG2ipm4k04",
         biomechanics:
             "An elbow flexion exercise. The EZ-bar's angled grip places the wrists in a semi-supinated position, reducing wrist strain vs. a straight bar. This grip slightly reduces biceps short head activation but is much more comfortable for most lifters, allowing heavier loads over time.",
         cues: [
@@ -409,6 +425,7 @@ export const WIKI_DATA: ExerciseWiki[] = [
             primary: ["Brachialis", "Brachioradialis"],
             secondary: ["Biceps Brachii (Long Head)"],
         },
+        youtubeId: "zC3nLlEvin4",
         biomechanics:
             "A neutral-grip elbow flexion exercise. The neutral (palms facing each other) grip shifts emphasis from the biceps to the brachialis and the brachioradialis. The brachialis sits underneath the biceps — developing it pushes the bicep up, making the arm appear thicker from the front.",
         cues: [
@@ -434,6 +451,7 @@ export const WIKI_DATA: ExerciseWiki[] = [
             primary: ["Latissimus Dorsi", "Rhomboids"],
             secondary: ["Biceps Brachii", "Posterior Deltoids", "Teres Major"],
         },
+        youtubeId: "pYcpY20QaE8",
         biomechanics:
             "A unilateral horizontal pull. Working one arm at a time allows you to lift heavier per side, correct imbalances, and achieve a greater range of motion (more lat stretch and contraction). The free hand supports the body, removing lower back stress.",
         cues: [
@@ -459,6 +477,7 @@ export const WIKI_DATA: ExerciseWiki[] = [
             primary: ["Latissimus Dorsi (Lower Fibers)"],
             secondary: ["Biceps Brachii", "Teres Major", "Rhomboids"],
         },
+        youtubeId: "ecyXEyus2wQ",
         biomechanics:
             "A vertical pull with a close/neutral grip. The closer grip increases the range of motion and allows for greater shoulder extension, biasing the lower lat fibers. This builds the 'sweep' of the lats that creates a V-taper. Also increases bicep involvement.",
         cues: [
@@ -484,6 +503,7 @@ export const WIKI_DATA: ExerciseWiki[] = [
             primary: ["Latissimus Dorsi"],
             secondary: ["Teres Major", "Posterior Deltoids", "Long Head of Triceps"],
         },
+        youtubeId: "j3kE1p_bUHM",
         biomechanics:
             "A pure shoulder extension movement with minimal elbow flexion. This isolates the lats without bicep involvement, making it an excellent exercise for improving the mind-muscle connection with the lats. Often used as an activation exercise before heavy rows/pulls.",
         cues: [
@@ -509,6 +529,7 @@ export const WIKI_DATA: ExerciseWiki[] = [
             primary: ["Posterior Deltoids"],
             secondary: ["Rhomboids", "Middle Trapezius", "Infraspinatus"],
         },
+        youtubeId: "5qIikIqEqm8",
         biomechanics:
             "Horizontal abduction of the shoulder in a fixed machine path. Isolates the rear delts with minimal trap involvement when performed correctly. The machine stabilization allows full focus on the posterior deltoid contraction.",
         cues: [
@@ -534,6 +555,7 @@ export const WIKI_DATA: ExerciseWiki[] = [
             primary: ["Biceps Brachii (Short Head)"],
             secondary: ["Brachialis"],
         },
+        youtubeId: "fIWP-FRFNU0",
         biomechanics:
             "An elbow flexion exercise with the upper arm braced against an angled pad. This eliminates all cheating / momentum and isolates the biceps. The angled pad shifts peak tension to the bottom/stretched position of the curl, making it one of the best short head / bicep peak exercises.",
         cues: [
@@ -563,6 +585,7 @@ export const WIKI_DATA: ExerciseWiki[] = [
             primary: ["Quadriceps", "Gluteus Maximus"],
             secondary: ["Hamstrings", "Adductors", "Erector Spinae", "Core"],
         },
+        youtubeId: "bEv6CCg2bc8",
         biomechanics:
             "The king of lower body exercises. A compound movement involving hip extension, knee extension, and ankle dorsiflexion. High bar position (on traps) creates a more upright torso and quad-dominant squat. Low bar (on rear delts) allows more hip hinge and posterior chain involvement. Both are valid.",
         cues: [
@@ -590,6 +613,7 @@ export const WIKI_DATA: ExerciseWiki[] = [
             primary: ["Hamstrings", "Gluteus Maximus"],
             secondary: ["Erector Spinae", "Adductor Magnus"],
         },
+        youtubeId: "jEy_czb3RKA",
         biomechanics:
             "A hip hinge pattern that maximally stretches the hamstrings under load. Unlike conventional deadlifts, the knees remain slightly bent and fixed, and the bar doesn't touch the floor. This isolates the hip extensors (hamstrings and glutes) while minimizing quads.",
         cues: [
@@ -617,6 +641,7 @@ export const WIKI_DATA: ExerciseWiki[] = [
             primary: ["Quadriceps", "Gluteus Maximus"],
             secondary: ["Hamstrings", "Adductors"],
         },
+        youtubeId: "IZxyjW7OSvc",
         biomechanics:
             "A machine-based compound push that removes spinal loading. Foot placement dramatically changes emphasis: high and wide targets glutes/hamstrings, low and narrow targets quads. The leg press allows you to load the legs heavily without the limiting factor of spinal erector fatigue from squats.",
         cues: [
@@ -642,6 +667,7 @@ export const WIKI_DATA: ExerciseWiki[] = [
             primary: ["Hamstrings (Biceps Femoris, Semimembranosus, Semitendinosus)"],
             secondary: ["Gastrocnemius"],
         },
+        youtubeId: "F488k67BTNo",
         biomechanics:
             "An isolated knee flexion exercise. With hips extended (lying flat), the hamstrings are in a shortened position at the hip, meaning the short head of the biceps femoris contributes more. For full hamstring development, combine with RDLs (which stretch the hamstrings at the hip).",
         cues: [
@@ -667,6 +693,7 @@ export const WIKI_DATA: ExerciseWiki[] = [
             primary: ["Gastrocnemius", "Soleus"],
             secondary: ["Tibialis Posterior"],
         },
+        youtubeId: "eMTy3wqLQMQ",
         biomechanics:
             "Ankle plantarflexion, isolating the calf muscles. Standing calf raises (with straight knees) target the gastrocnemius. Seated calf raises (with bent knees) target the soleus. The soleus makes up about 60% of the calf, so both variations are important.",
         cues: [
@@ -691,7 +718,8 @@ export const WIKI_DATA: ExerciseWiki[] = [
         muscles: {
             primary: ["Quadriceps"],
             secondary: ["Gluteus Maximus", "Adductors"],
-        },
+            },
+        youtubeId: "r5kK_vQJOhk",
         biomechanics:
             "A machine-based squat variation where the back is supported against a pad on an angled sled. This removes spinal loading and forces a more knee-dominant movement pattern, making it one of the purest quad builders available. Low foot placement increases quad demand; high placement adds glute bias.",
         cues: [
@@ -717,6 +745,7 @@ export const WIKI_DATA: ExerciseWiki[] = [
             primary: ["Quadriceps (Rectus Femoris, Vastus Lateralis, Vastus Medialis, Vastus Intermedius)"],
             secondary: [],
         },
+        youtubeId: "YyvSfVjQeL0",
         biomechanics:
             "Pure knee extension in isolation. The only exercise that truly isolates the quadriceps without any glute or hamstring involvement. Peak tension occurs at full knee extension, making it excellent for VMO (inner quad 'teardrop') development and quad separation.",
         cues: [
@@ -742,6 +771,7 @@ export const WIKI_DATA: ExerciseWiki[] = [
             primary: ["Hamstrings"],
             secondary: ["Gastrocnemius"],
         },
+        youtubeId: "F488k67BTNo",
         biomechanics:
             "Knee flexion from a seated position. With hips flexed (seated), the hamstrings are in a more stretched position at the hip compared to lying curls, potentially offering a better lengthened stimulus. Recent research suggests seated curls may produce slightly more hamstring hypertrophy than lying curls.",
         cues: [
@@ -767,6 +797,7 @@ export const WIKI_DATA: ExerciseWiki[] = [
             primary: ["Quadriceps", "Gluteus Maximus"],
             secondary: ["Hamstrings", "Adductors", "Core (Stabilization)"],
         },
+        youtubeId: "L8fvypPrzzs",
         biomechanics:
             "A dynamic unilateral leg exercise. Each stride involves a deep split squat pattern, providing a huge stretch on the hip flexors of the trailing leg and a powerful contraction on the lead leg's glutes and quads. The walking component adds balance and coordination challenges.",
         cues: [
@@ -797,6 +828,7 @@ export const WIKI_DATA: ExerciseWiki[] = [
             primary: ["Gluteus Maximus", "Hamstrings", "Calves"],
             secondary: ["Quadriceps", "Core"],
         },
+        youtubeId: "2WzN8zC_TCE",
         biomechanics:
             "Low-intensity steady-state (LISS) cardio on an incline. The incline increases glute and hamstring activation while keeping the movement low-impact. This is the ideal cardio for a recomp — burns calories without the muscle-damaging impact of running, and doesn't create excessive fatigue that impairs recovery.",
         cues: [

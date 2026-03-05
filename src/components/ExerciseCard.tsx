@@ -50,7 +50,7 @@ export default memo(function ExerciseCard({
 
     const isBwActive =
         exercise.sets.every(
-            (set) => (exerciseProgress?.[set.id]?.loggedWeight ?? "") === "BW"
+            (set) => (exerciseProgress?.[set.id]?.loggedWeight ?? "").startsWith("BW")
         ) && exercise.sets.length > 0;
 
     return (
@@ -156,7 +156,7 @@ export default memo(function ExerciseCard({
             {exercise.sets.map((set, setIdx) => {
                 const setData = exerciseProgress?.[set.id];
                 const weightVal = setData?.loggedWeight || "";
-                const isBwSet = weightVal === "BW";
+                const isBwSet = weightVal.startsWith("BW");
 
                 return (
                     <SetRow
