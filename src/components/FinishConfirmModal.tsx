@@ -5,7 +5,6 @@ import { useModalEscape } from "../hooks/useModalEscape";
 interface FinishConfirmModalProps {
     dayName: string;
     elapsedSeconds: number;
-    isTimerRunning: boolean;
     onConfirm: () => void;
     onCancel: () => void;
 }
@@ -13,7 +12,6 @@ interface FinishConfirmModalProps {
 export default function FinishConfirmModal({
     dayName,
     elapsedSeconds,
-    isTimerRunning,
     onConfirm,
     onCancel,
 }: FinishConfirmModalProps) {
@@ -47,7 +45,7 @@ export default function FinishConfirmModal({
                         <p className="text-[13px] text-neutral-400 font-medium mt-1">
                             Save this session and reset checkmarks?
                         </p>
-                        {isTimerRunning && (
+                        {elapsedSeconds > 0 && (
                             <p className="text-[11px] text-neutral-600 font-medium mt-2">
                                 Duration:{" "}
                                 <span className="text-lime-400 font-mono">{formatTime(elapsedSeconds)}</span>

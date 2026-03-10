@@ -30,7 +30,7 @@ export function useRestTimer({
                     pausedRemaining: typeof parsed.pausedRemaining === "number" ? parsed.pausedRemaining : null
                 };
             }
-        } catch { }
+        } catch { /* empty */ }
         return { endTime: null, duration: 90, type: null, pausedRemaining: null };
     });
 
@@ -73,18 +73,18 @@ export function useRestTimer({
             } else {
                 localStorage.setItem("recomp88-rest-state", JSON.stringify(state));
             }
-        } catch { }
+        } catch { /* empty */ }
     }, [state]);
 
     // calculate on state change and run timer
     useEffect(() => {
         // If it's paused or stopped, no interval required
         if (state.pausedRemaining !== null) {
-            setRestTimer(state.pausedRemaining);
+            setTimeout(() => setRestTimer(state.pausedRemaining), 0);
             return;
         }
         if (state.endTime === null) {
-            setRestTimer(null);
+            setTimeout(() => setRestTimer(null), 0);
             return;
         }
 

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import type { WorkoutProgress, SessionHistory, BodyWeightEntry } from "../types";
 import { WorkoutTemplate } from "../data";
-import { cn } from "../utils";
+import { cn, getClosestBodyWeight, resolveWeight } from "../utils";
 import {
   XAxis,
   YAxis,
@@ -78,7 +78,9 @@ export default function ChartsView({
           if (!exProgress) return { name: exercise.name, totalVolume: 0, maxWeight: 0, avgReps: 0, sets: 0 };
           let totalVolume = 0, maxWeight = 0, totalReps = 0, setsWithData = 0;
           Object.values(exProgress).forEach((setData) => {
-            const weight = parseFloat(setData.loggedWeight) || 0;
+            const defaultBw = weightUnit === "lbs" ? 175 : 80;
+            const bw = getClosestBodyWeight(new Date().toISOString(), bodyWeightEntries, defaultBw);
+            const weight = resolveWeight(setData.loggedWeight, bw);
             const reps = parseFloat(setData.loggedReps) || 0;
             if (weight > 0 || reps > 0) {
               totalVolume += weight * reps;
@@ -98,15 +100,20 @@ export default function ChartsView({
     }
 
     // Use latest session data
+    const defaultBw = weightUnit === "lbs" ? 175 : 80;
+    const bw = getClosestBodyWeight(latestSession.date, bodyWeightEntries, defaultBw);
+
     return latestSession.exercises.map((ex) => {
       let totalVolume = 0, maxWeight = 0, totalReps = 0, setsWithData = 0;
       ex.sets.forEach((set) => {
-        const weight = parseFloat(set.loggedWeight) || 0;
+        const weight = resolveWeight(set.loggedWeight, bw);
         const reps = parseFloat(set.loggedReps) || 0;
         if (weight > 0 || reps > 0) {
           totalVolume += weight * reps;
           maxWeight = Math.max(maxWeight, weight);
           totalReps += reps;
+          setsWithData++;
+        } else if (ex.type === "other" && set.completed) {
           setsWithData++;
         }
       });
@@ -119,7 +126,7 @@ export default function ChartsView({
         sets: setsWithData,
       };
     });
-  }, [sessions, progress, activeDay]);
+  }, [sessions, progress, activeDay, weightUnit, bodyWeightEntries]);
 
   const estimatedMaxes = useMemo(() => {
     const daySessions = sessions
@@ -139,14 +146,17 @@ export default function ChartsView({
         let best1RM = 0;
         let bestSet = "";
 
+        const defaultBw = weightUnit === "lbs" ? 175 : 80;
+        const bw = getClosestBodyWeight(latestSession.date, bodyWeightEntries, defaultBw);
+
         sessionEx.sets.forEach((set) => {
-          const weight = parseFloat(set.loggedWeight) || 0;
+          const weight = resolveWeight(set.loggedWeight, bw);
           const reps = parseFloat(set.loggedReps) || 0;
           if (weight > 0 && reps > 0) {
             const estimated = weight * (1 + reps / 30);
             if (estimated > best1RM) {
               best1RM = estimated;
-              bestSet = `${weight}${weightUnit} × ${reps}`;
+              bestSet = `${set.loggedWeight} × ${reps}`;
             }
           }
         });
@@ -158,7 +168,7 @@ export default function ChartsView({
         };
       })
       .filter((e) => e.estimated1RM > 0);
-  }, [sessions, activeDay, weightUnit]);
+  }, [sessions, activeDay, weightUnit, bodyWeightEntries]);
 
   const dayVolumeSummary = useMemo(() => {
     return TRAINING_DAYS.map((day) => {
@@ -168,10 +178,12 @@ export default function ChartsView({
 
       let totalVolume = 0;
       if (daySessions.length > 0) {
+        const defaultBw = weightUnit === "lbs" ? 175 : 80;
         const latestSession = daySessions[0];
+        const bw = getClosestBodyWeight(latestSession.date, bodyWeightEntries, defaultBw);
         latestSession.exercises.forEach((ex) => {
           ex.sets.forEach((set) => {
-            const weight = parseFloat(set.loggedWeight) || 0;
+            const weight = resolveWeight(set.loggedWeight, bw);
             const reps = parseFloat(set.loggedReps) || 0;
             totalVolume += weight * reps;
           });
@@ -183,7 +195,7 @@ export default function ChartsView({
         volume: Math.round(totalVolume),
       };
     });
-  }, [sessions]);
+  }, [sessions, weightUnit, bodyWeightEntries]);
 
   // ─── PR Tracker: 1RM history per strength exercise ─────────────────────
   const prHistory = useMemo(() => {
@@ -199,7 +211,10 @@ export default function ChartsView({
 
     if (strengthExercises.length === 0) return null;
 
+    const defaultBw = weightUnit === "lbs" ? 175 : 80;
+
     const series = daySessions.map((session) => {
+      const bw = getClosestBodyWeight(session.date, bodyWeightEntries, defaultBw);
       const point: Record<string, string | number> = {
         date: new Date(session.date).toLocaleDateString("en-GB", { day: "numeric", month: "short" }),
       };
@@ -208,7 +223,7 @@ export default function ChartsView({
         if (!ex) { point[exName] = 0; return; }
         let best1RM = 0;
         ex.sets.forEach((set) => {
-          const w = parseFloat(set.loggedWeight) || 0;
+          const w = resolveWeight(set.loggedWeight, bw);
           const r = parseFloat(set.loggedReps) || 0;
           if (w > 0 && r > 0) {
             const e1rm = w * (1 + r / 30);
@@ -221,7 +236,7 @@ export default function ChartsView({
     });
 
     return { series, exercises: strengthExercises };
-  }, [sessions, activeDay]);
+  }, [sessions, activeDay, weightUnit, bodyWeightEntries]);
 
   // ─── Week-over-week comparison ──────────────────────────────────────────
   const weekComparison = useMemo(() => {
@@ -230,17 +245,20 @@ export default function ChartsView({
     const oneWeekAgo = now - oneWeekMs;
     const twoWeeksAgo = now - 2 * oneWeekMs;
 
-    const getSessionVolume = (s: SessionHistory[number]) =>
-      s.exercises.reduce(
+    const defaultBw = weightUnit === "lbs" ? 175 : 80;
+    const getSessionVolume = (s: SessionHistory[number]) => {
+      const bw = getClosestBodyWeight(s.date, bodyWeightEntries, defaultBw);
+      return s.exercises.reduce(
         (eAcc, ex) =>
           eAcc +
           ex.sets.reduce(
             (sAcc, set) =>
-              sAcc + (parseFloat(set.loggedWeight) || 0) * (parseFloat(set.loggedReps) || 0),
+              sAcc + resolveWeight(set.loggedWeight, bw) * (parseFloat(set.loggedReps) || 0),
             0
           ),
         0
       );
+    };
 
     const thisWeekSessions = sessions.filter((s) => new Date(s.date).getTime() >= oneWeekAgo);
     const lastWeekSessions = sessions.filter((s) => {
@@ -260,7 +278,7 @@ export default function ChartsView({
       change,
       hasData: sessions.length >= 2,
     };
-  }, [sessions]);
+  }, [sessions, weightUnit, bodyWeightEntries]);
 
   // ─── Recent session history list ────────────────────────────────────────
   const recentSessions = useMemo(() => {
@@ -791,12 +809,14 @@ export default function ChartsView({
 
           <div className="flex flex-col gap-2">
             {recentSessions.map((session) => {
+              const defaultBw = weightUnit === "lbs" ? 175 : 80;
+              const bw = getClosestBodyWeight(session.date, bodyWeightEntries, defaultBw);
               const totalVol = session.exercises.reduce(
                 (acc, ex) =>
                   acc +
                   ex.sets.reduce(
                     (s, set) =>
-                      s + (parseFloat(set.loggedWeight) || 0) * (parseFloat(set.loggedReps) || 0),
+                      s + resolveWeight(set.loggedWeight, bw) * (parseFloat(set.loggedReps) || 0),
                     0
                   ),
                 0
@@ -880,9 +900,15 @@ export default function ChartsView({
                                     {i + 1}.{" "}
                                   </span>
                                   <span className="text-[10px] font-mono font-bold text-white">
-                                    {set.loggedWeight || "—"}
-                                    {set.loggedWeight && set.loggedWeight !== "BW" ? weightUnit : ""}{" "}
-                                    × {set.loggedReps || "—"}
+                                    {ex.type === "other" && set.completed ? (
+                                      <span className="text-lime-400">Completed ✓</span>
+                                    ) : (
+                                      <>
+                                        {set.loggedWeight || "—"}
+                                        {set.loggedWeight && set.loggedWeight !== "BW" ? weightUnit : ""}{" "}
+                                        × {set.loggedReps || "—"}
+                                      </>
+                                    )}
                                   </span>
                                 </div>
                               ))}
@@ -927,7 +953,8 @@ export default function ChartsView({
                   )}
                 </div>
               );
-            })}
+            })
+            }
           </div>
         </div>
       )}

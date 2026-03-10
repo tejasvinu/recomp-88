@@ -37,6 +37,7 @@ export interface SessionSet {
     setId: string;
     loggedWeight: string;
     loggedReps: string;
+    completed?: boolean;
 }
 
 export interface SessionExercise {

@@ -5,10 +5,10 @@ import { useToast } from "./hooks/useToast";
 import { useRestTimer } from "./hooks/useRestTimer";
 import { useWorkoutTimer } from "./hooks/useWorkoutTimer";
 import type { WorkoutProgress, SessionHistory, WorkoutSession, BodyWeightEntry } from "./types";
-import { cn, formatTime } from "./utils";
+import { cn, formatTime, getClosestBodyWeight, resolveWeight } from "./utils";
 import { findWikiEntry } from "./wikiData";
 import type { ExerciseWiki } from "./wikiData";
-import { Dumbbell, BookOpen, BarChart3, Settings, Calculator, Clock, Play } from "lucide-react";
+import { Dumbbell, BookOpen, BarChart3, Settings, Calculator, Clock, Play, RotateCcw } from "lucide-react";
 
 import ErrorBoundary from "./components/ErrorBoundary";
 import ExerciseDetailModal from "./components/ExerciseDetailModal";
@@ -62,16 +62,18 @@ export default function App() {
   // ─── PR computation ───────────────────────────────────────────────────────
   const allTimePRs = useMemo(() => {
     const prs: Record<string, number> = {};
+    const defaultBw = weightUnit === "lbs" ? 175 : 80;
     sessions.forEach((session) => {
+      const bw = getClosestBodyWeight(session.date, bodyWeightEntries, defaultBw);
       session.exercises.forEach((ex) => {
         ex.sets.forEach((set) => {
-          const w = parseFloat(set.loggedWeight) || 0;
+          const w = resolveWeight(set.loggedWeight, bw);
           if (w > (prs[ex.exerciseId] ?? 0)) prs[ex.exerciseId] = w;
         });
       });
     });
     return prs;
-  }, [sessions]);
+  }, [sessions, bodyWeightEntries, weightUnit]);
 
   // ─── Last session values per day/exercise/set ─────────────────────────────
   const lastSessionValues = useMemo(() => {
@@ -259,7 +261,7 @@ export default function App() {
       const hasData = activeDay.exercises.some((ex) =>
         ex.sets.some((set) => {
           const s = dayProgress[ex.id]?.[set.id];
-          return s && (s.loggedWeight || s.loggedReps);
+          return s && (s.loggedWeight || s.loggedReps || s.completed);
         })
       );
       if (hasData) {
@@ -271,18 +273,21 @@ export default function App() {
           dayName: activeDay.name,
           duration,
           exercises: activeDay.exercises
-            .filter((ex) => ex.type !== "other")
             .map((ex) => ({
               exerciseId: ex.id,
               name: ex.name,
               type: ex.type,
               sets: ex.sets
-                .map((set) => ({
-                  setId: set.id,
-                  loggedWeight: dayProgress[ex.id]?.[set.id]?.loggedWeight || "",
-                  loggedReps: dayProgress[ex.id]?.[set.id]?.loggedReps || "",
-                }))
-                .filter((s) => s.loggedWeight || s.loggedReps),
+                .map((set) => {
+                  const s = dayProgress[ex.id]?.[set.id];
+                  return {
+                    setId: set.id,
+                    loggedWeight: s?.loggedWeight || "",
+                    loggedReps: s?.loggedReps || "",
+                    completed: s?.completed || false,
+                  };
+                })
+                .filter((s) => s.loggedWeight || s.loggedReps || (ex.type === "other" && s.completed)),
             }))
             .filter((ex) => ex.sets.length > 0),
         };
@@ -325,6 +330,12 @@ export default function App() {
     );
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [progress, activeDay, workoutTimer, restTimer, setProgress, setSessions, showToast]);
+
+  // ─── Reset workout timer (without finishing) ──────────────────────────────
+  const handleResetTimer = useCallback(() => {
+    workoutTimer.reset();
+    showToast("Timer reset");
+  }, [workoutTimer, showToast]);
 
   // ─── Delete session ───────────────────────────────────────────────────────
   const deleteSession = useCallback(
@@ -460,19 +471,29 @@ export default function App() {
             </div>
             <div className="flex items-center gap-2">
               {activeTab === "workout" && (workoutTimer.isRunning || workoutTimer.isPaused) && (
-                <button
-                  onClick={workoutTimer.togglePause}
-                  className={cn(
-                    "flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border transition-all active:scale-95",
-                    workoutTimer.isPaused ? "bg-amber-400/10 border-amber-400/20 text-amber-400" : "bg-white/5 border-white/8 text-lime-400 hover:bg-white/10"
-                  )}
-                  aria-label={workoutTimer.isPaused ? "Resume workout" : "Pause workout"}
-                >
-                  {workoutTimer.isPaused ? <Play size={12} className="text-amber-400" /> : <Clock size={12} className="text-lime-400" />}
-                  <span className={cn("text-[11px] font-mono font-bold tabular-nums", workoutTimer.isPaused ? "text-amber-400" : "text-lime-400")}>
-                    {formatTime(workoutTimer.elapsedSeconds)}
-                  </span>
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={workoutTimer.togglePause}
+                    className={cn(
+                      "flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border transition-all active:scale-95",
+                      workoutTimer.isPaused ? "bg-amber-400/10 border-amber-400/20 text-amber-400" : "bg-white/5 border-white/8 text-lime-400 hover:bg-white/10"
+                    )}
+                    aria-label={workoutTimer.isPaused ? "Resume workout" : "Pause workout"}
+                  >
+                    {workoutTimer.isPaused ? <Play size={12} className="text-amber-400" /> : <Clock size={12} className="text-lime-400" />}
+                    <span className={cn("text-[11px] font-mono font-bold tabular-nums", workoutTimer.isPaused ? "text-amber-400" : "text-lime-400")}>
+                      {formatTime(workoutTimer.elapsedSeconds)}
+                    </span>
+                  </button>
+                  <button
+                    onClick={handleResetTimer}
+                    className="w-7 h-7 flex items-center justify-center rounded-xl bg-white/5 border border-white/8 text-neutral-500 hover:text-red-400 hover:bg-red-400/10 hover:border-red-400/20 transition-all active:scale-90"
+                    aria-label="Reset workout timer"
+                    title="Reset timer"
+                  >
+                    <RotateCcw size={11} />
+                  </button>
+                </div>
               )}
               {activeTab === "workout" && (
                 <button
@@ -661,7 +682,6 @@ export default function App() {
         <FinishConfirmModal
           dayName={activeDay.name}
           elapsedSeconds={workoutTimer.elapsedSeconds}
-          isTimerRunning={workoutTimer.isRunning}
           onConfirm={finishWorkout}
           onCancel={() => setShowFinishConfirm(false)}
         />
