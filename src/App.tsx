@@ -19,6 +19,7 @@ import DayCompleteOverlay from "./components/DayCompleteOverlay";
 import FinishConfirmModal from "./components/FinishConfirmModal";
 import SettingsModal from "./components/SettingsModal";
 import ToastContainer from "./components/ui/ToastContainer";
+import InstallPrompt from "./components/InstallPrompt";
 
 const WikiView = lazy(() => import("./components/WikiView"));
 const ChartsView = lazy(() => import("./components/ChartsView"));
@@ -631,6 +632,9 @@ export default function App() {
           onDismiss={restTimer.dismissTimer}
           onTogglePause={restTimer.togglePause}
         />
+
+        {/* ═══ Desktop/Mobile PWA Install Prompt ═══ */}
+        <InstallPrompt />
 
         {/* ═══ Bottom Navigation ═══ */}
         <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md pointer-events-none z-40">
