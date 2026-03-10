@@ -1,85 +1,189 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
-    <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#0e0e0e" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Recomp 88" />
-    <meta name="description" content="7-day body recomposition workout tracker with exercise wiki and progress charts" />
-    <title>Recomp 88</title>
-    <style>
-      #splash-screen {
-        position: fixed;
-        top: 0; left: 0; right: 0; bottom: 0;
-        background-color: #0e0e0e;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        z-index: 9999;
-        transition: opacity 0.5s ease-in-out;
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png" />
+  <link rel="apple-touch-icon" href="/splash/apple-icon-180.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#080808" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Recomp 88" />
+  <meta name="description" content="7-day body recomposition workout tracker with exercise wiki and progress charts" />
+  <title>Recomp 88</title>
+  <!-- iOS Native Splash Screens -->
+  <link rel="apple-touch-startup-image" href="/splash/apple-splash-2048-2732.jpg"
+    media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" />
+  <link rel="apple-touch-startup-image" href="/splash/apple-splash-1668-2388.jpg"
+    media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" />
+  <link rel="apple-touch-startup-image" href="/splash/apple-splash-1536-2048.jpg"
+    media="(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" />
+  <link rel="apple-touch-startup-image" href="/splash/apple-splash-1640-2360.jpg"
+    media="(device-width: 820px) and (device-height: 1180px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" />
+  <link rel="apple-touch-startup-image" href="/splash/apple-splash-1668-2224.jpg"
+    media="(device-width: 834px) and (device-height: 1112px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" />
+  <link rel="apple-touch-startup-image" href="/splash/apple-splash-1620-2160.jpg"
+    media="(device-width: 810px) and (device-height: 1080px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" />
+  <link rel="apple-touch-startup-image" href="/splash/apple-splash-1488-2266.jpg"
+    media="(device-width: 744px) and (device-height: 1133px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" />
+  <link rel="apple-touch-startup-image" href="/splash/apple-splash-1320-2868.jpg"
+    media="(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+  <link rel="apple-touch-startup-image" href="/splash/apple-splash-1206-2622.jpg"
+    media="(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+  <link rel="apple-touch-startup-image" href="/splash/apple-splash-1260-2736.jpg"
+    media="(device-width: 420px) and (device-height: 912px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+  <link rel="apple-touch-startup-image" href="/splash/apple-splash-1290-2796.jpg"
+    media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+  <link rel="apple-touch-startup-image" href="/splash/apple-splash-1179-2556.jpg"
+    media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+  <link rel="apple-touch-startup-image" href="/splash/apple-splash-1170-2532.jpg"
+    media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+  <link rel="apple-touch-startup-image" href="/splash/apple-splash-1284-2778.jpg"
+    media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+  <link rel="apple-touch-startup-image" href="/splash/apple-splash-1125-2436.jpg"
+    media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+  <link rel="apple-touch-startup-image" href="/splash/apple-splash-1242-2688.jpg"
+    media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+  <link rel="apple-touch-startup-image" href="/splash/apple-splash-828-1792.jpg"
+    media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" />
+  <link rel="apple-touch-startup-image" href="/splash/apple-splash-1242-2208.jpg"
+    media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" />
+  <link rel="apple-touch-startup-image" href="/splash/apple-splash-750-1334.jpg"
+    media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" />
+  <link rel="apple-touch-startup-image" href="/splash/apple-splash-640-1136.jpg"
+    media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" />
+  <style>
+    #splash-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #080808;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+      transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), visibility 0.6s;
+    }
+
+    .splash-logo {
+      width: 120px;
+      height: 120px;
+      border-radius: 20%;
+      margin-bottom: 24px;
+      box-shadow: 0 0 30px rgba(163, 230, 53, 0.2);
+      opacity: 0;
+      transform: translateY(20px) scale(0.9);
+      animation: appear 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards, float 3s ease-in-out infinite alternate 0.6s, pulse-glow 2s infinite alternate 0.6s;
+    }
+
+    .splash-title {
+      color: #f8fafc;
+      font-family: system-ui, -apple-system, sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      margin-bottom: 32px;
+      opacity: 0;
+      transform: translateY(10px);
+      animation: appear 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.1s forwards;
+    }
+
+    .splash-loader {
+      width: 48px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+      opacity: 0;
+      animation: appear 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.2s forwards;
+    }
+
+    .splash-loader::after {
+      content: '';
+      position: absolute;
+      left: -50%;
+      top: 0;
+      bottom: 0;
+      width: 50%;
+      background: #a3e635;
+      /* lime-400 */
+      border-radius: 4px;
+      animation: slide 1.5s infinite cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @keyframes float {
+      0% {
+        transform: translateY(0);
       }
-      .splash-logo {
-        width: 120px;
-        height: 120px;
-        border-radius: 20%;
-        margin-bottom: 24px;
-        animation: pulse 2s infinite;
-        box-shadow: 0 0 40px rgba(163, 230, 53, 0.2);
+
+      100% {
+        transform: translateY(-10px);
       }
-      .splash-loader {
-        width: 40px;
-        height: 4px;
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 4px;
-        overflow: hidden;
-        position: relative;
+    }
+
+    @keyframes pulse-glow {
+
+      0%,
+      100% {
+        box-shadow: 0 0 30px rgba(163, 230, 53, 0.2);
       }
-      .splash-loader::after {
-        content: '';
-        position: absolute;
-        left: 0;
-        top: 0;
-        bottom: 0;
-        width: 50%;
-        background: #a3e635; /* lime-400 */
-        border-radius: 4px;
-        animation: slide 1.5s infinite ease-in-out;
+
+      50% {
+        box-shadow: 0 0 50px rgba(163, 230, 53, 0.4);
       }
-      @keyframes pulse {
-        0%, 100% { transform: scale(1); opacity: 1; }
-        50% { transform: scale(0.95); opacity: 0.8; }
+    }
+
+    @keyframes slide {
+      0% {
+        transform: translateX(0);
       }
-      @keyframes slide {
-        0% { transform: translateX(-100%); }
-        100% { transform: translateX(200%); }
+
+      100% {
+        transform: translateX(300%);
       }
-      body { margin: 0; background: #0e0e0e; }
-    </style>
-  </head>
-  <body>
-    <div id="splash-screen">
-      <img src="/icon-512.png" alt="Recomp 88 Logo" class="splash-logo" />
-      <div class="splash-loader"></div>
-    </div>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-    <script>
-      // Automatically hide the splash screen slightly after the main script loads
-      window.addEventListener('load', () => {
-        setTimeout(() => {
-          const splash = document.getElementById('splash-screen');
-          if (splash) {
-            splash.style.opacity = '0';
-            setTimeout(() => splash.remove(), 500);
-          }
-        }, 500);
-      });
-    </script>
-  </body>
+    }
+
+    @keyframes appear {
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    body {
+      margin: 0;
+      background: #080808;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="splash-screen">
+    <img src="/icon-512.png" alt="Recomp 88 Logo" class="splash-logo" />
+    <div class="splash-title">Recomp 88</div>
+    <div class="splash-loader"></div>
+  </div>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+  <script>
+    // Automatically hide the splash screen slightly after the main script loads
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        const splash = document.getElementById('splash-screen');
+        if (splash) {
+          splash.style.opacity = '0';
+          splash.style.visibility = 'hidden';
+          setTimeout(() => splash.remove(), 600);
+        }
+      }, 300);
+    });
+  </script>
+</body>
+
 </html>
