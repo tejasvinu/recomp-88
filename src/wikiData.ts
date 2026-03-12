@@ -1,3 +1,18 @@
+import { ADDITIONAL_WIKI_DATA, EXERCISE_ENHANCEMENTS } from "./wikiEnhancements";
+
+export type ExerciseEquipment =
+    | "barbell"
+    | "dumbbell"
+    | "kettlebell"
+    | "bench"
+    | "bodyweight"
+    | "band"
+    | "machine"
+    | "cable"
+    | "smith-machine"
+    | "landmine"
+    | "pull-up-bar";
+
 export interface ExerciseWiki {
     id: string;
     name: string;
@@ -12,9 +27,17 @@ export interface ExerciseWiki {
     alternatives: string[];
     notes: string;
     youtubeId?: string;
+    equipment?: ExerciseEquipment[];
+    difficulty?: "Beginner" | "Intermediate" | "Advanced";
+    movementPattern?: string;
+    bestFor?: string[];
+    setupChecklist?: string[];
+    freeWeightAlternatives?: string[];
+    minimalEquipmentAlternatives?: string[];
+    homeGymFriendly?: boolean;
 }
 
-export const WIKI_DATA: ExerciseWiki[] = [
+const BASE_WIKI_DATA: ExerciseWiki[] = [
     // ═══════════════════════════════════════
     // PUSH EXERCISES
     // ═══════════════════════════════════════
@@ -873,13 +896,175 @@ export const WIKI_DATA: ExerciseWiki[] = [
     },
 ];
 
-// Pre-built Map for O(1) exercise lookup
+const FREE_WEIGHT_EQUIPMENT = new Set<ExerciseEquipment>([
+    "barbell",
+    "dumbbell",
+    "kettlebell",
+    "landmine",
+]);
+
+const MACHINE_DEPENDENT_EQUIPMENT = new Set<ExerciseEquipment>([
+    "machine",
+    "cable",
+    "smith-machine",
+]);
+
+const HOME_GYM_EQUIPMENT = new Set<ExerciseEquipment>([
+    "barbell",
+    "dumbbell",
+    "kettlebell",
+    "bench",
+    "bodyweight",
+    "band",
+    "pull-up-bar",
+    "landmine",
+]);
+
+const GENERIC_BEST_FOR: Record<ExerciseWiki["category"], string[]> = {
+    Push: ["strength carryover", "muscle gain", "joint-friendly programming choices"],
+    Pull: ["back balance", "grip development", "posture support"],
+    Legs: ["lower-body strength", "athletic base", "equipment-flexible substitutions"],
+    Core: ["trunk control", "better bracing", "low-equipment training"],
+    "Cardio/Mobility": ["recovery support", "conditioning", "access-friendly training days"],
+};
+
+const GENERIC_SETUP_BY_EQUIPMENT: Partial<Record<ExerciseEquipment, string[]>> = {
+    barbell: ["Set the bar path and rack height before the first set."],
+    dumbbell: ["Choose a load you can set up without wasting reps on the entry."],
+    kettlebell: ["Keep the handle path close to the body for better control."],
+    bench: ["Set the bench angle and foot position before loading hard."],
+    bodyweight: ["Own clean range of motion before you chase extra reps."],
+    band: ["Anchor the band before you load it aggressively."],
+    machine: ["Adjust the machine setup to your joints, not the other way around."],
+    cable: ["Set the cable height and line of pull before the work sets begin."],
+    "smith-machine": ["Use a stance that matches the machine's fixed bar path."],
+    landmine: ["Anchor the landmine securely before pressing or rowing from it."],
+    "pull-up-bar": ["Choose a grip and range of motion you can own every rep."],
+};
+
+const normalizeUniqueStrings = (values: string[]) =>
+    Array.from(
+        new Set(
+            values
+                .map((value) => value.trim())
+                .filter(Boolean)
+        )
+    );
+
+const withoutSelf = (values: string[], currentName: string) =>
+    normalizeUniqueStrings(values).filter((value) => value !== currentName);
+
+const buildGenericSetupChecklist = (equipment: ExerciseEquipment[]) =>
+    normalizeUniqueStrings(
+        equipment.flatMap((item) => GENERIC_SETUP_BY_EQUIPMENT[item] ?? [])
+    );
+
+const inferDifficulty = (equipment: ExerciseEquipment[]) => {
+    if (equipment.includes("machine") || equipment.includes("cable")) return "Beginner";
+    if (equipment.includes("barbell") || equipment.includes("landmine")) return "Intermediate";
+    return "Beginner";
+};
+
+const enrichExerciseEntry = (entry: ExerciseWiki): ExerciseWiki => {
+    const enhancement = EXERCISE_ENHANCEMENTS[entry.name];
+    const equipment = entry.equipment ?? enhancement?.equipment ?? ["bodyweight"];
+    const freeWeightAlternatives = withoutSelf(
+        entry.freeWeightAlternatives ??
+            enhancement?.freeWeightAlternatives ??
+            entry.alternatives,
+        entry.name
+    );
+    const minimalEquipmentAlternatives = withoutSelf(
+        entry.minimalEquipmentAlternatives ??
+            enhancement?.minimalEquipmentAlternatives ??
+            freeWeightAlternatives,
+        entry.name
+    );
+
+    return {
+        ...enhancement,
+        ...entry,
+        equipment,
+        difficulty:
+            entry.difficulty ?? enhancement?.difficulty ?? inferDifficulty(equipment),
+        movementPattern:
+            entry.movementPattern ?? enhancement?.movementPattern ?? entry.category,
+        bestFor: normalizeUniqueStrings([
+            ...(GENERIC_BEST_FOR[entry.category] ?? []),
+            ...(enhancement?.bestFor ?? []),
+            ...(entry.bestFor ?? []),
+        ]),
+        setupChecklist: normalizeUniqueStrings([
+            ...buildGenericSetupChecklist(equipment),
+            ...(enhancement?.setupChecklist ?? []),
+            ...(entry.setupChecklist ?? []),
+        ]),
+        alternatives: normalizeUniqueStrings(entry.alternatives),
+        freeWeightAlternatives,
+        minimalEquipmentAlternatives,
+        homeGymFriendly:
+            entry.homeGymFriendly ??
+            enhancement?.homeGymFriendly ??
+            equipment.every((item) => HOME_GYM_EQUIPMENT.has(item)),
+    };
+};
+
+export const WIKI_DATA: ExerciseWiki[] = [
+    ...BASE_WIKI_DATA,
+    ...ADDITIONAL_WIKI_DATA,
+].map(enrichExerciseEntry);
+
 const WIKI_MAP = new Map<string, ExerciseWiki>(
     WIKI_DATA.map((entry) => [entry.name.toLowerCase().trim(), entry])
 );
 
-// Helper to look up a wiki entry by exercise name
+const resolveEntry = (entryOrName: ExerciseWiki | string) =>
+    typeof entryOrName === "string" ? findWikiEntry(entryOrName) : entryOrName;
+
 export function findWikiEntry(exerciseName: string): ExerciseWiki | undefined {
     return WIKI_MAP.get(exerciseName.toLowerCase().trim());
+}
+
+export function isFreeWeightFriendly(entryOrName: ExerciseWiki | string): boolean {
+    const entry = resolveEntry(entryOrName);
+    if (!entry) return false;
+
+    const equipment = entry.equipment ?? [];
+    const usesAccessibleLoading =
+        equipment.some((item) => FREE_WEIGHT_EQUIPMENT.has(item)) ||
+        equipment.includes("bodyweight");
+    const requiresMachine = equipment.some((item) =>
+        MACHINE_DEPENDENT_EQUIPMENT.has(item)
+    );
+
+    return usesAccessibleLoading && !requiresMachine;
+}
+
+export function isHomeGymFriendly(entryOrName: ExerciseWiki | string): boolean {
+    const entry = resolveEntry(entryOrName);
+    if (!entry) return false;
+    return !!entry.homeGymFriendly;
+}
+
+export function getFreeWeightAlternatives(
+    entryOrName: ExerciseWiki | string
+): string[] {
+    const entry = resolveEntry(entryOrName);
+    if (!entry) return [];
+    return entry.freeWeightAlternatives ?? [];
+}
+
+export function getMinimalEquipmentAlternatives(
+    entryOrName: ExerciseWiki | string
+): string[] {
+    const entry = resolveEntry(entryOrName);
+    if (!entry) return [];
+    return entry.minimalEquipmentAlternatives ?? [];
+}
+
+export function resolvePrimaryFreeWeightAlternative(
+    exerciseName: string
+): string | undefined {
+    return getFreeWeightAlternatives(exerciseName)[0];
 }
 

@@ -1,3 +1,5 @@
+'use client';
+
 import { Timer, X, Pause, Play } from "lucide-react";
 import { cn, formatTime } from "../utils";
 

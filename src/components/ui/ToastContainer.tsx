@@ -1,3 +1,5 @@
+'use client';
+
 import { cn } from "../../utils";
 import type { ToastItem } from "../../hooks/useToast";
 import { Undo2 } from "lucide-react";

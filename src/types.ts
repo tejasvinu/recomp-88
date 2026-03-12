@@ -1,3 +1,6 @@
+export type ExerciseType = "strength" | "hypertrophy" | "other";
+export type WeightUnit = "kg" | "lbs";
+
 export interface SetData {
     id: string;
     targetReps: string;
@@ -9,9 +12,34 @@ export interface SetData {
 export interface Exercise {
     id: string;
     name: string;
-    type: "strength" | "hypertrophy" | "other"; // determines rest timer (strength: 120s, hyper: 90s, other: no timer)
+    type: ExerciseType; // determines rest timer (strength: 120s, hyper: 90s, other: no timer)
     sets: SetData[];
     details?: string; // e.g. "45 mins" for cardio
+}
+
+export interface Stretch {
+    id: string;
+    name: string;
+    duration: number; // seconds
+    description?: string;
+    image?: string; // URL or path
+    targetAreas?: string[];
+    cues?: string[];
+    benefits?: string[];
+    commonMistakes?: string[];
+    regression?: string;
+    progression?: string;
+    equipment?: string[];
+}
+
+export interface StretchingProgram {
+    id: string;
+    name: string;
+    stretches: Stretch[];
+    focusAreas?: string[];
+    bestFor?: string[];
+    difficulty?: "Easy" | "Moderate" | "Focused";
+    equipment?: string[];
 }
 
 export interface DayRoutine {
@@ -20,7 +48,10 @@ export interface DayRoutine {
     title: string;
     name: string; // e.g., "Heavy Push"
     exercises: Exercise[];
+    stretchingProgramId?: string;
 }
+
+export type WorkoutTemplate = DayRoutine[];
 
 // How we'll save the user's progress for a set
 export interface SavedSetState {
@@ -62,4 +93,20 @@ export type SessionHistory = WorkoutSession[];
 export interface BodyWeightEntry {
     date: string; // YYYY-MM-DD
     weight: number;
+}
+
+export interface WorkoutSettings {
+    strengthRestDuration: number;
+    hypertrophyRestDuration: number;
+    soundEnabled: boolean;
+    weightUnit: WeightUnit;
+}
+
+export interface AppDataSnapshot {
+    workoutTemplate: WorkoutTemplate;
+    progress: WorkoutProgress;
+    sessions: SessionHistory;
+    bodyWeightEntries: BodyWeightEntry[];
+    exerciseNotes: Record<string, string>;
+    settings: WorkoutSettings;
 }

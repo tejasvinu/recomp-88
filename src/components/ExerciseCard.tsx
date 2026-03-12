@@ -1,3 +1,5 @@
+'use client';
+
 import { memo } from "react";
 import type { Exercise, SavedSetState } from "../types";
 import { cn } from "../utils";

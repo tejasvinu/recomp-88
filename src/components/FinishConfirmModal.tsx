@@ -1,3 +1,5 @@
+'use client';
+
 import { RotateCcw } from "lucide-react";
 import { formatTime } from "../utils";
 import { useModalEscape } from "../hooks/useModalEscape";

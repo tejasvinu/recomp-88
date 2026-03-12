@@ -1,0 +1,165 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Barlow Condensed', system-ui, -apple-system, sans-serif;
+  --font-mono: 'DM Mono', 'SF Mono', 'Fira Code', monospace;
+}
+
+@layer base {
+  body {
+    background-color: #080808;
+    color: white;
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* ─── Splash Screen ─────────────────────────────────────── */
+  #splash-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #080808;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), visibility 0.6s;
+  }
+
+  .splash-logo {
+    width: 120px;
+    height: 120px;
+    border-radius: 20%;
+    margin-bottom: 24px;
+    box-shadow: 0 0 30px rgba(163, 230, 53, 0.2);
+    opacity: 0;
+    transform: translateY(20px) scale(0.9);
+    animation: appear 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards,
+      float 3s ease-in-out infinite alternate 0.6s,
+      pulse-glow 2s infinite alternate 0.6s;
+  }
+
+  .splash-title {
+    color: #f8fafc;
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    margin-bottom: 32px;
+    opacity: 0;
+    transform: translateY(10px);
+    animation: appear 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.1s forwards;
+  }
+
+  .splash-loader {
+    width: 48px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+    opacity: 0;
+    animation: appear 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.2s forwards;
+  }
+
+  .splash-loader::after {
+    content: '';
+    position: absolute;
+    left: -50%;
+    top: 0;
+    bottom: 0;
+    width: 50%;
+    background: #a3e635;
+    border-radius: 4px;
+    animation: slide 1.5s infinite cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  @keyframes float {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-10px); }
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 30px rgba(163, 230, 53, 0.2); }
+    50% { box-shadow: 0 0 50px rgba(163, 230, 53, 0.4); }
+  }
+
+  @keyframes slide {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(300%); }
+  }
+
+  @keyframes appear {
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+}
+
+@layer utilities {
+  @keyframes slide-up {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-slide-up {
+    animation: slide-up 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.25s ease-out both;
+  }
+
+  @keyframes slide-down {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-slide-down {
+    animation: slide-down 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}

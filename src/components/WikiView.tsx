@@ -1,10 +1,27 @@
+'use client';
+
 import { useState, useMemo } from "react";
-import { WIKI_DATA, type ExerciseWiki } from "../wikiData";
+import {
+  getFreeWeightAlternatives,
+  getMinimalEquipmentAlternatives,
+  isFreeWeightFriendly,
+  isHomeGymFriendly,
+  WIKI_DATA,
+  type ExerciseWiki,
+} from "../wikiData";
 import { cn } from "../utils";
 import ExerciseDetailModal from "./ExerciseDetailModal";
 import { Search, BookOpen, X, ChevronRight } from "lucide-react";
 
 const CATEGORIES = ["All", "Push", "Pull", "Legs", "Core", "Cardio/Mobility"] as const;
+const ACCESS_FILTERS = [
+  "All",
+  "Free Weight",
+  "Bodyweight",
+  "Home Gym",
+  "Minimal Gear",
+  "Machine / Cable",
+] as const;
 
 const categoryColors: Record<string, { badge: string; bar: string; dot: string }> = {
   Push:             { badge: "text-orange-400 bg-orange-400/10 border-orange-400/20", bar: "bg-orange-400",  dot: "bg-orange-400 shadow-[0_0_6px_theme(colors.orange.400)]" },
@@ -17,15 +34,35 @@ const categoryColors: Record<string, { badge: string; bar: string; dot: string }
 export default function WikiView() {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("All");
+  const [activeAccess, setActiveAccess] = useState<string>("All");
   const [selectedEntry, setSelectedEntry] = useState<ExerciseWiki | null>(null);
 
   const filteredExercises = useMemo(() => {
     return WIKI_DATA.filter((ex) => {
       const matchesCategory = activeCategory === "All" || ex.category === activeCategory;
-      const matchesSearch = !search || ex.name.toLowerCase().includes(search.toLowerCase()) || ex.muscles.primary.some((m) => m.toLowerCase().includes(search.toLowerCase()));
-      return matchesCategory && matchesSearch;
+      const lowerSearch = search.toLowerCase();
+      const matchesSearch =
+        !search ||
+        ex.name.toLowerCase().includes(lowerSearch) ||
+        ex.muscles.primary.some((muscle) => muscle.toLowerCase().includes(lowerSearch)) ||
+        ex.muscles.secondary.some((muscle) => muscle.toLowerCase().includes(lowerSearch)) ||
+        ex.alternatives.some((alternative) => alternative.toLowerCase().includes(lowerSearch)) ||
+        ex.equipment?.some((equipment) => equipment.toLowerCase().includes(lowerSearch)) ||
+        ex.bestFor?.some((goal) => goal.toLowerCase().includes(lowerSearch)) ||
+        ex.movementPattern?.toLowerCase().includes(lowerSearch);
+
+      const matchesAccess =
+        activeAccess === "All" ||
+        (activeAccess === "Free Weight" && isFreeWeightFriendly(ex)) ||
+        (activeAccess === "Bodyweight" && ex.equipment?.includes("bodyweight")) ||
+        (activeAccess === "Home Gym" && isHomeGymFriendly(ex)) ||
+        (activeAccess === "Minimal Gear" && getMinimalEquipmentAlternatives(ex).length > 0) ||
+        (activeAccess === "Machine / Cable" &&
+          !!ex.equipment?.some((equipment) => equipment === "machine" || equipment === "cable" || equipment === "smith-machine"));
+
+      return matchesCategory && matchesSearch && matchesAccess;
     });
-  }, [search, activeCategory]);
+  }, [search, activeCategory, activeAccess]);
 
   const groupedExercises = useMemo(() => {
     const grouped: Record<string, ExerciseWiki[]> = {};
@@ -45,7 +82,9 @@ export default function WikiView() {
         </div>
         <div>
           <h2 className="text-xl font-black text-white tracking-wide">Exercise Wiki</h2>
-          <p className="text-[11px] text-neutral-500 font-medium uppercase tracking-widest">{WIKI_DATA.length} exercises · tap for details</p>
+          <p className="text-[11px] text-neutral-500 font-medium uppercase tracking-widest">
+            {WIKI_DATA.length} exercises · access-aware swaps built in
+          </p>
         </div>
       </div>
 
@@ -87,10 +126,29 @@ export default function WikiView() {
         ))}
       </div>
 
+      <div className="flex gap-1.5 overflow-x-auto scrollbar-none pb-1 -mx-0.5 px-0.5">
+        {ACCESS_FILTERS.map((filter) => (
+          <button
+            key={filter}
+            onClick={() => setActiveAccess(filter)}
+            className={cn(
+              "shrink-0 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all duration-200 border whitespace-nowrap",
+              activeAccess === filter
+                ? "bg-sky-400 text-neutral-950 border-sky-400 shadow-[0_0_10px_rgba(56,189,248,0.18)]"
+                : "bg-white/4 text-neutral-500 border-white/6 hover:bg-white/8 hover:text-neutral-300"
+            )}
+          >
+            {filter}
+          </button>
+        ))}
+      </div>
+
       {/* Exercise List */}
       {Object.keys(groupedExercises).length === 0 ? (
         <div className="text-center py-16">
-          <p className="text-neutral-500 text-sm font-medium">No exercises found.</p>
+          <p className="text-neutral-500 text-sm font-medium">
+            No exercises match the current search and access filters.
+          </p>
         </div>
       ) : (
         Object.entries(groupedExercises).map(([category, exercises]) => (
@@ -120,6 +178,23 @@ export default function WikiView() {
                   <p className="text-[10px] text-neutral-600 font-medium mt-0.5 uppercase tracking-wider truncate">
                     {ex.muscles.primary.join(" · ")}
                   </p>
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {isHomeGymFriendly(ex) && (
+                      <span className="text-[9px] uppercase font-black tracking-widest text-sky-400 bg-sky-400/10 border border-sky-400/20 px-2 py-0.5 rounded-full">
+                        Home Gym
+                      </span>
+                    )}
+                    {isFreeWeightFriendly(ex) && (
+                      <span className="text-[9px] uppercase font-black tracking-widest text-lime-400 bg-lime-400/10 border border-lime-400/20 px-2 py-0.5 rounded-full">
+                        Free Weight
+                      </span>
+                    )}
+                    {getFreeWeightAlternatives(ex).length > 0 && !isFreeWeightFriendly(ex) && (
+                      <span className="text-[9px] uppercase font-black tracking-widest text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded-full">
+                        {getFreeWeightAlternatives(ex).length} swap options
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="shrink-0 pr-3">

@@ -1,6 +1,13 @@
-import { useMemo, useState } from "react";
-import type { WorkoutProgress, SessionHistory, BodyWeightEntry } from "../types";
-import { WorkoutTemplate } from "../data";
+'use client';
+
+import { useEffect, useMemo, useState } from "react";
+import type {
+  WorkoutProgress,
+  SessionHistory,
+  BodyWeightEntry,
+  WorkoutTemplate,
+} from "../types";
+import { isTrainingDay } from "../data";
 import { cn, getClosestBodyWeight, resolveWeight } from "../utils";
 import {
   XAxis,
@@ -33,6 +40,7 @@ import {
 } from "lucide-react";
 
 interface ChartsViewProps {
+  workoutTemplate: WorkoutTemplate;
   progress: WorkoutProgress;
   sessions: SessionHistory;
   onOpenExercise?: (name: string) => void;
@@ -42,9 +50,8 @@ interface ChartsViewProps {
   weightUnit?: "kg" | "lbs";
 }
 
-const TRAINING_DAYS = WorkoutTemplate.filter((d) => d.id !== "day-7");
-
 export default function ChartsView({
+  workoutTemplate,
   progress,
   sessions,
   onOpenExercise,
@@ -57,10 +64,22 @@ export default function ChartsView({
   const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);
   const [bwInput, setBwInput] = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
-  const activeDay = TRAINING_DAYS[selectedDayIdx];
+  const trainingDays = useMemo(
+    () => workoutTemplate.filter(isTrainingDay),
+    [workoutTemplate]
+  );
+  const activeDay = trainingDays[selectedDayIdx] ?? trainingDays[0] ?? null;
+
+  useEffect(() => {
+    if (selectedDayIdx >= trainingDays.length && trainingDays.length > 0) {
+      setSelectedDayIdx(0);
+    }
+  }, [selectedDayIdx, trainingDays.length]);
 
   // Use most recent saved session for exercise stats (not live progress which resets)
   const exerciseStats = useMemo(() => {
+    if (!activeDay) return [];
+
     // Find the most recent session for this day
     const daySessions = sessions
       .filter((s) => s.dayId === activeDay.id)
@@ -103,9 +122,26 @@ export default function ChartsView({
     const defaultBw = weightUnit === "lbs" ? 175 : 80;
     const bw = getClosestBodyWeight(latestSession.date, bodyWeightEntries, defaultBw);
 
-    return latestSession.exercises.map((ex) => {
+    return activeDay.exercises
+      .filter((exercise) => exercise.type !== "other")
+      .map((exercise) => {
+      const sessionExercise = latestSession.exercises.find(
+        (entry) => entry.exerciseId === exercise.id || entry.name === exercise.name
+      );
+
+      if (!sessionExercise) {
+        return {
+          name: exercise.name.length > 14 ? exercise.name.substring(0, 12) + "…" : exercise.name,
+          fullName: exercise.name,
+          totalVolume: 0,
+          maxWeight: 0,
+          avgReps: 0,
+          sets: 0,
+        };
+      }
+
       let totalVolume = 0, maxWeight = 0, totalReps = 0, setsWithData = 0;
-      ex.sets.forEach((set) => {
+      sessionExercise.sets.forEach((set) => {
         const weight = resolveWeight(set.loggedWeight, bw);
         const reps = parseFloat(set.loggedReps) || 0;
         if (weight > 0 || reps > 0) {
@@ -113,13 +149,13 @@ export default function ChartsView({
           maxWeight = Math.max(maxWeight, weight);
           totalReps += reps;
           setsWithData++;
-        } else if (ex.type === "other" && set.completed) {
+        } else if (sessionExercise.type === "other" && set.completed) {
           setsWithData++;
         }
       });
       return {
-        name: ex.name.length > 14 ? ex.name.substring(0, 12) + "…" : ex.name,
-        fullName: ex.name,
+        name: exercise.name.length > 14 ? exercise.name.substring(0, 12) + "…" : exercise.name,
+        fullName: exercise.name,
         totalVolume: Math.round(totalVolume),
         maxWeight,
         avgReps: setsWithData > 0 ? Math.round(totalReps / setsWithData) : 0,
@@ -129,6 +165,8 @@ export default function ChartsView({
   }, [sessions, progress, activeDay, weightUnit, bodyWeightEntries]);
 
   const estimatedMaxes = useMemo(() => {
+    if (!activeDay) return [];
+
     const daySessions = sessions
       .filter((s) => s.dayId === activeDay.id)
       .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -171,7 +209,7 @@ export default function ChartsView({
   }, [sessions, activeDay, weightUnit, bodyWeightEntries]);
 
   const dayVolumeSummary = useMemo(() => {
-    return TRAINING_DAYS.map((day) => {
+    return trainingDays.map((day) => {
       const daySessions = sessions
         .filter((s) => s.dayId === day.id)
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -195,10 +233,12 @@ export default function ChartsView({
         volume: Math.round(totalVolume),
       };
     });
-  }, [sessions, weightUnit, bodyWeightEntries]);
+  }, [sessions, trainingDays, weightUnit, bodyWeightEntries]);
 
   // ─── PR Tracker: 1RM history per strength exercise ─────────────────────
   const prHistory = useMemo(() => {
+    if (!activeDay) return null;
+
     const daySessions = sessions
       .filter((s) => s.dayId === activeDay.id)
       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -559,238 +599,273 @@ export default function ChartsView({
         </div>
       )}
 
-      {/* Day Selector */}
-      <div>
-        <div className="flex gap-1.5 overflow-x-auto scrollbar-none pb-1 -mx-0.5 px-0.5">
-          {TRAINING_DAYS.map((day, idx) => (
-            <button
-              key={day.id}
-              onClick={() => setSelectedDayIdx(idx)}
-              className={cn(
-                "snap-center shrink-0 px-3.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all duration-200 border",
-                selectedDayIdx === idx
-                  ? "bg-lime-400 text-neutral-950 border-lime-400 shadow-[0_0_10px_rgba(163,230,53,0.2)]"
-                  : "bg-white/4 text-neutral-500 border-white/6 hover:bg-white/8 hover:text-neutral-300"
-              )}
-            >
-              D{day.dayNumber}
-            </button>
-          ))}
-        </div>
-        <p className="text-[11px] font-semibold text-neutral-500 uppercase tracking-widest mt-1.5 px-0.5">
-          {activeDay.name}
-        </p>
-      </div>
-
-      {/* Per-Exercise Volume */}
-      <div className="bg-neutral-900/50 border border-white/6 rounded-2xl p-4 shadow-lg">
-        <div className="flex items-center gap-2 mb-4">
-          <Dumbbell size={15} className="text-lime-400" />
-          <h3 className="text-[12px] font-black text-white uppercase tracking-widest">
-            Exercise Volume
-          </h3>
-        </div>
-
-        {exerciseStats.some((e) => e.totalVolume > 0) ? (
-          <div className="h-44">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={exerciseStats.filter((e) => e.totalVolume > 0)}
-                barSize={18}
-                layout="vertical"
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" horizontal={false} />
-                <XAxis
-                  type="number"
-                  tick={{ fill: "#525252", fontSize: 10 }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  dataKey="name"
-                  type="category"
-                  width={82}
-                  tick={{ fill: "#c4c4c4", fontSize: 10, fontWeight: 700 }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#111",
-                    border: "1px solid #2a2a2a",
-                    borderRadius: 10,
-                    fontSize: 12,
-                    fontFamily: "DM Mono, monospace",
-                  }}
-                  labelStyle={{ color: "#fff", fontWeight: 800, fontSize: 11 }}
-                  formatter={(value: unknown) => [`${Number(value).toLocaleString()} ${weightUnit}`, "Volume"]}
-                  cursor={{ fill: "rgba(163,230,53,0.04)" }}
-                />
-                <Bar dataKey="totalVolume" fill="#a3e635" radius={[0, 4, 4, 0]} fillOpacity={0.85} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        ) : (
-          <EmptyState message={`No data logged for ${activeDay.name} yet`} />
-        )}
-
-        {exerciseStats.some((e) => e.totalVolume > 0) && (
-          <div className="grid grid-cols-3 gap-2 mt-4">
-            <StatCard
-              label="Total Vol"
-              value={`${exerciseStats.reduce((a, e) => a + e.totalVolume, 0).toLocaleString()}`}
-              unit={weightUnit}
-            />
-            <StatCard
-              label="Top Weight"
-              value={`${Math.max(...exerciseStats.map((e) => e.maxWeight))}`}
-              unit={weightUnit}
-            />
-            <StatCard
-              label="Sets"
-              value={`${exerciseStats.reduce((a, e) => a + e.sets, 0)}`}
-              unit="sets"
-            />
-          </div>
-        )}
-      </div>
-
-      {/* Estimated 1RM */}
-      {estimatedMaxes.length > 0 && (
-        <div className="bg-neutral-900/50 border border-white/6 rounded-2xl p-4 shadow-lg">
-          <div className="flex items-center gap-2 mb-4">
-            <Award size={15} className="text-lime-400" />
-            <h3 className="text-[12px] font-black text-white uppercase tracking-widest">
-              Estimated 1RM
-            </h3>
-            <span className="text-[9px] text-neutral-600 font-black uppercase tracking-widest ml-auto bg-white/4 px-2 py-1 rounded-md border border-white/6">
-              Epley
-            </span>
+      {activeDay ? (
+        <>
+          {/* Day Selector */}
+          <div>
+            <div className="flex gap-1.5 overflow-x-auto scrollbar-none pb-1 -mx-0.5 px-0.5">
+              {trainingDays.map((day, idx) => (
+                <button
+                  key={day.id}
+                  onClick={() => setSelectedDayIdx(idx)}
+                  className={cn(
+                    "snap-center shrink-0 px-3.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all duration-200 border",
+                    selectedDayIdx === idx
+                      ? "bg-lime-400 text-neutral-950 border-lime-400 shadow-[0_0_10px_rgba(163,230,53,0.2)]"
+                      : "bg-white/4 text-neutral-500 border-white/6 hover:bg-white/8 hover:text-neutral-300"
+                  )}
+                >
+                  D{day.dayNumber}
+                </button>
+              ))}
+            </div>
+            <p className="text-[11px] font-semibold text-neutral-500 uppercase tracking-widest mt-1.5 px-0.5">
+              {activeDay.name}
+            </p>
           </div>
 
-          <div className="flex flex-col gap-2">
-            {estimatedMaxes.map((entry) => (
-              <div
-                key={entry.name}
-                className="flex items-center justify-between bg-white/4 border border-white/7 rounded-xl p-3.5 hover:bg-white/7 transition-colors"
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="text-[14px] font-bold text-white tracking-wide leading-snug truncate">
-                      {entry.name}
-                    </p>
-                    {onOpenExercise && (
-                      <button
-                        onClick={() => onOpenExercise(entry.name)}
-                        className="shrink-0 w-5 h-5 bg-white/5 hover:bg-lime-400/15 rounded-full flex items-center justify-center transition-colors border border-white/6 hover:border-lime-400/30 group"
-                        title="View exercise info"
-                      >
-                        <Info size={10} className="text-neutral-500 group-hover:text-lime-400 transition-colors" />
-                      </button>
-                    )}
-                  </div>
-                  <p className="text-[10px] text-neutral-500 font-medium mt-0.5 uppercase tracking-wider">
-                    Best: <span className="text-neutral-300 font-mono">{entry.bestSet}</span>
-                  </p>
-                </div>
-                <div className="flex items-baseline gap-0.5 shrink-0 ml-3">
-                  <span className="text-[22px] font-mono font-bold text-lime-400 tabular-nums leading-none">
-                    {entry.estimated1RM}
-                  </span>
-                  <span className="text-[9px] text-neutral-500 font-bold uppercase tracking-widest ml-1">
-                    {weightUnit}
-                  </span>
-                </div>
+          {/* Per-Exercise Volume */}
+          <div className="bg-neutral-900/50 border border-white/6 rounded-2xl p-4 shadow-lg">
+            <div className="flex items-center gap-2 mb-4">
+              <Dumbbell size={15} className="text-lime-400" />
+              <h3 className="text-[12px] font-black text-white uppercase tracking-widest">
+                Exercise Volume
+              </h3>
+            </div>
+
+            {exerciseStats.some((entry) => entry.totalVolume > 0) ? (
+              <div className="h-44">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={exerciseStats.filter((entry) => entry.totalVolume > 0)}
+                    barSize={18}
+                    layout="vertical"
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" horizontal={false} />
+                    <XAxis
+                      type="number"
+                      tick={{ fill: "#525252", fontSize: 10 }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      dataKey="name"
+                      type="category"
+                      width={82}
+                      tick={{ fill: "#c4c4c4", fontSize: 10, fontWeight: 700 }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "#111",
+                        border: "1px solid #2a2a2a",
+                        borderRadius: 10,
+                        fontSize: 12,
+                        fontFamily: "DM Mono, monospace",
+                      }}
+                      labelStyle={{ color: "#fff", fontWeight: 800, fontSize: 11 }}
+                      formatter={(value: unknown) => [
+                        `${Number(value).toLocaleString()} ${weightUnit}`,
+                        "Volume",
+                      ]}
+                      cursor={{ fill: "rgba(163,230,53,0.04)" }}
+                    />
+                    <Bar
+                      dataKey="totalVolume"
+                      fill="#a3e635"
+                      radius={[0, 4, 4, 0]}
+                      fillOpacity={0.85}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
-            ))}
+            ) : (
+              <EmptyState message={`No data logged for ${activeDay.name} yet`} />
+            )}
+
+            {exerciseStats.some((entry) => entry.totalVolume > 0) && (
+              <div className="grid grid-cols-3 gap-2 mt-4">
+                <StatCard
+                  label="Total Vol"
+                  value={`${exerciseStats.reduce((total, entry) => total + entry.totalVolume, 0).toLocaleString()}`}
+                  unit={weightUnit}
+                />
+                <StatCard
+                  label="Top Weight"
+                  value={`${Math.max(...exerciseStats.map((entry) => entry.maxWeight))}`}
+                  unit={weightUnit}
+                />
+                <StatCard
+                  label="Sets"
+                  value={`${exerciseStats.reduce((total, entry) => total + entry.sets, 0)}`}
+                  unit="sets"
+                />
+              </div>
+            )}
           </div>
 
-          <p className="text-[10px] text-neutral-600 mt-3 text-center font-medium">
-            1RM = weight × (1 + reps ÷ 30) · most accurate for 1–10 rep sets
-          </p>
-        </div>
-      )}
-
-      {/* PR Tracker */}
-      {prHistory && (
-        <div className="bg-neutral-900/50 border border-white/6 rounded-2xl p-4 shadow-lg">
-          <div className="flex items-center gap-2 mb-1">
-            <TrendingUp size={15} className="text-lime-400" />
-            <h3 className="text-[12px] font-black text-white uppercase tracking-widest">
-              PR Tracker
-            </h3>
-            <span className="text-[9px] text-neutral-600 font-black uppercase tracking-widest ml-auto bg-white/4 px-2 py-1 rounded-md border border-white/6">
-              {sessions.filter((s) => s.dayId === activeDay.id).length} sessions
-            </span>
-          </div>
-          <p className="text-[10px] text-neutral-500 font-medium mb-4 uppercase tracking-wider">
-            Est. 1RM over time
-          </p>
-
-          <div className="h-44">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={prHistory.series} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" />
-                <XAxis
-                  dataKey="date"
-                  tick={{ fill: "#525252", fontSize: 9, fontWeight: 700 }}
-                  axisLine={false}
-                  tickLine={false}
-                />
-                <YAxis
-                  tick={{ fill: "#525252", fontSize: 9 }}
-                  axisLine={false}
-                  tickLine={false}
-                  width={32}
-                  tickFormatter={(v) => `${v}`}
-                />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#111",
-                    border: "1px solid #2a2a2a",
-                    borderRadius: 10,
-                    fontSize: 11,
-                    fontFamily: "DM Mono, monospace",
-                  }}
-                  labelStyle={{
-                    color: "#a3e635",
-                    fontWeight: 800,
-                    textTransform: "uppercase" as const,
-                    fontSize: 9,
-                    letterSpacing: "0.1em",
-                  }}
-                  formatter={(value: unknown, name: unknown) => [`${value} ${weightUnit}`, String(name)]}
-                  cursor={{ stroke: "rgba(255,255,255,0.06)" }}
-                />
-                {prHistory.exercises.map((exName, i) => (
-                  <Line
-                    key={exName}
-                    type="monotone"
-                    dataKey={exName}
-                    stroke={LINE_COLORS[i % LINE_COLORS.length]}
-                    strokeWidth={2}
-                    dot={{ r: 3, fill: LINE_COLORS[i % LINE_COLORS.length], strokeWidth: 0 }}
-                    activeDot={{ r: 5, strokeWidth: 0 }}
-                    connectNulls
-                  />
-                ))}
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div className="flex flex-wrap gap-2 mt-3">
-            {prHistory.exercises.map((exName, i) => (
-              <div key={exName} className="flex items-center gap-1.5">
-                <span
-                  className="w-3 h-0.5 rounded-full shrink-0"
-                  style={{ backgroundColor: LINE_COLORS[i % LINE_COLORS.length] }}
-                />
-                <span className="text-[9px] font-bold text-neutral-500 uppercase tracking-wider">
-                  {exName}
+          {/* Estimated 1RM */}
+          {estimatedMaxes.length > 0 && (
+            <div className="bg-neutral-900/50 border border-white/6 rounded-2xl p-4 shadow-lg">
+              <div className="flex items-center gap-2 mb-4">
+                <Award size={15} className="text-lime-400" />
+                <h3 className="text-[12px] font-black text-white uppercase tracking-widest">
+                  Estimated 1RM
+                </h3>
+                <span className="text-[9px] text-neutral-600 font-black uppercase tracking-widest ml-auto bg-white/4 px-2 py-1 rounded-md border border-white/6">
+                  Epley
                 </span>
               </div>
-            ))}
-          </div>
+
+              <div className="flex flex-col gap-2">
+                {estimatedMaxes.map((entry) => (
+                  <div
+                    key={entry.name}
+                    className="flex items-center justify-between bg-white/4 border border-white/7 rounded-xl p-3.5 hover:bg-white/7 transition-colors"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="text-[14px] font-bold text-white tracking-wide leading-snug truncate">
+                          {entry.name}
+                        </p>
+                        {onOpenExercise && (
+                          <button
+                            onClick={() => onOpenExercise(entry.name)}
+                            className="shrink-0 w-5 h-5 bg-white/5 hover:bg-lime-400/15 rounded-full flex items-center justify-center transition-colors border border-white/6 hover:border-lime-400/30 group"
+                            title="View exercise info"
+                          >
+                            <Info
+                              size={10}
+                              className="text-neutral-500 group-hover:text-lime-400 transition-colors"
+                            />
+                          </button>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-neutral-500 font-medium mt-0.5 uppercase tracking-wider">
+                        Best: <span className="text-neutral-300 font-mono">{entry.bestSet}</span>
+                      </p>
+                    </div>
+                    <div className="flex items-baseline gap-0.5 shrink-0 ml-3">
+                      <span className="text-[22px] font-mono font-bold text-lime-400 tabular-nums leading-none">
+                        {entry.estimated1RM}
+                      </span>
+                      <span className="text-[9px] text-neutral-500 font-bold uppercase tracking-widest ml-1">
+                        {weightUnit}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <p className="text-[10px] text-neutral-600 mt-3 text-center font-medium">
+                1RM = weight × (1 + reps ÷ 30) · most accurate for 1–10 rep sets
+              </p>
+            </div>
+          )}
+
+          {/* PR Tracker */}
+          {prHistory && (
+            <div className="bg-neutral-900/50 border border-white/6 rounded-2xl p-4 shadow-lg">
+              <div className="flex items-center gap-2 mb-1">
+                <TrendingUp size={15} className="text-lime-400" />
+                <h3 className="text-[12px] font-black text-white uppercase tracking-widest">
+                  PR Tracker
+                </h3>
+                <span className="text-[9px] text-neutral-600 font-black uppercase tracking-widest ml-auto bg-white/4 px-2 py-1 rounded-md border border-white/6">
+                  {sessions.filter((session) => session.dayId === activeDay.id).length} sessions
+                </span>
+              </div>
+              <p className="text-[10px] text-neutral-500 font-medium mb-4 uppercase tracking-wider">
+                Est. 1RM over time
+              </p>
+
+              <div className="h-44">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={prHistory.series}
+                    margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" />
+                    <XAxis
+                      dataKey="date"
+                      tick={{ fill: "#525252", fontSize: 9, fontWeight: 700 }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      tick={{ fill: "#525252", fontSize: 9 }}
+                      axisLine={false}
+                      tickLine={false}
+                      width={32}
+                      tickFormatter={(value) => `${value}`}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "#111",
+                        border: "1px solid #2a2a2a",
+                        borderRadius: 10,
+                        fontSize: 11,
+                        fontFamily: "DM Mono, monospace",
+                      }}
+                      labelStyle={{
+                        color: "#a3e635",
+                        fontWeight: 800,
+                        textTransform: "uppercase" as const,
+                        fontSize: 9,
+                        letterSpacing: "0.1em",
+                      }}
+                      formatter={(value: unknown, name: unknown) => [
+                        `${value} ${weightUnit}`,
+                        String(name),
+                      ]}
+                      cursor={{ stroke: "rgba(255,255,255,0.06)" }}
+                    />
+                    {prHistory.exercises.map((exerciseName, index) => (
+                      <Line
+                        key={exerciseName}
+                        type="monotone"
+                        dataKey={exerciseName}
+                        stroke={LINE_COLORS[index % LINE_COLORS.length]}
+                        strokeWidth={2}
+                        dot={{
+                          r: 3,
+                          fill: LINE_COLORS[index % LINE_COLORS.length],
+                          strokeWidth: 0,
+                        }}
+                        activeDot={{ r: 5, strokeWidth: 0 }}
+                        connectNulls
+                      />
+                    ))}
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+
+              <div className="flex flex-wrap gap-2 mt-3">
+                {prHistory.exercises.map((exerciseName, index) => (
+                  <div key={exerciseName} className="flex items-center gap-1.5">
+                    <span
+                      className="w-3 h-0.5 rounded-full shrink-0"
+                      style={{ backgroundColor: LINE_COLORS[index % LINE_COLORS.length] }}
+                    />
+                    <span className="text-[9px] font-bold text-neutral-500 uppercase tracking-wider">
+                      {exerciseName}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="bg-white/2 border border-dashed border-white/8 rounded-2xl p-6 text-center">
+          <p className="text-[12px] font-black text-white mb-1.5 uppercase tracking-widest">
+            No Training Days Configured
+          </p>
+          <p className="text-[11px] text-neutral-500 font-medium leading-relaxed max-w-[280px] mx-auto">
+            Add at least one strength or hypertrophy day in workout settings to unlock
+            progression charts for your current program.
+          </p>
         </div>
       )}
 
@@ -960,7 +1035,7 @@ export default function ChartsView({
       )}
 
       {/* Empty state */}
-      {!hasAnyData && sessions.length === 0 && (
+      {!hasAnyData && sessions.length === 0 && trainingDays.length > 0 && (
         <div className="bg-white/2 border border-dashed border-white/8 rounded-2xl p-8 text-center">
           <div className="w-14 h-14 bg-white/4 border border-white/8 rounded-full flex items-center justify-center mx-auto mb-4">
             <TrendingUp size={24} className="text-neutral-600" />
@@ -969,8 +1044,8 @@ export default function ChartsView({
             No progression data yet
           </p>
           <p className="text-[12px] text-neutral-500 font-medium leading-relaxed max-w-[260px] mx-auto">
-            Log weights and reps in the tracker, then tap "Finish & Reset" to save your first
-            session.
+            Log weights and reps in the tracker, then tap &quot;Finish &amp; Reset&quot; to save your
+            first session.
           </p>
         </div>
       )}

@@ -1,5 +1,13 @@
+'use client';
+
 import { useState } from "react";
-import type { ExerciseWiki } from "../wikiData";
+import {
+  getFreeWeightAlternatives,
+  getMinimalEquipmentAlternatives,
+  isFreeWeightFriendly,
+  isHomeGymFriendly,
+  type ExerciseWiki,
+} from "../wikiData";
 import { cn } from "../utils";
 import { useModalEscape } from "../hooks/useModalEscape";
 import {
@@ -11,6 +19,9 @@ import {
   ChevronDown,
   Dumbbell,
   Zap,
+  House,
+  ListChecks,
+  Backpack,
 } from "lucide-react";
 
 interface ExerciseDetailModalProps {
@@ -22,6 +33,8 @@ export default function ExerciseDetailModal({ entry, onClose }: ExerciseDetailMo
   useModalEscape(onClose);
 
   const [expandedSection, setExpandedSection] = useState<string | null>("biomechanics");
+  const freeWeightAlternatives = getFreeWeightAlternatives(entry);
+  const minimalEquipmentAlternatives = getMinimalEquipmentAlternatives(entry);
 
   const toggle = (section: string) => {
     setExpandedSection((prev) => (prev === section ? null : section));
@@ -75,6 +88,32 @@ export default function ExerciseDetailModal({ entry, onClose }: ExerciseDetailMo
                   ))}
                 </div>
               )}
+
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {entry.difficulty && (
+                  <span className="text-[9px] uppercase font-black tracking-widest text-white bg-white/6 border border-white/10 px-2.5 py-1 rounded-full">
+                    {entry.difficulty}
+                  </span>
+                )}
+                {isHomeGymFriendly(entry) && (
+                  <span className="text-[9px] uppercase font-black tracking-widest text-sky-400 bg-sky-400/10 border border-sky-400/20 px-2.5 py-1 rounded-full">
+                    Home Gym Friendly
+                  </span>
+                )}
+                {isFreeWeightFriendly(entry) && (
+                  <span className="text-[9px] uppercase font-black tracking-widest text-lime-400 bg-lime-400/10 border border-lime-400/20 px-2.5 py-1 rounded-full">
+                    Free Weight Ready
+                  </span>
+                )}
+                {entry.equipment?.map((item) => (
+                  <span
+                    key={item}
+                    className="text-[9px] uppercase font-black tracking-widest text-neutral-400 bg-black/25 border border-white/8 px-2.5 py-1 rounded-full"
+                  >
+                    {item.replace(/-/g, " ")}
+                  </span>
+                ))}
+              </div>
             </div>
 
             <button
@@ -109,6 +148,25 @@ export default function ExerciseDetailModal({ entry, onClose }: ExerciseDetailMo
             onToggle={() => toggle("biomechanics")}
           >
             <p className="text-[13px] text-neutral-300 leading-relaxed font-medium">{entry.biomechanics}</p>
+          </AccordionSection>
+
+          <AccordionSection
+            id="best-for"
+            title="Best For"
+            icon={<House size={14} />}
+            isOpen={expandedSection === "best-for"}
+            onToggle={() => toggle("best-for")}
+          >
+            <div className="flex flex-wrap gap-2">
+              {(entry.bestFor ?? []).map((item) => (
+                <span
+                  key={item}
+                  className="text-[12px] font-bold text-neutral-200 bg-white/6 border border-white/9 px-3 py-1.5 rounded-lg"
+                >
+                  {item}
+                </span>
+              ))}
+            </div>
           </AccordionSection>
 
           <AccordionSection
@@ -149,18 +207,83 @@ export default function ExerciseDetailModal({ entry, onClose }: ExerciseDetailMo
           </AccordionSection>
 
           <AccordionSection
+            id="setup"
+            title="Setup Checklist"
+            icon={<ListChecks size={14} />}
+            isOpen={expandedSection === "setup"}
+            onToggle={() => toggle("setup")}
+          >
+            <ol className="flex flex-col gap-2.5 list-none">
+              {(entry.setupChecklist ?? []).map((checkItem, index) => (
+                <li key={checkItem} className="flex gap-3 items-start text-[13px] text-neutral-300 leading-relaxed font-medium">
+                  <span className="shrink-0 w-5 h-5 rounded-lg bg-white/8 text-white text-[9px] font-black flex items-center justify-center mt-0.5 border border-white/10">
+                    {index + 1}
+                  </span>
+                  {checkItem}
+                </li>
+              ))}
+            </ol>
+          </AccordionSection>
+
+          <AccordionSection
             id="alternatives"
-            title="Swap Alternatives"
-            icon={<ArrowLeftRight size={14} />}
+            title="Swap & Access Paths"
+            icon={<Backpack size={14} />}
             isOpen={expandedSection === "alternatives"}
             onToggle={() => toggle("alternatives")}
           >
-            <div className="flex flex-wrap gap-2">
-              {entry.alternatives.map((alt) => (
-                <span key={alt} className="text-[12px] font-bold text-neutral-200 bg-white/6 border border-white/9 px-3 py-1.5 rounded-lg">
-                  {alt}
-                </span>
-              ))}
+            <div className="flex flex-col gap-4">
+              {freeWeightAlternatives.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <ArrowLeftRight size={12} className="text-lime-400" />
+                    <p className="text-[10px] uppercase font-black tracking-[0.18em] text-lime-400">
+                      Free-Weight Alternatives
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {freeWeightAlternatives.map((alt) => (
+                      <span key={alt} className="text-[12px] font-bold text-neutral-200 bg-lime-400/10 border border-lime-400/20 px-3 py-1.5 rounded-lg">
+                        {alt}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {minimalEquipmentAlternatives.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <House size={12} className="text-sky-400" />
+                    <p className="text-[10px] uppercase font-black tracking-[0.18em] text-sky-400">
+                      Minimal-Equipment Options
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {minimalEquipmentAlternatives.map((alt) => (
+                      <span key={alt} className="text-[12px] font-bold text-neutral-200 bg-sky-400/10 border border-sky-400/20 px-3 py-1.5 rounded-lg">
+                        {alt}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <Dumbbell size={12} className="text-neutral-400" />
+                  <p className="text-[10px] uppercase font-black tracking-[0.18em] text-neutral-500">
+                    Broader Swap Library
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {entry.alternatives.map((alt) => (
+                    <span key={alt} className="text-[12px] font-bold text-neutral-200 bg-white/6 border border-white/9 px-3 py-1.5 rounded-lg">
+                      {alt}
+                    </span>
+                  ))}
+                </div>
+              </div>
             </div>
           </AccordionSection>
 

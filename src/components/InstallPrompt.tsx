@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from "react";
 import { Download, X } from "lucide-react";
 import { cn } from "../utils";
@@ -14,15 +16,11 @@ interface BeforeInstallPromptEvent extends Event {
 export default function InstallPrompt() {
     const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
     const [isInstallable, setIsInstallable] = useState(false);
-    const [isDismissed, setIsDismissed] = useState(false);
+    const isDismissed =
+        typeof window !== "undefined" &&
+        localStorage.getItem("recomp88-pwa-dismissed") === "true";
 
     useEffect(() => {
-        // Check if the user has already dismissed it in the past
-        const dismissed = localStorage.getItem("recomp88-pwa-dismissed");
-        if (dismissed === "true") {
-            setIsDismissed(true);
-        }
-
         const handleBeforeInstallPrompt = (e: Event) => {
             // Prevent the mini-infobar from appearing on mobile
             e.preventDefault();
@@ -64,7 +62,6 @@ export default function InstallPrompt() {
 
     const handleDismiss = () => {
         setIsInstallable(false);
-        setIsDismissed(true);
         localStorage.setItem("recomp88-pwa-dismissed", "true");
     };
 
@@ -85,7 +82,7 @@ export default function InstallPrompt() {
                         Install Recomp 88
                     </h3>
                     <p className="text-xs text-neutral-400 whitespace-nowrap overflow-hidden text-ellipsis">
-                        Add to home screen for offline use
+                        Add to home screen for faster access
                     </p>
                 </div>
 

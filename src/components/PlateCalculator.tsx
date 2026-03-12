@@ -1,3 +1,5 @@
+'use client';
+
 import { useState } from "react";
 import { X, Calculator, Flame } from "lucide-react";
 import { cn } from "../utils";

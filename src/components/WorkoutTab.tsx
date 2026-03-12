@@ -1,7 +1,9 @@
+'use client';
+
 import { useState } from "react";
 import type { DayRoutine, WorkoutProgress } from "../types";
 import { cn } from "../utils";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, Timer } from "lucide-react";
 import ExerciseCard from "./ExerciseCard";
 import { useSwipeNavigation } from "../hooks/useSwipeNavigation";
 
@@ -24,6 +26,7 @@ interface WorkoutTabProps {
     onOpenExerciseInfo: (name: string) => void;
     onNoteChange: (exerciseId: string, note: string) => void;
     onShowFinishConfirm: () => void;
+    onStartStretching?: () => void;
 }
 
 export default function WorkoutTab({
@@ -45,6 +48,7 @@ export default function WorkoutTab({
     onOpenExerciseInfo,
     onNoteChange,
     onShowFinishConfirm,
+    onStartStretching,
 }: WorkoutTabProps) {
     const [expandedNoteId, setExpandedNoteId] = useState<string | null>(null);
 
@@ -96,7 +100,16 @@ export default function WorkoutTab({
             ))}
 
             {/* Finish Workout */}
-            <div className="mt-6 mb-4">
+            <div className="mt-6 mb-4 space-y-3">
+                {activeDay.stretchingProgramId && (
+                    <button
+                        onClick={onStartStretching}
+                        className="w-full active:scale-[0.98] flex items-center justify-center gap-2.5 py-4 rounded-2xl font-bold text-[12px] tracking-[0.18em] uppercase transition-all border bg-white/5 hover:bg-white/8 border-white/10 text-white"
+                    >
+                        <Timer size={15} className="text-lime-400" />
+                        Start Stretching Session
+                    </button>
+                )}
                 <button
                     onClick={onShowFinishConfirm}
                     className={cn(

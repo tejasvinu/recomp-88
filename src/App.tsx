@@ -1,45 +1,155 @@
+'use client';
+
 import { useState, useEffect, useMemo, useCallback, useRef, Suspense, lazy } from "react";
-import { WorkoutTemplate } from "./data";
+import {
+  createDefaultWorkoutTemplate,
+  mergeWorkoutProgress,
+  normalizeWorkoutTemplate,
+  pruneExerciseNotesForWorkoutTemplate,
+  pruneProgressForWorkoutTemplate,
+} from "./data";
 import { useLocalStorage } from "./hooks/useLocalStorage";
 import { useToast } from "./hooks/useToast";
 import { useRestTimer } from "./hooks/useRestTimer";
 import { useWorkoutTimer } from "./hooks/useWorkoutTimer";
-import type { WorkoutProgress, SessionHistory, WorkoutSession, BodyWeightEntry } from "./types";
+import { useCloudSync } from "./hooks/useCloudSync";
+import type {
+  AppDataSnapshot,
+  WorkoutProgress,
+  SessionHistory,
+  WorkoutSession,
+  BodyWeightEntry,
+  WorkoutTemplate as WorkoutTemplateData,
+} from "./types";
 import { cn, formatTime, getClosestBodyWeight, resolveWeight } from "./utils";
-import { findWikiEntry } from "./wikiData";
+import {
+  findWikiEntry,
+  isFreeWeightFriendly,
+  resolvePrimaryFreeWeightAlternative,
+} from "./wikiData";
 import type { ExerciseWiki } from "./wikiData";
-import { Dumbbell, BookOpen, BarChart3, Settings, Calculator, Clock, Play, RotateCcw } from "lucide-react";
+import { Dumbbell, BookOpen, BarChart3, Settings, Calculator, Clock, Play, RotateCcw, UserCircle2, Timer } from "lucide-react";
 
 import ErrorBoundary from "./components/ErrorBoundary";
 import ExerciseDetailModal from "./components/ExerciseDetailModal";
 import PlateCalculator from "./components/PlateCalculator";
 import WorkoutTab from "./components/WorkoutTab";
+import StretchingTab from "./components/StretchingTab";
 import RestTimerToast from "./components/RestTimerToast";
 import DayCompleteOverlay from "./components/DayCompleteOverlay";
 import FinishConfirmModal from "./components/FinishConfirmModal";
 import SettingsModal from "./components/SettingsModal";
+import WorkoutEditorModal from "./components/WorkoutEditorModal";
 import ToastContainer from "./components/ui/ToastContainer";
 import InstallPrompt from "./components/InstallPrompt";
 
 const WikiView = lazy(() => import("./components/WikiView"));
 const ChartsView = lazy(() => import("./components/ChartsView"));
+const ProfileTab = lazy(() => import("./components/ProfileTab"));
 
-type TabId = "workout" | "wiki" | "charts";
+type TabId = "workout" | "stretching" | "wiki" | "charts" | "profile";
+
+const APP_STORAGE_KEYS = [
+  "recomp88-workout-template",
+  "recomp88-progress",
+  "recomp88-sessions",
+  "recomp88-strength-rest",
+  "recomp88-hypertrophy-rest",
+  "recomp88-notes",
+  "recomp88-sound",
+  "recomp88-bodyweight",
+  "recomp88-weight-unit",
+  "recomp88-rest-state",
+  "recomp88-timer-start",
+  "recomp88-timer-paused",
+  "recomp88-pwa-dismissed",
+] as const;
+
+const DEFAULT_SETTINGS = {
+  strengthRestDuration: 120,
+  hypertrophyRestDuration: 90,
+  soundEnabled: true,
+  weightUnit: "kg" as const,
+};
+
+const slugifyName = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 24);
+
+const createWorkoutExerciseId = (dayId: string, exerciseName: string) => {
+  const suffix =
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID().slice(0, 6)
+      : `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+
+  return `${dayId}-${slugifyName(exerciseName) || "exercise"}-${suffix}`;
+};
+
+const mergeSessions = (localSessions: SessionHistory, cloudSessions: SessionHistory): SessionHistory => {
+  const merged = new Map<string, WorkoutSession>();
+
+  [...cloudSessions, ...localSessions].forEach((session) => {
+    if (!session?.id) return;
+    merged.set(session.id, session);
+  });
+
+  return Array.from(merged.values()).sort(
+    (left, right) => new Date(left.date).getTime() - new Date(right.date).getTime()
+  );
+};
+
+const mergeBodyWeightEntries = (
+  localEntries: BodyWeightEntry[],
+  cloudEntries: BodyWeightEntry[]
+): BodyWeightEntry[] => {
+  const merged = new Map<string, BodyWeightEntry>();
+
+  [...cloudEntries, ...localEntries].forEach((entry) => {
+    if (!entry?.date || typeof entry.weight !== "number") return;
+    merged.set(entry.date, entry);
+  });
+
+  return Array.from(merged.values()).sort((left, right) => left.date.localeCompare(right.date));
+};
 
 export default function App() {
+  const defaultWorkoutTemplate = useMemo(() => createDefaultWorkoutTemplate(), []);
   const [activeTab, setActiveTab] = useState<TabId>("workout");
   const [activeDayIndex, setActiveDayIndex] = useState(0);
-  const activeDay = WorkoutTemplate[activeDayIndex];
 
   // ─── Persisted state ─────────────────────────────────────────────────────
+  const [workoutTemplate, setWorkoutTemplate] = useLocalStorage<WorkoutTemplateData>(
+    "recomp88-workout-template",
+    defaultWorkoutTemplate
+  );
   const [progress, setProgress] = useLocalStorage<WorkoutProgress>("recomp88-progress", {});
   const [sessions, setSessions] = useLocalStorage<SessionHistory>("recomp88-sessions", []);
-  const [strengthRestDuration, setStrengthRestDuration] = useLocalStorage<number>("recomp88-strength-rest", 120);
-  const [hypertrophyRestDuration, setHypertrophyRestDuration] = useLocalStorage<number>("recomp88-hypertrophy-rest", 90);
+  const [strengthRestDuration, setStrengthRestDuration] = useLocalStorage<number>(
+    "recomp88-strength-rest",
+    DEFAULT_SETTINGS.strengthRestDuration
+  );
+  const [hypertrophyRestDuration, setHypertrophyRestDuration] = useLocalStorage<number>(
+    "recomp88-hypertrophy-rest",
+    DEFAULT_SETTINGS.hypertrophyRestDuration
+  );
   const [exerciseNotes, setExerciseNotes] = useLocalStorage<Record<string, string>>("recomp88-notes", {});
-  const [soundEnabled, setSoundEnabled] = useLocalStorage<boolean>("recomp88-sound", true);
+  const [soundEnabled, setSoundEnabled] = useLocalStorage<boolean>(
+    "recomp88-sound",
+    DEFAULT_SETTINGS.soundEnabled
+  );
   const [bodyWeightEntries, setBodyWeightEntries] = useLocalStorage<BodyWeightEntry[]>("recomp88-bodyweight", []);
-  const [weightUnit, setWeightUnit] = useLocalStorage<"kg" | "lbs">("recomp88-weight-unit", "kg");
+  const [weightUnit, setWeightUnit] = useLocalStorage<"kg" | "lbs">(
+    "recomp88-weight-unit",
+    DEFAULT_SETTINGS.weightUnit
+  );
+
+  // ─── Cloud sync ──────────────────────────────────────────────────────────
+  const { isLoggedIn, fetchCloudData, schedulePush, pushToCloud, syncStatus, lastSyncedAt } = useCloudSync();
+  const cloudBootstrapped = useRef(false);
+  const [canPushCloud, setCanPushCloud] = useState(false);
 
   // ─── Hooks ─────────────────────────────────────────────────────────────────
   const { toasts, showToast, dismissToast } = useToast();
@@ -54,8 +164,187 @@ export default function App() {
   const [modalEntry, setModalEntry] = useState<ExerciseWiki | null>(null);
   const [showDayComplete, setShowDayComplete] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showWorkoutEditor, setShowWorkoutEditor] = useState(false);
   const [showPlateCalc, setShowPlateCalc] = useState(false);
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
+  const [selectedStretchingProgramId, setSelectedStretchingProgramId] = useState<string | null>(null);
+
+  const safeWorkoutTemplate = useMemo(
+    () => normalizeWorkoutTemplate(workoutTemplate) ?? defaultWorkoutTemplate,
+    [defaultWorkoutTemplate, workoutTemplate]
+  );
+  const clampedActiveDayIndex = Math.min(activeDayIndex, Math.max(safeWorkoutTemplate.length - 1, 0));
+  const activeDay = safeWorkoutTemplate[clampedActiveDayIndex];
+
+  useEffect(() => {
+    const serializedCurrent = JSON.stringify(workoutTemplate);
+    const serializedSafe = JSON.stringify(safeWorkoutTemplate);
+    if (serializedCurrent !== serializedSafe) {
+      setWorkoutTemplate(safeWorkoutTemplate);
+    }
+  }, [safeWorkoutTemplate, setWorkoutTemplate, workoutTemplate]);
+
+  useEffect(() => {
+    if (activeDayIndex !== clampedActiveDayIndex) {
+      setActiveDayIndex(clampedActiveDayIndex);
+    }
+  }, [activeDayIndex, clampedActiveDayIndex]);
+
+  const applyWorkoutTemplate = useCallback(
+    (nextWorkoutTemplate: WorkoutTemplateData, successMessage?: string) => {
+      const normalizedTemplate = normalizeWorkoutTemplate(nextWorkoutTemplate);
+      if (!normalizedTemplate) {
+        showToast("Invalid workout template", "error");
+        return null;
+      }
+
+      setWorkoutTemplate(normalizedTemplate);
+      setProgress((previousProgress) =>
+        pruneProgressForWorkoutTemplate(previousProgress, normalizedTemplate)
+      );
+      setExerciseNotes((previousNotes) =>
+        pruneExerciseNotesForWorkoutTemplate(previousNotes, normalizedTemplate)
+      );
+      setActiveDayIndex((currentIndex) =>
+        Math.min(currentIndex, Math.max(normalizedTemplate.length - 1, 0))
+      );
+
+      if (successMessage) {
+        showToast(successMessage);
+      }
+
+      return normalizedTemplate;
+    },
+    [setExerciseNotes, setProgress, setWorkoutTemplate, showToast]
+  );
+
+  // ─── Bootstrap cloud data on login ────────────────────────────────────────
+  useEffect(() => {
+    if (!isLoggedIn) {
+      cloudBootstrapped.current = false;
+      setCanPushCloud(false);
+      return;
+    }
+
+    if (cloudBootstrapped.current) return;
+
+    cloudBootstrapped.current = true;
+    let cancelled = false;
+
+    fetchCloudData()
+      .then((data) => {
+        if (!data || cancelled) return;
+
+        const nextWorkoutTemplate =
+          normalizeWorkoutTemplate(data.workoutTemplate) ?? safeWorkoutTemplate;
+
+        setWorkoutTemplate(nextWorkoutTemplate);
+        setProgress((previousProgress) =>
+          pruneProgressForWorkoutTemplate(
+            mergeWorkoutProgress(data.progress ?? {}, previousProgress),
+            nextWorkoutTemplate
+          )
+        );
+        setSessions((previousSessions) => mergeSessions(previousSessions, data.sessions ?? []));
+        setBodyWeightEntries((previousEntries) =>
+          mergeBodyWeightEntries(previousEntries, data.bodyWeightEntries ?? [])
+        );
+        setExerciseNotes((previousNotes) =>
+          pruneExerciseNotesForWorkoutTemplate(
+            { ...(data.exerciseNotes ?? {}), ...previousNotes },
+            nextWorkoutTemplate
+          )
+        );
+
+        if (data.settings) {
+          if (typeof data.settings.strengthRestDuration === "number") {
+            setStrengthRestDuration(() => data.settings.strengthRestDuration);
+          }
+          if (typeof data.settings.hypertrophyRestDuration === "number") {
+            setHypertrophyRestDuration(() => data.settings.hypertrophyRestDuration);
+          }
+          if (typeof data.settings.soundEnabled === "boolean") {
+            setSoundEnabled(() => data.settings.soundEnabled);
+          }
+          if (data.settings.weightUnit === "kg" || data.settings.weightUnit === "lbs") {
+            setWeightUnit(() => data.settings.weightUnit);
+          }
+        }
+
+        showToast("Cloud data loaded");
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setCanPushCloud(true);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    fetchCloudData,
+    isLoggedIn,
+    safeWorkoutTemplate,
+    setBodyWeightEntries,
+    setExerciseNotes,
+    setHypertrophyRestDuration,
+    setProgress,
+    setSessions,
+    setSoundEnabled,
+    setStrengthRestDuration,
+    setWeightUnit,
+    setWorkoutTemplate,
+    showToast,
+  ]);
+
+  // ─── Auto-push on data change ─────────────────────────────────────────────
+  useEffect(() => {
+    if (!isLoggedIn || !canPushCloud) return;
+    schedulePush({
+      workoutTemplate: safeWorkoutTemplate,
+      progress,
+      sessions,
+      bodyWeightEntries,
+      exerciseNotes,
+      settings: { strengthRestDuration, hypertrophyRestDuration, soundEnabled, weightUnit },
+    });
+  }, [
+    bodyWeightEntries,
+    canPushCloud,
+    exerciseNotes,
+    hypertrophyRestDuration,
+    isLoggedIn,
+    progress,
+    safeWorkoutTemplate,
+    schedulePush,
+    sessions,
+    soundEnabled,
+    strengthRestDuration,
+    weightUnit,
+  ]);
+
+  const handleManualSync = useCallback(() => {
+    pushToCloud({
+      workoutTemplate: safeWorkoutTemplate,
+      progress,
+      sessions,
+      bodyWeightEntries,
+      exerciseNotes,
+      settings: { strengthRestDuration, hypertrophyRestDuration, soundEnabled, weightUnit },
+    });
+  }, [
+    bodyWeightEntries,
+    exerciseNotes,
+    hypertrophyRestDuration,
+    progress,
+    pushToCloud,
+    safeWorkoutTemplate,
+    sessions,
+    soundEnabled,
+    strengthRestDuration,
+    weightUnit,
+  ]);
 
   // For undo support - stores refs for the undo callback in toast
   const prevProgressPercent = useRef<number>(0);
@@ -64,41 +353,76 @@ export default function App() {
   const allTimePRs = useMemo(() => {
     const prs: Record<string, number> = {};
     const defaultBw = weightUnit === "lbs" ? 175 : 80;
-    sessions.forEach((session) => {
-      const bw = getClosestBodyWeight(session.date, bodyWeightEntries, defaultBw);
-      session.exercises.forEach((ex) => {
-        ex.sets.forEach((set) => {
-          const w = resolveWeight(set.loggedWeight, bw);
-          if (w > (prs[ex.exerciseId] ?? 0)) prs[ex.exerciseId] = w;
-        });
+
+    safeWorkoutTemplate.forEach((day) => {
+      day.exercises.forEach((exercise) => {
+        let bestWeight = 0;
+
+        sessions
+          .filter((session) => session.dayId === day.id)
+          .forEach((session) => {
+            const bw = getClosestBodyWeight(session.date, bodyWeightEntries, defaultBw);
+            session.exercises
+              .filter(
+                (sessionExercise) =>
+                  sessionExercise.exerciseId === exercise.id ||
+                  sessionExercise.name === exercise.name
+              )
+              .forEach((sessionExercise) => {
+                sessionExercise.sets.forEach((set) => {
+                  const resolvedWeight = resolveWeight(set.loggedWeight, bw);
+                  if (resolvedWeight > bestWeight) {
+                    bestWeight = resolvedWeight;
+                  }
+                });
+              });
+          });
+
+        prs[exercise.id] = bestWeight;
       });
     });
+
     return prs;
-  }, [sessions, bodyWeightEntries, weightUnit]);
+  }, [bodyWeightEntries, safeWorkoutTemplate, sessions, weightUnit]);
 
   // ─── Last session values per day/exercise/set ─────────────────────────────
   const lastSessionValues = useMemo(() => {
-    const latest: Record<string, WorkoutSession> = {};
-    sessions.forEach((s) => {
-      if (!latest[s.dayId] || new Date(s.date) > new Date(latest[s.dayId].date)) {
-        latest[s.dayId] = s;
-      }
-    });
     const values: Record<string, Record<string, Record<string, { weight: string; reps: string }>>> = {};
-    Object.values(latest).forEach((session) => {
-      values[session.dayId] = {};
-      session.exercises.forEach((ex) => {
-        values[session.dayId][ex.exerciseId] = {};
-        ex.sets.forEach((set) => {
-          values[session.dayId][ex.exerciseId][set.setId] = {
-            weight: set.loggedWeight,
-            reps: set.loggedReps,
+
+    safeWorkoutTemplate.forEach((day) => {
+      const daySessions = sessions
+        .filter((session) => session.dayId === day.id)
+        .sort((left, right) => new Date(right.date).getTime() - new Date(left.date).getTime());
+
+      if (daySessions.length === 0) return;
+
+      values[day.id] = {};
+      day.exercises.forEach((exercise) => {
+        const matchingSessionExercise = daySessions
+          .flatMap((session) => session.exercises)
+          .find(
+            (sessionExercise) =>
+              sessionExercise.exerciseId === exercise.id ||
+              sessionExercise.name === exercise.name
+          );
+
+        if (!matchingSessionExercise) return;
+
+        values[day.id][exercise.id] = {};
+        exercise.sets.forEach((set, setIndex) => {
+          const previousSet = matchingSessionExercise.sets[setIndex];
+          if (!previousSet) return;
+
+          values[day.id][exercise.id][set.id] = {
+            weight: previousSet.loggedWeight,
+            reps: previousSet.loggedReps,
           };
         });
       });
     });
+
     return values;
-  }, [sessions]);
+  }, [safeWorkoutTemplate, sessions]);
 
   // ─── Day progress % (now properly memoized) ──────────────────────────────
   const progressPercent = useMemo(() => {
@@ -368,27 +692,84 @@ export default function App() {
     [setExerciseNotes]
   );
 
-  // ─── Export / Import (now includes notes and settings) ─────────────────────
+  const handleSaveWorkoutTemplate = useCallback(
+    (nextWorkoutTemplate: WorkoutTemplateData) => {
+      const appliedTemplate = applyWorkoutTemplate(nextWorkoutTemplate, "Workout updated");
+      if (!appliedTemplate) return;
+
+      setShowWorkoutEditor(false);
+    },
+    [applyWorkoutTemplate]
+  );
+
+  const handleResetWorkoutTemplate = useCallback(() => {
+    const defaultTemplate = createDefaultWorkoutTemplate();
+    applyWorkoutTemplate(defaultTemplate, "Workout reset to default");
+    setShowSettings(false);
+  }, [applyWorkoutTemplate]);
+
+  const handleApplyFreeWeightWorkout = useCallback(() => {
+    let replacementCount = 0;
+    const convertedTemplate = safeWorkoutTemplate.map((day) => ({
+      ...day,
+      exercises: day.exercises.map((exercise) => {
+        const entry = findWikiEntry(exercise.name);
+        if (!entry || isFreeWeightFriendly(entry)) return exercise;
+
+        const freeWeightAlternative = resolvePrimaryFreeWeightAlternative(entry.name);
+        if (!freeWeightAlternative || freeWeightAlternative === exercise.name) {
+          return exercise;
+        }
+
+        replacementCount += 1;
+
+        return {
+          ...exercise,
+          id: createWorkoutExerciseId(day.id, freeWeightAlternative),
+          name: freeWeightAlternative,
+        };
+      }),
+    }));
+
+    if (replacementCount === 0) {
+      showToast("Workout is already largely free-weight friendly");
+      setShowSettings(false);
+      return;
+    }
+
+    applyWorkoutTemplate(
+      convertedTemplate,
+      "Free-weight-friendly swaps applied"
+    );
+    setShowSettings(false);
+  }, [applyWorkoutTemplate, safeWorkoutTemplate, showToast]);
+
+  const handleStartStretching = useCallback(() => {
+    setSelectedStretchingProgramId(activeDay.stretchingProgramId ?? null);
+    setActiveTab("stretching");
+  }, [activeDay.stretchingProgramId]);
+
+  // ─── Export / Import (now includes workout template) ──────────────────────
   const handleExport = useCallback(() => {
+    const snapshot: AppDataSnapshot & { exportedAt: string; schemaVersion: number } = {
+      workoutTemplate: safeWorkoutTemplate,
+      progress,
+      sessions,
+      bodyWeightEntries,
+      exerciseNotes,
+      settings: {
+        strengthRestDuration,
+        hypertrophyRestDuration,
+        soundEnabled,
+        weightUnit,
+      },
+      exportedAt: new Date().toISOString(),
+      schemaVersion: 2,
+    };
+
     const blob = new Blob(
       [
-        JSON.stringify(
-          {
-            progress,
-            sessions,
-            bodyWeightEntries,
-            exerciseNotes,
-            settings: {
-              strengthRestDuration,
-              hypertrophyRestDuration,
-              soundEnabled,
-              weightUnit,
-            },
-            exportedAt: new Date().toISOString(),
-          },
-          null,
-          2
-        ),
+        JSON.stringify(snapshot, null, 2),
       ],
       { type: "application/json" }
     );
@@ -399,7 +780,18 @@ export default function App() {
     a.click();
     URL.revokeObjectURL(url);
     showToast("Backup exported");
-  }, [progress, sessions, bodyWeightEntries, exerciseNotes, strengthRestDuration, hypertrophyRestDuration, soundEnabled, weightUnit, showToast]);
+  }, [
+    bodyWeightEntries,
+    exerciseNotes,
+    hypertrophyRestDuration,
+    progress,
+    safeWorkoutTemplate,
+    sessions,
+    showToast,
+    soundEnabled,
+    strengthRestDuration,
+    weightUnit,
+  ]);
 
   const handleImport = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -408,24 +800,49 @@ export default function App() {
       const reader = new FileReader();
       reader.onload = (ev) => {
         try {
-          const data = JSON.parse(ev.target?.result as string);
+          const data = JSON.parse(ev.target?.result as string) as Partial<AppDataSnapshot>;
           if (typeof data !== "object" || data === null) throw new Error("Invalid format");
-          if (data.progress && typeof data.progress === "object") setProgress(data.progress);
-          if (data.sessions && Array.isArray(data.sessions)) setSessions(data.sessions);
-          if (data.bodyWeightEntries && Array.isArray(data.bodyWeightEntries))
-            setBodyWeightEntries(data.bodyWeightEntries);
-          if (data.exerciseNotes && typeof data.exerciseNotes === "object")
-            setExerciseNotes(data.exerciseNotes);
-          if (data.settings && typeof data.settings === "object") {
-            if (typeof data.settings.strengthRestDuration === "number")
-              setStrengthRestDuration(() => data.settings.strengthRestDuration);
-            if (typeof data.settings.hypertrophyRestDuration === "number")
-              setHypertrophyRestDuration(() => data.settings.hypertrophyRestDuration);
-            if (typeof data.settings.soundEnabled === "boolean")
-              setSoundEnabled(() => data.settings.soundEnabled);
-            if (data.settings.weightUnit === "kg" || data.settings.weightUnit === "lbs")
-              setWeightUnit(() => data.settings.weightUnit);
+
+          const importedWorkoutTemplate =
+            normalizeWorkoutTemplate(data.workoutTemplate) ?? safeWorkoutTemplate;
+
+          setWorkoutTemplate(importedWorkoutTemplate);
+
+          if (data.progress && typeof data.progress === "object") {
+            setProgress(pruneProgressForWorkoutTemplate(data.progress as WorkoutProgress, importedWorkoutTemplate));
           }
+          if (data.sessions && Array.isArray(data.sessions)) {
+            setSessions(data.sessions);
+          }
+          if (data.bodyWeightEntries && Array.isArray(data.bodyWeightEntries)) {
+            setBodyWeightEntries(data.bodyWeightEntries);
+          }
+          if (data.exerciseNotes && typeof data.exerciseNotes === "object") {
+            setExerciseNotes(
+              pruneExerciseNotesForWorkoutTemplate(
+                data.exerciseNotes as Record<string, string>,
+                importedWorkoutTemplate
+              )
+            );
+          }
+          const importedSettings = data.settings;
+          if (importedSettings && typeof importedSettings === "object") {
+            if (typeof importedSettings.strengthRestDuration === "number") {
+              setStrengthRestDuration(() => importedSettings.strengthRestDuration);
+            }
+            if (typeof importedSettings.hypertrophyRestDuration === "number") {
+              setHypertrophyRestDuration(() => importedSettings.hypertrophyRestDuration);
+            }
+            if (typeof importedSettings.soundEnabled === "boolean") {
+              setSoundEnabled(() => importedSettings.soundEnabled);
+            }
+            if (importedSettings.weightUnit === "kg" || importedSettings.weightUnit === "lbs") {
+              setWeightUnit(() => importedSettings.weightUnit);
+            }
+          }
+          setActiveDayIndex((currentIndex) =>
+            Math.min(currentIndex, Math.max(importedWorkoutTemplate.length - 1, 0))
+          );
           setShowSettings(false);
           showToast("Data imported successfully");
         } catch {
@@ -435,13 +852,71 @@ export default function App() {
       reader.readAsText(file);
       e.target.value = "";
     },
-    [setProgress, setSessions, setBodyWeightEntries, setExerciseNotes, setStrengthRestDuration, setHypertrophyRestDuration, setSoundEnabled, setWeightUnit, showToast]
+    [
+      safeWorkoutTemplate,
+      setBodyWeightEntries,
+      setExerciseNotes,
+      setHypertrophyRestDuration,
+      setProgress,
+      setSessions,
+      setSoundEnabled,
+      setStrengthRestDuration,
+      setWeightUnit,
+      setWorkoutTemplate,
+      showToast,
+    ]
   );
 
   const handleClearData = useCallback(() => {
-    localStorage.clear();
-    location.reload();
-  }, []);
+    const resetWorkoutTemplate = createDefaultWorkoutTemplate();
+    const emptySnapshot: AppDataSnapshot = {
+      workoutTemplate: resetWorkoutTemplate,
+      progress: {},
+      sessions: [],
+      bodyWeightEntries: [],
+      exerciseNotes: {},
+      settings: { ...DEFAULT_SETTINGS },
+    };
+
+    APP_STORAGE_KEYS.forEach((key) => {
+      localStorage.removeItem(key);
+    });
+
+    setWorkoutTemplate(resetWorkoutTemplate);
+    setProgress({});
+    setSessions([]);
+    setBodyWeightEntries([]);
+    setExerciseNotes({});
+    setStrengthRestDuration(() => DEFAULT_SETTINGS.strengthRestDuration);
+    setHypertrophyRestDuration(() => DEFAULT_SETTINGS.hypertrophyRestDuration);
+    setSoundEnabled(() => DEFAULT_SETTINGS.soundEnabled);
+    setWeightUnit(() => DEFAULT_SETTINGS.weightUnit);
+    setActiveDayIndex(0);
+    restTimer.dismissTimer();
+    workoutTimer.reset();
+    setShowSettings(false);
+
+    if (isLoggedIn) {
+      void pushToCloud(emptySnapshot);
+    }
+
+    showToast("All data reset");
+  }, [
+    isLoggedIn,
+    pushToCloud,
+    restTimer,
+    setBodyWeightEntries,
+    setExerciseNotes,
+    setHypertrophyRestDuration,
+    setProgress,
+    setSessions,
+    setSoundEnabled,
+    setStrengthRestDuration,
+    setWeightUnit,
+    setWorkoutTemplate,
+    showToast,
+    workoutTimer,
+  ]);
 
   const openExerciseInfo = useCallback((exerciseName: string) => {
     const entry = findWikiEntry(exerciseName);
@@ -450,8 +925,10 @@ export default function App() {
 
   const tabs = [
     { id: "workout" as TabId, label: "Tracker", icon: Dumbbell },
+    { id: "stretching" as TabId, label: "Stretch", icon: Timer },
     { id: "wiki" as TabId, label: "Wiki", icon: BookOpen },
     { id: "charts" as TabId, label: "Progress", icon: BarChart3 },
+    { id: "profile" as TabId, label: "Profile", icon: UserCircle2 },
   ];
 
   // ─── Render ───────────────────────────────────────────────────────────────
@@ -530,15 +1007,15 @@ export default function App() {
               </div>
 
               <div className="flex overflow-x-auto gap-1.5 scrollbar-none snap-x -mx-0.5 px-0.5" role="tablist" aria-label="Workout days">
-                {WorkoutTemplate.map((day, idx) => (
+                {safeWorkoutTemplate.map((day, idx) => (
                   <button
                     key={day.id}
                     onClick={() => setActiveDayIndex(idx)}
                     role="tab"
-                    aria-selected={activeDayIndex === idx}
+                    aria-selected={clampedActiveDayIndex === idx}
                     className={cn(
                       "snap-center shrink-0 px-3.5 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-widest transition-all duration-200 border",
-                      activeDayIndex === idx
+                      clampedActiveDayIndex === idx
                         ? "bg-lime-400 text-neutral-950 border-lime-400 shadow-[0_0_12px_rgba(163,230,53,0.25)]"
                         : "bg-white/4 text-neutral-500 border-white/6 hover:bg-white/8 hover:text-neutral-300"
                     )}
@@ -566,8 +1043,8 @@ export default function App() {
             <div className={activeTab === "workout" ? "block" : "hidden"}>
               <WorkoutTab
                 activeDay={activeDay}
-                activeDayIndex={activeDayIndex}
-                totalDays={WorkoutTemplate.length}
+                activeDayIndex={clampedActiveDayIndex}
+                totalDays={safeWorkoutTemplate.length}
                 progress={progress}
                 exerciseNotes={exerciseNotes}
                 lastSessionValues={lastSessionValues}
@@ -583,6 +1060,16 @@ export default function App() {
                 onOpenExerciseInfo={openExerciseInfo}
                 onNoteChange={handleNoteChange}
                 onShowFinishConfirm={() => setShowFinishConfirm(true)}
+                onStartStretching={handleStartStretching}
+              />
+            </div>
+
+            <div className={activeTab === "stretching" ? "block" : "hidden"}>
+              <StretchingTab
+                soundEnabled={soundEnabled}
+                selectedProgramId={selectedStretchingProgramId}
+                onSelectProgram={setSelectedStretchingProgramId}
+                onCloseProgram={() => setSelectedStretchingProgramId(null)}
               />
             </div>
 
@@ -607,6 +1094,7 @@ export default function App() {
                 }
               >
                 <ChartsView
+                  workoutTemplate={safeWorkoutTemplate}
                   progress={progress}
                   sessions={sessions}
                   onOpenExercise={openExerciseInfo}
@@ -614,6 +1102,25 @@ export default function App() {
                   bodyWeightEntries={bodyWeightEntries}
                   onLogBodyWeight={logBodyWeight}
                   weightUnit={weightUnit}
+                />
+              </Suspense>
+            </div>
+
+            <div className={activeTab === "profile" ? "block" : "hidden"}>
+              <Suspense
+                fallback={
+                  <div className="flex items-center justify-center py-20">
+                    <div className="w-6 h-6 border-2 border-lime-400/30 border-t-lime-400 rounded-full animate-spin" />
+                  </div>
+                }
+              >
+                <ProfileTab
+                  sessions={sessions}
+                  bodyWeightEntries={bodyWeightEntries}
+                  weightUnit={weightUnit}
+                  syncStatus={syncStatus}
+                  lastSyncedAt={lastSyncedAt}
+                  onManualSync={handleManualSync}
                 />
               </Suspense>
             </div>
@@ -708,10 +1215,25 @@ export default function App() {
           weightUnit={weightUnit}
           setWeightUnit={setWeightUnit}
           sessionCount={sessions.length}
+          workoutDayCount={safeWorkoutTemplate.length}
           onExport={handleExport}
           onImport={handleImport}
+          onOpenWorkoutEditor={() => {
+            setShowSettings(false);
+            setShowWorkoutEditor(true);
+          }}
+          onApplyFreeWeightWorkout={handleApplyFreeWeightWorkout}
+          onResetWorkoutTemplate={handleResetWorkoutTemplate}
           onClearData={handleClearData}
           onClose={() => setShowSettings(false)}
+        />
+      )}
+
+      {showWorkoutEditor && (
+        <WorkoutEditorModal
+          workoutTemplate={safeWorkoutTemplate}
+          onSave={handleSaveWorkoutTemplate}
+          onClose={() => setShowWorkoutEditor(false)}
         />
       )}
     </div>

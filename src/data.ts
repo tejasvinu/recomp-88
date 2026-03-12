@@ -1,13 +1,25 @@
-import type { DayRoutine, Exercise, SetData } from "./types";
+import type {
+    DayRoutine,
+    Exercise,
+    ExerciseType,
+    SavedSetState,
+    SetData,
+    WorkoutProgress,
+    WorkoutTemplate,
+} from "./types";
+
+const cloneData = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
+
+export const createTemplateSet = (id: string, targetReps: string): SetData => ({
+    id,
+    targetReps,
+    completed: false,
+    loggedWeight: "",
+    loggedReps: "",
+});
 
 const makeSets = (count: number, targetReps: string): SetData[] => {
-    return Array.from({ length: count }, (_, i) => ({
-        id: `set-${i + 1}`,
-        targetReps,
-        completed: false,
-        loggedWeight: "",
-        loggedReps: "",
-    }));
+    return Array.from({ length: count }, (_, i) => createTemplateSet(`set-${i + 1}`, targetReps));
 };
 
 const makeExercise = (
@@ -15,7 +27,7 @@ const makeExercise = (
     name: string,
     setsCount: number,
     targetReps: string,
-    type: "strength" | "hypertrophy" | "other" = "hypertrophy"
+    type: ExerciseType = "hypertrophy"
 ): Exercise => ({
     id,
     name,
@@ -23,12 +35,13 @@ const makeExercise = (
     sets: makeSets(setsCount, targetReps),
 });
 
-export const WorkoutTemplate: DayRoutine[] = [
+const DEFAULT_WORKOUT_TEMPLATE: WorkoutTemplate = [
     {
         id: "day-1",
         dayNumber: 1,
         title: "Day 1",
         name: "Heavy Push",
+        stretchingProgramId: "upper-body-stretch",
         exercises: [
             makeExercise("d1-e1", "Bench Press", 4, "6-8", "strength"),
             makeExercise("d1-e2", "Seated DB Press", 3, "8-10", "hypertrophy"),
@@ -42,6 +55,7 @@ export const WorkoutTemplate: DayRoutine[] = [
         dayNumber: 2,
         title: "Day 2",
         name: "Heavy Pull",
+        stretchingProgramId: "upper-body-stretch",
         exercises: [
             makeExercise("d2-e1", "Barbell Rows", 4, "6-8", "strength"),
             makeExercise("d2-e2", "Pull-ups", 3, "8-10", "hypertrophy"),
@@ -56,6 +70,7 @@ export const WorkoutTemplate: DayRoutine[] = [
         dayNumber: 3,
         title: "Day 3",
         name: "Heavy Legs",
+        stretchingProgramId: "lower-body-stretch",
         exercises: [
             makeExercise("d3-e1", "Barbell Squats", 4, "6-8", "strength"),
             makeExercise("d3-e2", "RDLs", 3, "8-10", "hypertrophy"),
@@ -69,6 +84,7 @@ export const WorkoutTemplate: DayRoutine[] = [
         dayNumber: 4,
         title: "Day 4",
         name: "Hyper Push",
+        stretchingProgramId: "upper-body-stretch",
         exercises: [
             makeExercise("d4-e1", "Incline Barbell Press", 3, "8-10", "hypertrophy"),
             makeExercise("d4-e2", "Pec Deck", 3, "12-15", "hypertrophy"),
@@ -82,6 +98,7 @@ export const WorkoutTemplate: DayRoutine[] = [
         dayNumber: 5,
         title: "Day 5",
         name: "Hyper Pull",
+        stretchingProgramId: "upper-body-stretch",
         exercises: [
             makeExercise("d5-e1", "Single-Arm Rows", 3, "10-12", "hypertrophy"),
             makeExercise("d5-e2", "Close-Grip Pulldowns", 3, "10-12", "hypertrophy"),
@@ -95,6 +112,7 @@ export const WorkoutTemplate: DayRoutine[] = [
         dayNumber: 6,
         title: "Day 6",
         name: "Hyper Legs",
+        stretchingProgramId: "lower-body-stretch",
         exercises: [
             makeExercise("d6-e1", "Hack Squats", 3, "8-12", "hypertrophy"),
             makeExercise("d6-e2", "Leg Extensions", 3, "12-15", "hypertrophy"),
@@ -108,6 +126,7 @@ export const WorkoutTemplate: DayRoutine[] = [
         dayNumber: 7,
         title: "Day 7",
         name: "Active Recovery",
+        stretchingProgramId: "full-body-stretch",
         exercises: [
             {
                 id: "d7-e1",
@@ -142,3 +161,192 @@ export const WorkoutTemplate: DayRoutine[] = [
         ],
     },
 ];
+
+export const cloneWorkoutTemplate = (template: WorkoutTemplate): WorkoutTemplate => cloneData(template);
+
+export const createDefaultWorkoutTemplate = (): WorkoutTemplate => cloneWorkoutTemplate(DEFAULT_WORKOUT_TEMPLATE);
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+    typeof value === "object" && value !== null;
+
+const normalizeExerciseType = (value: unknown): ExerciseType =>
+    value === "strength" || value === "hypertrophy" || value === "other"
+        ? value
+        : "hypertrophy";
+
+const normalizeSavedSetState = (value: unknown): SavedSetState | null => {
+    if (!isRecord(value)) return null;
+    return {
+        completed: !!value.completed,
+        loggedWeight: typeof value.loggedWeight === "string" ? value.loggedWeight : "",
+        loggedReps: typeof value.loggedReps === "string" ? value.loggedReps : "",
+    };
+};
+
+export const normalizeWorkoutTemplate = (value: unknown): WorkoutTemplate | null => {
+    if (!Array.isArray(value) || value.length === 0) return null;
+
+    const normalized = value.flatMap((dayValue, dayIndex) => {
+        if (!isRecord(dayValue)) return [];
+
+        const dayNumber =
+            typeof dayValue.dayNumber === "number" && Number.isFinite(dayValue.dayNumber)
+                ? dayValue.dayNumber
+                : dayIndex + 1;
+        const title =
+            typeof dayValue.title === "string" && dayValue.title.trim()
+                ? dayValue.title.trim()
+                : `Day ${dayNumber}`;
+        const name =
+            typeof dayValue.name === "string" && dayValue.name.trim()
+                ? dayValue.name.trim()
+                : title;
+        const exercisesValue = Array.isArray(dayValue.exercises) ? dayValue.exercises : [];
+        const exercises = exercisesValue.flatMap((exerciseValue, exerciseIndex) => {
+            if (!isRecord(exerciseValue)) return [];
+
+            const type = normalizeExerciseType(exerciseValue.type);
+            const setsValue = Array.isArray(exerciseValue.sets) ? exerciseValue.sets : [];
+            const defaultTargetReps = type === "other" ? "1" : "8-12";
+            const sets = setsValue.length
+                ? setsValue.flatMap((setValue, setIndex) => {
+                      if (!isRecord(setValue)) return [];
+                      const id =
+                          typeof setValue.id === "string" && setValue.id.trim()
+                              ? setValue.id.trim()
+                              : `set-${setIndex + 1}`;
+                      return [
+                          createTemplateSet(
+                              id,
+                              typeof setValue.targetReps === "string" && setValue.targetReps.trim()
+                                  ? setValue.targetReps.trim()
+                                  : defaultTargetReps
+                          ),
+                      ];
+                  })
+                : [createTemplateSet("set-1", defaultTargetReps)];
+
+            return [
+                {
+                    id:
+                        typeof exerciseValue.id === "string" && exerciseValue.id.trim()
+                            ? exerciseValue.id.trim()
+                            : `day-${dayNumber}-exercise-${exerciseIndex + 1}`,
+                    name:
+                        typeof exerciseValue.name === "string" && exerciseValue.name.trim()
+                            ? exerciseValue.name.trim()
+                            : `Exercise ${exerciseIndex + 1}`,
+                    type,
+                    details:
+                        typeof exerciseValue.details === "string" && exerciseValue.details.trim()
+                            ? exerciseValue.details.trim()
+                            : undefined,
+                    sets,
+                } satisfies Exercise,
+            ];
+        });
+
+        if (exercises.length === 0) {
+            exercises.push({
+                id: `day-${dayNumber}-exercise-1`,
+                name: "New Exercise",
+                type: "hypertrophy",
+                details: undefined,
+                sets: [createTemplateSet("set-1", "8-12")],
+            });
+        }
+
+        return [
+            {
+                id:
+                    typeof dayValue.id === "string" && dayValue.id.trim()
+                        ? dayValue.id.trim()
+                        : `day-${dayNumber}`,
+                dayNumber,
+                title,
+                name,
+                stretchingProgramId:
+                    typeof dayValue.stretchingProgramId === "string" && dayValue.stretchingProgramId.trim()
+                        ? dayValue.stretchingProgramId.trim()
+                        : undefined,
+                exercises,
+            } satisfies DayRoutine,
+        ];
+    });
+
+    return normalized.length > 0 ? normalized : null;
+};
+
+export const isTrainingDay = (day: DayRoutine): boolean =>
+    day.exercises.some((exercise) => exercise.type !== "other");
+
+export const mergeWorkoutProgress = (
+    remoteProgress: WorkoutProgress,
+    localProgress: WorkoutProgress
+): WorkoutProgress => {
+    const merged: WorkoutProgress = {};
+
+    const apply = (source: WorkoutProgress) => {
+        Object.entries(source).forEach(([dayId, exerciseMap]) => {
+            if (!isRecord(exerciseMap)) return;
+
+            merged[dayId] = merged[dayId] ?? {};
+            Object.entries(exerciseMap).forEach(([exerciseId, setMap]) => {
+                if (!isRecord(setMap)) return;
+
+                merged[dayId][exerciseId] = merged[dayId][exerciseId] ?? {};
+                Object.entries(setMap).forEach(([setId, savedState]) => {
+                    const normalizedState = normalizeSavedSetState(savedState);
+                    if (!normalizedState) return;
+                    merged[dayId][exerciseId][setId] = normalizedState;
+                });
+            });
+        });
+    };
+
+    apply(remoteProgress);
+    apply(localProgress);
+
+    return merged;
+};
+
+export const pruneProgressForWorkoutTemplate = (
+    progress: WorkoutProgress,
+    workoutTemplate: WorkoutTemplate
+): WorkoutProgress => {
+    const pruned: WorkoutProgress = {};
+
+    workoutTemplate.forEach((day) => {
+        const dayProgress = progress[day.id];
+        if (!dayProgress) return;
+
+        day.exercises.forEach((exercise) => {
+            const exerciseProgress = dayProgress[exercise.id];
+            if (!exerciseProgress) return;
+
+            exercise.sets.forEach((set) => {
+                const savedState = normalizeSavedSetState(exerciseProgress[set.id]);
+                if (!savedState) return;
+
+                pruned[day.id] = pruned[day.id] ?? {};
+                pruned[day.id][exercise.id] = pruned[day.id][exercise.id] ?? {};
+                pruned[day.id][exercise.id][set.id] = savedState;
+            });
+        });
+    });
+
+    return pruned;
+};
+
+export const pruneExerciseNotesForWorkoutTemplate = (
+    notes: Record<string, string>,
+    workoutTemplate: WorkoutTemplate
+): Record<string, string> => {
+    const validExerciseIds = new Set(
+        workoutTemplate.flatMap((day) => day.exercises.map((exercise) => exercise.id))
+    );
+
+    return Object.fromEntries(
+        Object.entries(notes).filter(([exerciseId]) => validExerciseIds.has(exerciseId))
+    );
+};
