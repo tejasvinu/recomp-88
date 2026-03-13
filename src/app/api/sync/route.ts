@@ -33,16 +33,43 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     await connectDB();
 
+    const existing = await UserData.findOne({ userId });
+
+    const mergeById = <T extends { id: string }>(local: T[], cloud: T[]): T[] => {
+      const merged = new Map<string, T>();
+      [...cloud, ...local].forEach((item) => {
+        if (item?.id) merged.set(item.id, item);
+      });
+      return Array.from(merged.values());
+    };
+
+    const mergeByDate = <T extends { date: string }>(local: T[], cloud: T[]): T[] => {
+      const merged = new Map<string, T>();
+      [...cloud, ...local].forEach((item) => {
+        if (item?.date) merged.set(item.date, item);
+      });
+      return Array.from(merged.values());
+    };
+
+    const workoutTemplate = body.workoutTemplate ?? existing?.workoutTemplate ?? [];
+    const progress = { ...(existing?.progress ?? {}), ...(body.progress ?? {}) };
+    const sessions = mergeById(body.sessions ?? [], existing?.sessions ?? []);
+    const bodyWeightEntries = mergeByDate(body.bodyWeightEntries ?? [], existing?.bodyWeightEntries ?? []);
+    const exerciseNotes = { ...(existing?.exerciseNotes ?? {}), ...(body.exerciseNotes ?? {}) };
+    const settings = { ...(existing?.settings ?? {}), ...(body.settings ?? {}) };
+    const customExercises = mergeById(body.customExercises ?? [], existing?.customExercises ?? []);
+
     const updated = await UserData.findOneAndUpdate(
       { userId },
       {
         userId,
-        workoutTemplate: body.workoutTemplate ?? [],
-        progress: body.progress ?? {},
-        sessions: body.sessions ?? [],
-        bodyWeightEntries: body.bodyWeightEntries ?? [],
-        exerciseNotes: body.exerciseNotes ?? {},
-        settings: body.settings ?? {},
+        workoutTemplate,
+        progress,
+        sessions,
+        bodyWeightEntries,
+        exerciseNotes,
+        settings,
+        customExercises,
         lastSyncedAt: new Date(),
       },
       { upsert: true, new: true }

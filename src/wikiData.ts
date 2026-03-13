@@ -1,41 +1,6 @@
 import { ADDITIONAL_WIKI_DATA, EXERCISE_ENHANCEMENTS } from "./wikiEnhancements";
-
-export type ExerciseEquipment =
-    | "barbell"
-    | "dumbbell"
-    | "kettlebell"
-    | "bench"
-    | "bodyweight"
-    | "band"
-    | "machine"
-    | "cable"
-    | "smith-machine"
-    | "landmine"
-    | "pull-up-bar";
-
-export interface ExerciseWiki {
-    id: string;
-    name: string;
-    category: "Push" | "Pull" | "Legs" | "Core" | "Cardio/Mobility";
-    muscles: {
-        primary: string[];
-        secondary: string[];
-    };
-    biomechanics: string;
-    cues: string[];
-    commonMistakes: string[];
-    alternatives: string[];
-    notes: string;
-    youtubeId?: string;
-    equipment?: ExerciseEquipment[];
-    difficulty?: "Beginner" | "Intermediate" | "Advanced";
-    movementPattern?: string;
-    bestFor?: string[];
-    setupChecklist?: string[];
-    freeWeightAlternatives?: string[];
-    minimalEquipmentAlternatives?: string[];
-    homeGymFriendly?: boolean;
-}
+import type { ExerciseWiki, ExerciseEquipment } from "./types";
+export type { ExerciseWiki, ExerciseEquipment };
 
 const BASE_WIKI_DATA: ExerciseWiki[] = [
     // ═══════════════════════════════════════

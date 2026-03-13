@@ -1,3 +1,40 @@
+export type ExerciseEquipment =
+    | "barbell"
+    | "dumbbell"
+    | "kettlebell"
+    | "bench"
+    | "bodyweight"
+    | "band"
+    | "machine"
+    | "cable"
+    | "smith-machine"
+    | "landmine"
+    | "pull-up-bar";
+
+export interface ExerciseWiki {
+    id: string;
+    name: string;
+    category: "Push" | "Pull" | "Legs" | "Core" | "Cardio/Mobility";
+    muscles: {
+        primary: string[];
+        secondary: string[];
+    };
+    biomechanics: string;
+    cues: string[];
+    commonMistakes: string[];
+    alternatives: string[];
+    notes: string;
+    youtubeId?: string;
+    equipment?: ExerciseEquipment[];
+    difficulty?: "Beginner" | "Intermediate" | "Advanced";
+    movementPattern?: string;
+    bestFor?: string[];
+    setupChecklist?: string[];
+    freeWeightAlternatives?: string[];
+    minimalEquipmentAlternatives?: string[];
+    homeGymFriendly?: boolean;
+}
+
 export type ExerciseType = "strength" | "hypertrophy" | "other";
 export type WeightUnit = "kg" | "lbs";
 
@@ -109,4 +146,5 @@ export interface AppDataSnapshot {
     bodyWeightEntries: BodyWeightEntry[];
     exerciseNotes: Record<string, string>;
     settings: WorkoutSettings;
+    customExercises: ExerciseWiki[];
 }

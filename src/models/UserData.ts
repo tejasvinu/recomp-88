@@ -5,6 +5,7 @@ import type {
   SessionHistory,
   BodyWeightEntry,
   WorkoutSettings,
+  ExerciseWiki,
 } from "../types";
 
 export interface IUserData extends Document {
@@ -15,6 +16,7 @@ export interface IUserData extends Document {
   bodyWeightEntries: BodyWeightEntry[];
   exerciseNotes: Record<string, string>;
   settings: WorkoutSettings;
+  customExercises: ExerciseWiki[];
   lastSyncedAt: Date;
 }
 
@@ -32,6 +34,7 @@ const UserDataSchema = new Schema(
       soundEnabled: { type: Boolean, default: true },
       weightUnit: { type: String, enum: ["kg", "lbs"], default: "kg" },
     },
+    customExercises: { type: Array, default: [] },
     lastSyncedAt: { type: Date, default: Date.now },
   },
   { timestamps: true }

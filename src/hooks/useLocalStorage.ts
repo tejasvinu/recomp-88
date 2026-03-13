@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 export function useLocalStorage<T>(key: string, initialValue: T) {
-    const readValue = () => {
+    const readValue = useCallback(() => {
         if (typeof window === "undefined") {
             return initialValue;
         }
@@ -13,9 +13,27 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
             console.error(`Error reading localStorage key "${key}":`, error);
             return initialValue;
         }
-    };
+    }, [key, initialValue]);
 
-    const [storedValue, setStoredValue] = useState<T>(readValue);
+    useEffect(() => {
+        const handleStorageChange = (e: StorageEvent) => {
+            if (e.key === key && e.newValue !== null) {
+                try {
+                    setStoredValue(JSON.parse(e.newValue));
+                } catch {
+                    // Ignore parse errors from other tabs
+                }
+            }
+        };
+        window.addEventListener("storage", handleStorageChange);
+        return () => window.removeEventListener("storage", handleStorageChange);
+    }, [key]);
+
+    const [storedValue, setStoredValue] = useState<T>(initialValue);
+
+    useEffect(() => {
+        setStoredValue(readValue());
+    }, [key, readValue]);
 
     // Persist to localStorage
     useEffect(() => {
@@ -31,21 +49,6 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
             }
         }
     }, [key, storedValue]);
-
-    // Cross-tab synchronization
-    useEffect(() => {
-        const handleStorageChange = (e: StorageEvent) => {
-            if (e.key === key && e.newValue !== null) {
-                try {
-                    setStoredValue(JSON.parse(e.newValue));
-                } catch {
-                    // Ignore parse errors from other tabs
-                }
-            }
-        };
-        window.addEventListener("storage", handleStorageChange);
-        return () => window.removeEventListener("storage", handleStorageChange);
-    }, [key]);
 
     return [storedValue, setStoredValue] as const;
 }

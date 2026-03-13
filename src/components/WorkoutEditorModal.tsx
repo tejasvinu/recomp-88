@@ -5,19 +5,26 @@ import { ArrowLeftRight, Plus, Save, Trash2, X } from "lucide-react";
 import { cloneWorkoutTemplate, createTemplateSet } from "../data";
 import { useModalEscape } from "../hooks/useModalEscape";
 import { StretchingPrograms } from "../stretchingData";
-import type { Exercise, ExerciseType, WorkoutTemplate } from "../types";
+import {
+  ExerciseWiki,
+  Exercise,
+  ExerciseType,
+  WorkoutTemplate,
+} from "../types";
 import { cn } from "../utils";
 import {
-    findWikiEntry,
     getFreeWeightAlternatives,
     isHomeGymFriendly,
     WIKI_DATA,
+    findWikiEntry,
 } from "../wikiData";
-import type { ExerciseWiki } from "../wikiData";
+
 
 interface WorkoutEditorModalProps {
     workoutTemplate: WorkoutTemplate;
+    customExercises: ExerciseWiki[];
     onSave: (workoutTemplate: WorkoutTemplate) => void;
+    onSaveCustomExercise: (exercise: ExerciseWiki) => void;
     onClose: () => void;
 }
 
@@ -65,15 +72,18 @@ const inferExerciseCategory = (
 
 const getExerciseLibraryNames = (
     category: ExerciseCategory | null,
-    exerciseType: ExerciseType
+    exerciseType: ExerciseType,
+    customExercises: ExerciseWiki[] = []
 ) => {
+    const allEntries = [...WIKI_DATA, ...customExercises];
     const relevantEntries = category
-        ? WIKI_DATA.filter((entry) => entry.category === category)
-        : WIKI_DATA.filter((entry) =>
+        ? allEntries.filter((entry) => entry.category === category)
+        : allEntries.filter((entry) =>
               exerciseType === "other"
                   ? entry.category === "Cardio/Mobility"
                   : entry.category !== "Cardio/Mobility"
           );
+
 
     const names = new Set<string>();
     relevantEntries.forEach((entry) => {
@@ -84,18 +94,20 @@ const getExerciseLibraryNames = (
     return Array.from(names).sort((left, right) => left.localeCompare(right));
 };
 
-const getExerciseSwapOptions = (exercise: Exercise, dayName: string) => {
-    const currentEntry = findWikiEntry(exercise.name);
+const getExerciseSwapOptions = (exercise: Exercise, dayName: string, customExercises: ExerciseWiki[] = []) => {
+    const allCustom = customExercises;
+    const currentEntry = findWikiEntry(exercise.name) || allCustom.find(ex => ex.name === exercise.name);
     const category =
         currentEntry?.category ?? inferExerciseCategory(dayName, exercise.type);
-    const libraryNames = getExerciseLibraryNames(category, exercise.type).filter(
+    const libraryNames = getExerciseLibraryNames(category, exercise.type, allCustom).filter(
         (name) => name !== exercise.name
     );
     const featuredNames = (
-        currentEntry
+        currentEntry && "alternatives" in currentEntry
             ? getFreeWeightAlternatives(currentEntry)
             : libraryNames
     )
+
         .filter((name, index, allNames) => name !== exercise.name && allNames.indexOf(name) === index)
         .slice(0, 4);
 
@@ -109,7 +121,9 @@ const getExerciseSwapOptions = (exercise: Exercise, dayName: string) => {
 
 export default function WorkoutEditorModal({
     workoutTemplate,
+    customExercises,
     onSave,
+    onSaveCustomExercise,
     onClose,
 }: WorkoutEditorModalProps) {
     const [draft, setDraft] = useState<WorkoutTemplate>(() => cloneWorkoutTemplate(workoutTemplate));
@@ -377,7 +391,8 @@ export default function WorkoutEditorModal({
                             {activeDay.exercises.map((exercise, exerciseIndex) => {
                                 const swapOptions = getExerciseSwapOptions(
                                     exercise,
-                                    activeDay.name
+                                    activeDay.name,
+                                    customExercises
                                 );
 
                                 return (
@@ -413,9 +428,30 @@ export default function WorkoutEditorModal({
 
                                         <div className="grid grid-cols-1 md:grid-cols-[1.2fr_180px] gap-3">
                                             <label className="flex flex-col gap-1.5">
-                                                <span className="text-[10px] text-neutral-500 font-black uppercase tracking-widest">
-                                                    Exercise Name
-                                                </span>
+                                                <div className="flex items-center justify-between gap-2">
+                                                    <span className="text-[10px] text-neutral-500 font-black uppercase tracking-widest">
+                                                        Exercise Name
+                                                    </span>
+                                                    {exercise.name && !findWikiEntry(exercise.name) && !customExercises.find(ex => ex.name === exercise.name) && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => onSaveCustomExercise({
+                                                                id: makeId('custom'),
+                                                                name: exercise.name,
+                                                                category: swapOptions.category || 'Push',
+                                                                muscles: { primary: [], secondary: [] },
+                                                                biomechanics: 'User-defined custom exercise.',
+                                                                cues: [],
+                                                                commonMistakes: [],
+                                                                alternatives: [],
+                                                                notes: '',
+                                                            })}
+                                                            className="text-[9px] text-lime-400 font-black uppercase tracking-widest hover:text-lime-300 transition-colors"
+                                                        >
+                                                            + Save to Library
+                                                        </button>
+                                                    )}
+                                                </div>
                                                 <input
                                                     value={exercise.name}
                                                     onChange={(event) =>

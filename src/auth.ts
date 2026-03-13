@@ -48,7 +48,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (account?.provider === "google") {
         try {
           const db = await connectDB();
-          if (!db) return true; // allow sign in but skip DB entry if DB is down
+          if (!db) return false; // Prevent sign-in to avoid orphaned tokens and future CastErrors
           const existing = await User.findOne({ email: user.email!.toLowerCase() });
           if (!existing) {
             await User.create({
@@ -76,7 +76,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             if (dbUser) token.id = dbUser._id.toString();
           }
         } catch {
-          if (user.id) token.id = user.id;
+          // Prevent fallback to raw string ID to avoid Mongoose CastError on sync
         }
       }
       return token;

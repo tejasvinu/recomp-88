@@ -20,6 +20,7 @@ import type {
   WorkoutSession,
   BodyWeightEntry,
   WorkoutTemplate as WorkoutTemplateData,
+  ExerciseWiki,
 } from "./types";
 import { cn, formatTime, getClosestBodyWeight, resolveWeight } from "./utils";
 import {
@@ -27,7 +28,6 @@ import {
   isFreeWeightFriendly,
   resolvePrimaryFreeWeightAlternative,
 } from "./wikiData";
-import type { ExerciseWiki } from "./wikiData";
 import { Dumbbell, BookOpen, BarChart3, Settings, Calculator, Clock, Play, RotateCcw, UserCircle2, Timer } from "lucide-react";
 
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -63,6 +63,7 @@ const APP_STORAGE_KEYS = [
   "recomp88-timer-start",
   "recomp88-timer-paused",
   "recomp88-pwa-dismissed",
+  "recomp88-custom-exercises",
 ] as const;
 
 const DEFAULT_SETTINGS = {
@@ -145,6 +146,8 @@ export default function App() {
     "recomp88-weight-unit",
     DEFAULT_SETTINGS.weightUnit
   );
+  const [customExercises, setCustomExercises] = useLocalStorage<ExerciseWiki[]>("recomp88-custom-exercises", []);
+
 
   // ─── Cloud sync ──────────────────────────────────────────────────────────
   const { isLoggedIn, fetchCloudData, schedulePush, pushToCloud, syncStatus, lastSyncedAt } = useCloudSync();
@@ -240,6 +243,13 @@ export default function App() {
       setBodyWeightEntries((previousEntries) =>
         mergeBodyWeightEntries(previousEntries, data.bodyWeightEntries ?? [])
       );
+      setCustomExercises((previousCustom) => {
+        const merged = new Map<string, ExerciseWiki>();
+        [...(data.customExercises ?? []), ...previousCustom].forEach((ex) => {
+          if (ex?.id) merged.set(ex.id, ex);
+        });
+        return Array.from(merged.values());
+      });
       setExerciseNotes((previousNotes) =>
         pruneExerciseNotesForWorkoutTemplate(
           { ...(data.exerciseNotes ?? {}), ...previousNotes },
@@ -264,6 +274,7 @@ export default function App() {
     isLoggedIn,
     safeWorkoutTemplate,
     setBodyWeightEntries,
+    setCustomExercises,
     setExerciseNotes,
     setHypertrophyRestDuration,
     setProgress,
@@ -311,6 +322,7 @@ export default function App() {
     setWeightUnit,
     setWorkoutTemplate,
     showToast,
+    pullAndMergeCloudData,
   ]);
 
   // ─── Auto-push on data change ─────────────────────────────────────────────
@@ -323,10 +335,12 @@ export default function App() {
       bodyWeightEntries,
       exerciseNotes,
       settings: { strengthRestDuration, hypertrophyRestDuration, soundEnabled, weightUnit },
+      customExercises,
     });
   }, [
     bodyWeightEntries,
     canPushCloud,
+    customExercises,
     exerciseNotes,
     hypertrophyRestDuration,
     isLoggedIn,
@@ -375,6 +389,7 @@ export default function App() {
       bodyWeightEntries,
       exerciseNotes,
       settings: { strengthRestDuration, hypertrophyRestDuration, soundEnabled, weightUnit },
+      customExercises,
     });
   }, [
     pullAndMergeCloudData,
@@ -389,6 +404,7 @@ export default function App() {
     hypertrophyRestDuration,
     soundEnabled,
     weightUnit,
+    customExercises,
     showToast,
   ]);
 
@@ -809,8 +825,9 @@ export default function App() {
         soundEnabled,
         weightUnit,
       },
+      customExercises,
       exportedAt: new Date().toISOString(),
-      schemaVersion: 2,
+      schemaVersion: 1,
     };
 
     const blob = new Blob(
@@ -922,6 +939,7 @@ export default function App() {
       bodyWeightEntries: [],
       exerciseNotes: {},
       settings: { ...DEFAULT_SETTINGS },
+      customExercises: [],
     };
 
     APP_STORAGE_KEYS.forEach((key) => {
@@ -1300,7 +1318,12 @@ export default function App() {
       {showWorkoutEditor && (
         <WorkoutEditorModal
           workoutTemplate={safeWorkoutTemplate}
+          customExercises={customExercises}
           onSave={handleSaveWorkoutTemplate}
+          onSaveCustomExercise={(ex) => {
+            setCustomExercises([...customExercises, ex]);
+            showToast(`Saved ${ex.name} to library`);
+          }}
           onClose={() => setShowWorkoutEditor(false)}
         />
       )}
