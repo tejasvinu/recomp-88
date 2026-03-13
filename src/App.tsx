@@ -218,6 +218,63 @@ export default function App() {
     [setExerciseNotes, setProgress, setWorkoutTemplate, showToast]
   );
 
+  // ─── Shared pull and merge logic ──────────────────────────────────────────
+  const pullAndMergeCloudData = useCallback(async (silent = true) => {
+    if (!isLoggedIn) return false;
+    
+    try {
+      const data = await fetchCloudData();
+      if (!data) return false;
+
+      const nextWorkoutTemplate =
+        normalizeWorkoutTemplate(data.workoutTemplate) ?? safeWorkoutTemplate;
+
+      setWorkoutTemplate(nextWorkoutTemplate);
+      setProgress((previousProgress) =>
+        pruneProgressForWorkoutTemplate(
+          mergeWorkoutProgress(data.progress ?? {}, previousProgress),
+          nextWorkoutTemplate
+        )
+      );
+      setSessions((previousSessions) => mergeSessions(previousSessions, data.sessions ?? []));
+      setBodyWeightEntries((previousEntries) =>
+        mergeBodyWeightEntries(previousEntries, data.bodyWeightEntries ?? [])
+      );
+      setExerciseNotes((previousNotes) =>
+        pruneExerciseNotesForWorkoutTemplate(
+          { ...(data.exerciseNotes ?? {}), ...previousNotes },
+          nextWorkoutTemplate
+        )
+      );
+
+      if (data.settings) {
+        if (typeof data.settings.strengthRestDuration === "number") setStrengthRestDuration(() => data.settings.strengthRestDuration);
+        if (typeof data.settings.hypertrophyRestDuration === "number") setHypertrophyRestDuration(() => data.settings.hypertrophyRestDuration);
+        if (typeof data.settings.soundEnabled === "boolean") setSoundEnabled(() => data.settings.soundEnabled);
+        if (data.settings.weightUnit === "kg" || data.settings.weightUnit === "lbs") setWeightUnit(() => data.settings.weightUnit);
+      }
+
+      if (!silent) showToast("Cloud merge complete");
+      return true;
+    } catch {
+      return false;
+    }
+  }, [
+    fetchCloudData,
+    isLoggedIn,
+    safeWorkoutTemplate,
+    setBodyWeightEntries,
+    setExerciseNotes,
+    setHypertrophyRestDuration,
+    setProgress,
+    setSessions,
+    setSoundEnabled,
+    setStrengthRestDuration,
+    setWeightUnit,
+    setWorkoutTemplate,
+    showToast,
+  ]);
+
   // ─── Bootstrap cloud data on login ────────────────────────────────────────
   useEffect(() => {
     if (!isLoggedIn) {
@@ -231,53 +288,11 @@ export default function App() {
     cloudBootstrapped.current = true;
     let cancelled = false;
 
-    fetchCloudData()
-      .then((data) => {
-        if (!data || cancelled) return;
-
-        const nextWorkoutTemplate =
-          normalizeWorkoutTemplate(data.workoutTemplate) ?? safeWorkoutTemplate;
-
-        setWorkoutTemplate(nextWorkoutTemplate);
-        setProgress((previousProgress) =>
-          pruneProgressForWorkoutTemplate(
-            mergeWorkoutProgress(data.progress ?? {}, previousProgress),
-            nextWorkoutTemplate
-          )
-        );
-        setSessions((previousSessions) => mergeSessions(previousSessions, data.sessions ?? []));
-        setBodyWeightEntries((previousEntries) =>
-          mergeBodyWeightEntries(previousEntries, data.bodyWeightEntries ?? [])
-        );
-        setExerciseNotes((previousNotes) =>
-          pruneExerciseNotesForWorkoutTemplate(
-            { ...(data.exerciseNotes ?? {}), ...previousNotes },
-            nextWorkoutTemplate
-          )
-        );
-
-        if (data.settings) {
-          if (typeof data.settings.strengthRestDuration === "number") {
-            setStrengthRestDuration(() => data.settings.strengthRestDuration);
-          }
-          if (typeof data.settings.hypertrophyRestDuration === "number") {
-            setHypertrophyRestDuration(() => data.settings.hypertrophyRestDuration);
-          }
-          if (typeof data.settings.soundEnabled === "boolean") {
-            setSoundEnabled(() => data.settings.soundEnabled);
-          }
-          if (data.settings.weightUnit === "kg" || data.settings.weightUnit === "lbs") {
-            setWeightUnit(() => data.settings.weightUnit);
-          }
-        }
-
-        showToast("Cloud data loaded");
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setCanPushCloud(true);
-        }
-      });
+    pullAndMergeCloudData(true).finally(() => {
+      if (!cancelled) {
+        setCanPushCloud(true);
+      }
+    });
 
     return () => {
       cancelled = true;
@@ -324,7 +339,35 @@ export default function App() {
     weightUnit,
   ]);
 
-  const handleManualSync = useCallback(() => {
+  // ─── Auto-pull on app focus ────────────────────────────────────────────────
+  useEffect(() => {
+    if (!isLoggedIn || !canPushCloud) return;
+
+    const onFocus = () => {
+      pullAndMergeCloudData(true);
+    };
+    
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") onFocus();
+    };
+
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [isLoggedIn, canPushCloud, pullAndMergeCloudData]);
+
+  const handleManualSync = useCallback(async () => {
+    // To prevent overwriting unseen cloud data, pull and merge first
+    const success = await pullAndMergeCloudData(false);
+    if (!success) {
+      showToast("Could not fetch cloud data, pushing local state...");
+    }
+    
+    // Always push the latest aggregated local state
     pushToCloud({
       workoutTemplate: safeWorkoutTemplate,
       progress,
@@ -334,16 +377,19 @@ export default function App() {
       settings: { strengthRestDuration, hypertrophyRestDuration, soundEnabled, weightUnit },
     });
   }, [
+    pullAndMergeCloudData,
+    pushToCloud,
+    workoutTemplate,
+    safeWorkoutTemplate,
+    progress,
+    sessions,
     bodyWeightEntries,
     exerciseNotes,
-    hypertrophyRestDuration,
-    progress,
-    pushToCloud,
-    safeWorkoutTemplate,
-    sessions,
-    soundEnabled,
     strengthRestDuration,
+    hypertrophyRestDuration,
+    soundEnabled,
     weightUnit,
+    showToast,
   ]);
 
   // For undo support - stores refs for the undo callback in toast
