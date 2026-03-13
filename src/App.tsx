@@ -933,13 +933,22 @@ export default function App() {
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#080808] text-neutral-200 font-sans selection:bg-lime-400/30 overflow-hidden relative">
+    <div
+      className="min-h-screen bg-[#080808] text-neutral-200 font-sans selection:bg-lime-400/30 overflow-hidden relative"
+      style={
+        {
+          // Used to reserve space for the fixed bottom navigation.
+          // Keep in sync with the bar's actual non-safe-area height.
+          ["--bottom-nav-height" as never]: "68px",
+        } as React.CSSProperties
+      }
+    >
       <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(163,230,53,0.04),transparent_60%),radial-gradient(ellipse_at_bottom_right,rgba(163,230,53,0.03),transparent_60%)] pointer-events-none" />
 
       {/* ═══ Toast Notifications ═══ */}
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
 
-      <div className="max-w-md mx-auto min-h-dvh bg-neutral-950/50 relative shadow-2xl flex flex-col pb-24 border-x border-white/4">
+      <div className="max-w-md mx-auto min-h-dvh bg-neutral-950/50 relative shadow-2xl flex flex-col pb-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom))] border-x border-white/4">
         {/* ═══ Sticky Header ═══ */}
         <header className="sticky top-0 z-40 bg-[#080808]/80 backdrop-blur-2xl border-b border-white/6 px-4 pt-4 pb-3">
           <div className="flex items-center justify-between mb-3">
@@ -1144,46 +1153,59 @@ export default function App() {
         <InstallPrompt />
 
         {/* ═══ Bottom Navigation ═══ */}
-        <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md pointer-events-none z-40">
-          <div className="pointer-events-auto bg-[#080808]/90 backdrop-blur-2xl border-t border-white/6 pb-[calc(env(safe-area-inset-bottom)+6px)] pt-2 px-4">
-            <nav className="flex items-center justify-around" aria-label="Main navigation">
+        <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md pointer-events-none z-50">
+          <div className="pointer-events-auto bg-[#080808]/88 backdrop-blur-2xl border-t border-white/6 shadow-[0_-10px_40px_rgba(0,0,0,0.55)] px-2 pb-[env(safe-area-inset-bottom)]">
+            <div className="h-[var(--bottom-nav-height)] flex items-center justify-center">
+              <nav className="grid grid-cols-5 w-full gap-0.5" aria-label="Main navigation">
               {tabs.map(({ id, label, icon: Icon }) => {
                 const isActive = activeTab === id;
                 return (
                   <button
                     key={id}
+                    type="button"
                     onClick={() => {
                       setActiveTab(id);
                       window.scrollTo({ top: 0, behavior: "smooth" });
                     }}
                     className={cn(
-                      "flex flex-col items-center gap-1 transition-all duration-200 px-5 py-1",
-                      isActive ? "text-lime-400" : "text-neutral-600 hover:text-neutral-400"
+                      "group relative flex flex-col items-center justify-center gap-[2px] rounded-2xl transition-all duration-200 py-1.5",
+                      "min-h-[52px] min-w-0 select-none outline-none",
+                      "focus-visible:ring-2 focus-visible:ring-lime-400/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#080808]",
+                      isActive ? "text-lime-400" : "text-neutral-600 hover:text-neutral-300"
                     )}
                     aria-current={isActive ? "page" : undefined}
                   >
                     <div
                       className={cn(
-                        "w-10 h-8 flex items-center justify-center rounded-xl transition-all duration-200",
+                        "w-9 h-8 flex items-center justify-center rounded-2xl transition-all duration-200 border",
                         isActive
-                          ? "bg-lime-400/12 border border-lime-400/20"
-                          : "border border-transparent"
+                          ? "bg-lime-400/12 border-lime-400/25 shadow-[0_0_18px_rgba(163,230,53,0.14)]"
+                          : "border-transparent group-hover:bg-white/4"
                       )}
                     >
-                      <Icon size={19} strokeWidth={isActive ? 2.5 : 2} />
+                      <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
                     </div>
                     <span
                       className={cn(
-                        "text-[9px] uppercase font-bold tracking-widest leading-none transition-all",
-                        isActive ? "text-lime-400" : "text-neutral-600"
+                        "text-[8px] uppercase font-bold tracking-[0.1em] leading-none transition-colors truncate w-full text-center px-0.5",
+                        isActive ? "text-lime-400" : "text-neutral-600 group-hover:text-neutral-400"
                       )}
                     >
                       {label}
                     </span>
+                    <span
+                      aria-hidden="true"
+                      className={cn(
+                        "absolute -top-px left-1/2 -translate-x-1/2 h-[2px] w-8 rounded-full transition-opacity",
+                        "bg-lime-400/80 shadow-[0_0_10px_rgba(163,230,53,0.45)]",
+                        isActive ? "opacity-100" : "opacity-0"
+                      )}
+                    />
                   </button>
                 );
               })}
-            </nav>
+              </nav>
+            </div>
           </div>
         </div>
       </div>

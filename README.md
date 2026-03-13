@@ -1,73 +1,63 @@
-# React + TypeScript + Vite
+# Recomp 88
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Body recomposition tracker built with **Next.js** and **NextAuth**. Supports:
 
-Currently, two official plugins are available:
+- **Guest mode**: use the app without signing in (data stays local).
+- **Accounts**: sign up with email/password or Google.
+- **Cloud sync**: signed-in users can sync data to MongoDB.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Tech stack
 
-## React Compiler
+- **Next.js** (App Router)
+- **React**
+- **NextAuth** (JWT session strategy)
+- **MongoDB** via **Mongoose**
+- **Tailwind CSS**
 
-The React Compiler is currently not compatible with SWC. See [this issue](https://github.com/vitejs/vite-plugin-react/issues/428) for tracking the progress.
+## Getting started
 
-## Expanding the ESLint configuration
+Install dependencies:
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Create your environment file:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+cp .env.example .env.local
 ```
+
+Run the dev server:
+
+```bash
+npm run dev
+```
+
+Then open `http://localhost:3000`.
+
+## Environment variables
+
+This project reads these variables at runtime:
+
+- `MONGODB_URI`: Mongo connection string (required for sign-up, profiles, and sync).
+- `AUTH_SECRET`: NextAuth secret used to sign/encrypt tokens.
+- `AUTH_GOOGLE_ID`: Google OAuth client id.
+- `AUTH_GOOGLE_SECRET`: Google OAuth client secret.
+
+If `MONGODB_URI` is missing, database features are disabled (sign-up / profile / sync won’t work).
+
+## Auth & API routes
+
+- **Sign in / sign up UI**: `src/app/auth/signin/page.tsx`
+- **NextAuth handler**: `src/app/api/auth/[...nextauth]/route.ts`
+- **Register (credentials sign-up)**: `POST /api/auth/register`
+- **Cloud sync**: `GET /api/sync`, `POST /api/sync` (requires auth)
+- **Profile**: `GET /api/user/profile`, `PATCH /api/user/profile` (requires auth)
+
+## Scripts
+
+- `npm run dev`: start dev server
+- `npm run build`: production build
+- `npm run start`: start production server
+- `npm run lint`: run ESLint
