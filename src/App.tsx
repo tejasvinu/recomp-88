@@ -377,11 +377,11 @@ export default function App() {
   const handleManualSync = useCallback(async () => {
     // To prevent overwriting unseen cloud data, pull and merge first
     const success = await pullAndMergeCloudData(false);
-    if (!success) {
-      showToast("Could not fetch cloud data, pushing local state...");
+    if (success) {
+      return;
     }
-    
-    // Always push the latest aggregated local state
+
+    showToast("Could not fetch cloud data, pushing local state...");
     pushToCloud({
       workoutTemplate: safeWorkoutTemplate,
       progress,
@@ -674,7 +674,7 @@ export default function App() {
                     completed: s?.completed || false,
                   };
                 })
-                .filter((s) => s.loggedWeight || s.loggedReps || (ex.type === "other" && s.completed)),
+                .filter((s) => s.loggedWeight || s.loggedReps || s.completed),
             }))
             .filter((ex) => ex.sets.length > 0),
         };

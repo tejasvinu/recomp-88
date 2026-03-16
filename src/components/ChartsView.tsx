@@ -975,7 +975,7 @@ export default function ChartsView({
                                     {i + 1}.{" "}
                                   </span>
                                   <span className="text-[10px] font-mono font-bold text-white">
-                                    {ex.type === "other" && set.completed ? (
+                                    {set.completed && !set.loggedWeight && !set.loggedReps ? (
                                       <span className="text-lime-400">Completed ✓</span>
                                     ) : (
                                       <>

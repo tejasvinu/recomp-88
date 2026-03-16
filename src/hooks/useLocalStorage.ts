@@ -1,35 +1,45 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 export function useLocalStorage<T>(key: string, initialValue: T) {
+    const initialValueRef = useRef(initialValue);
+    initialValueRef.current = initialValue;
+
     const readValue = useCallback(() => {
+        const fallbackValue = initialValueRef.current;
+
         if (typeof window === "undefined") {
-            return initialValue;
+            return fallbackValue;
         }
 
         try {
             const item = window.localStorage.getItem(key);
-            return item ? JSON.parse(item) : initialValue;
+            return item ? JSON.parse(item) : fallbackValue;
         } catch (error) {
             console.error(`Error reading localStorage key "${key}":`, error);
-            return initialValue;
+            return fallbackValue;
         }
-    }, [key, initialValue]);
+    }, [key]);
+
+    const [storedValue, setStoredValue] = useState<T>(initialValue);
 
     useEffect(() => {
         const handleStorageChange = (e: StorageEvent) => {
-            if (e.key === key && e.newValue !== null) {
-                try {
-                    setStoredValue(JSON.parse(e.newValue));
-                } catch {
-                    // Ignore parse errors from other tabs
-                }
+            if (e.key !== key) return;
+
+            if (e.newValue === null) {
+                setStoredValue(initialValueRef.current);
+                return;
+            }
+
+            try {
+                setStoredValue(JSON.parse(e.newValue));
+            } catch {
+                // Ignore parse errors from other tabs
             }
         };
         window.addEventListener("storage", handleStorageChange);
         return () => window.removeEventListener("storage", handleStorageChange);
     }, [key]);
-
-    const [storedValue, setStoredValue] = useState<T>(initialValue);
 
     useEffect(() => {
         setStoredValue(readValue());
