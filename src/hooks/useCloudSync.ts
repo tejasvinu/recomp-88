@@ -3,6 +3,7 @@
 import { useSession } from "next-auth/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { AppDataSnapshot } from "../types";
+import type { CloudSyncSnapshot, SyncPushPayload } from "../lib/sync";
 
 type SyncPayload = AppDataSnapshot;
 
@@ -13,10 +14,15 @@ export function useCloudSync() {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>("idle");
   const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSyncedAtRef = useRef<Date | null>(null);
 
   const isLoggedIn = !!session?.user;
 
-  const fetchCloudData = useCallback(async (): Promise<SyncPayload | null> => {
+  useEffect(() => {
+    lastSyncedAtRef.current = lastSyncedAt;
+  }, [lastSyncedAt]);
+
+  const fetchCloudData = useCallback(async (): Promise<CloudSyncSnapshot | null> => {
     if (!isLoggedIn) return null;
     if (typeof navigator !== "undefined" && !navigator.onLine) {
       setSyncStatus("offline");
@@ -36,7 +42,7 @@ export function useCloudSync() {
       }
 
       setSyncStatus("synced");
-      return json.data as SyncPayload | null;
+      return json.data as CloudSyncSnapshot | null;
     } catch {
       setSyncStatus(
         typeof navigator !== "undefined" && !navigator.onLine ? "offline" : "error"
@@ -55,14 +61,18 @@ export function useCloudSync() {
 
       setSyncStatus("syncing");
       try {
+        const payloadWithSyncBase: SyncPushPayload = {
+          ...payload,
+          baseLastSyncedAt: lastSyncedAtRef.current?.toISOString() ?? null,
+        };
         const res = await fetch("/api/sync", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: JSON.stringify(payloadWithSyncBase),
         });
         if (!res.ok) throw new Error("Sync failed");
-        const { lastSyncedAt } = await res.json();
-        setLastSyncedAt(new Date(lastSyncedAt));
+        const { lastSyncedAt: syncedAt } = await res.json();
+        setLastSyncedAt(new Date(syncedAt));
         setSyncStatus("synced");
       } catch {
         setSyncStatus(
@@ -104,6 +114,14 @@ export function useCloudSync() {
     return () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
     };
   }, []);
 

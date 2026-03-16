@@ -3,7 +3,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef, Suspense, lazy } from "react";
 import {
   createDefaultWorkoutTemplate,
-  mergeWorkoutProgress,
   normalizeWorkoutTemplate,
   pruneExerciseNotesForWorkoutTemplate,
   pruneProgressForWorkoutTemplate,
@@ -13,14 +12,24 @@ import { useToast } from "./hooks/useToast";
 import { useRestTimer } from "./hooks/useRestTimer";
 import { useWorkoutTimer } from "./hooks/useWorkoutTimer";
 import { useCloudSync } from "./hooks/useCloudSync";
+import {
+  hasRemoteChangesSinceBase,
+  mergeBodyWeightEntries,
+  mergeById,
+  mergeExerciseNotes,
+  mergeSessionHistory,
+  mergeSettings,
+  mergeWorkoutProgressWithPreference,
+  sanitizeSyncPayload,
+} from "./lib/sync";
 import type {
   AppDataSnapshot,
-  WorkoutProgress,
-  SessionHistory,
-  WorkoutSession,
   BodyWeightEntry,
   WorkoutTemplate as WorkoutTemplateData,
   ExerciseWiki,
+  SessionHistory,
+  WorkoutSession,
+  WorkoutProgress,
 } from "./types";
 import { cn, formatTime, getClosestBodyWeight, resolveWeight } from "./utils";
 import {
@@ -87,33 +96,6 @@ const createWorkoutExerciseId = (dayId: string, exerciseName: string) => {
       : `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
 
   return `${dayId}-${slugifyName(exerciseName) || "exercise"}-${suffix}`;
-};
-
-const mergeSessions = (localSessions: SessionHistory, cloudSessions: SessionHistory): SessionHistory => {
-  const merged = new Map<string, WorkoutSession>();
-
-  [...cloudSessions, ...localSessions].forEach((session) => {
-    if (!session?.id) return;
-    merged.set(session.id, session);
-  });
-
-  return Array.from(merged.values()).sort(
-    (left, right) => new Date(left.date).getTime() - new Date(right.date).getTime()
-  );
-};
-
-const mergeBodyWeightEntries = (
-  localEntries: BodyWeightEntry[],
-  cloudEntries: BodyWeightEntry[]
-): BodyWeightEntry[] => {
-  const merged = new Map<string, BodyWeightEntry>();
-
-  [...cloudEntries, ...localEntries].forEach((entry) => {
-    if (!entry?.date || typeof entry.weight !== "number") return;
-    merged.set(entry.date, entry);
-  });
-
-  return Array.from(merged.values()).sort((left, right) => left.date.localeCompare(right.date));
 };
 
 export default function App() {
@@ -228,40 +210,66 @@ export default function App() {
     try {
       const data = await fetchCloudData();
       if (!data) return false;
+      const preferCloudOnConflict = hasRemoteChangesSinceBase(lastSyncedAt, data.lastSyncedAt);
 
       const nextWorkoutTemplate =
-        normalizeWorkoutTemplate(data.workoutTemplate) ?? safeWorkoutTemplate;
+        data.workoutTemplate && (preferCloudOnConflict || !lastSyncedAt)
+          ? data.workoutTemplate
+          : safeWorkoutTemplate;
 
       setWorkoutTemplate(nextWorkoutTemplate);
       setProgress((previousProgress) =>
         pruneProgressForWorkoutTemplate(
-          mergeWorkoutProgress(data.progress ?? {}, previousProgress),
+          mergeWorkoutProgressWithPreference(
+            previousProgress,
+            data.progress ?? {},
+            preferCloudOnConflict
+          ),
           nextWorkoutTemplate
         )
       );
-      setSessions((previousSessions) => mergeSessions(previousSessions, data.sessions ?? []));
-      setBodyWeightEntries((previousEntries) =>
-        mergeBodyWeightEntries(previousEntries, data.bodyWeightEntries ?? [])
+      setSessions((previousSessions) =>
+        mergeSessionHistory(previousSessions, data.sessions ?? [], preferCloudOnConflict)
       );
-      setCustomExercises((previousCustom) => {
-        const merged = new Map<string, ExerciseWiki>();
-        [...(data.customExercises ?? []), ...previousCustom].forEach((ex) => {
-          if (ex?.id) merged.set(ex.id, ex);
-        });
-        return Array.from(merged.values());
-      });
+      setBodyWeightEntries((previousEntries) =>
+        mergeBodyWeightEntries(
+          previousEntries,
+          data.bodyWeightEntries ?? [],
+          preferCloudOnConflict
+        )
+      );
+      setCustomExercises((previousCustom) =>
+        mergeById(previousCustom, data.customExercises ?? [], preferCloudOnConflict)
+      );
       setExerciseNotes((previousNotes) =>
         pruneExerciseNotesForWorkoutTemplate(
-          { ...(data.exerciseNotes ?? {}), ...previousNotes },
+          mergeExerciseNotes(previousNotes, data.exerciseNotes ?? {}, preferCloudOnConflict),
           nextWorkoutTemplate
         )
       );
 
-      if (data.settings) {
-        if (typeof data.settings.strengthRestDuration === "number") setStrengthRestDuration(() => data.settings.strengthRestDuration);
-        if (typeof data.settings.hypertrophyRestDuration === "number") setHypertrophyRestDuration(() => data.settings.hypertrophyRestDuration);
-        if (typeof data.settings.soundEnabled === "boolean") setSoundEnabled(() => data.settings.soundEnabled);
-        if (data.settings.weightUnit === "kg" || data.settings.weightUnit === "lbs") setWeightUnit(() => data.settings.weightUnit);
+      const mergedSettings = mergeSettings(
+        {
+          strengthRestDuration,
+          hypertrophyRestDuration,
+          soundEnabled,
+          weightUnit,
+        },
+        data.settings ?? {},
+        preferCloudOnConflict
+      );
+
+      if (typeof mergedSettings.strengthRestDuration === "number") {
+        setStrengthRestDuration(mergedSettings.strengthRestDuration);
+      }
+      if (typeof mergedSettings.hypertrophyRestDuration === "number") {
+        setHypertrophyRestDuration(mergedSettings.hypertrophyRestDuration);
+      }
+      if (typeof mergedSettings.soundEnabled === "boolean") {
+        setSoundEnabled(mergedSettings.soundEnabled);
+      }
+      if (mergedSettings.weightUnit === "kg" || mergedSettings.weightUnit === "lbs") {
+        setWeightUnit(mergedSettings.weightUnit);
       }
 
       if (!silent) showToast("Cloud merge complete");
@@ -272,7 +280,9 @@ export default function App() {
   }, [
     fetchCloudData,
     isLoggedIn,
+    lastSyncedAt,
     safeWorkoutTemplate,
+    soundEnabled,
     setBodyWeightEntries,
     setCustomExercises,
     setExerciseNotes,
@@ -282,8 +292,11 @@ export default function App() {
     setSoundEnabled,
     setStrengthRestDuration,
     setWeightUnit,
+    strengthRestDuration,
     setWorkoutTemplate,
     showToast,
+    weightUnit,
+    hypertrophyRestDuration,
   ]);
 
   // ─── Bootstrap cloud data on login ────────────────────────────────────────
@@ -394,7 +407,6 @@ export default function App() {
   }, [
     pullAndMergeCloudData,
     pushToCloud,
-    workoutTemplate,
     safeWorkoutTemplate,
     progress,
     sessions,
@@ -845,6 +857,7 @@ export default function App() {
     showToast("Backup exported");
   }, [
     bodyWeightEntries,
+    customExercises,
     exerciseNotes,
     hypertrophyRestDuration,
     progress,
@@ -863,44 +876,48 @@ export default function App() {
       const reader = new FileReader();
       reader.onload = (ev) => {
         try {
-          const data = JSON.parse(ev.target?.result as string) as Partial<AppDataSnapshot>;
-          if (typeof data !== "object" || data === null) throw new Error("Invalid format");
+          const rawData = JSON.parse(ev.target?.result as string);
+          const data = sanitizeSyncPayload(rawData);
+          if (!data) throw new Error("Invalid format");
 
           const importedWorkoutTemplate =
-            normalizeWorkoutTemplate(data.workoutTemplate) ?? safeWorkoutTemplate;
+            data.workoutTemplate ?? safeWorkoutTemplate;
 
           setWorkoutTemplate(importedWorkoutTemplate);
 
-          if (data.progress && typeof data.progress === "object") {
-            setProgress(pruneProgressForWorkoutTemplate(data.progress as WorkoutProgress, importedWorkoutTemplate));
+          if (data.progress) {
+            setProgress(pruneProgressForWorkoutTemplate(data.progress, importedWorkoutTemplate));
           }
-          if (data.sessions && Array.isArray(data.sessions)) {
+          if (data.sessions) {
             setSessions(data.sessions);
           }
-          if (data.bodyWeightEntries && Array.isArray(data.bodyWeightEntries)) {
+          if (data.bodyWeightEntries) {
             setBodyWeightEntries(data.bodyWeightEntries);
           }
-          if (data.exerciseNotes && typeof data.exerciseNotes === "object") {
+          if (data.exerciseNotes) {
             setExerciseNotes(
               pruneExerciseNotesForWorkoutTemplate(
-                data.exerciseNotes as Record<string, string>,
+                data.exerciseNotes,
                 importedWorkoutTemplate
               )
             );
           }
-          const importedSettings = data.settings;
-          if (importedSettings && typeof importedSettings === "object") {
+          if (data.customExercises) {
+            setCustomExercises(data.customExercises);
+          }
+          const importedSettings = data.settings ?? {};
+          if (Object.keys(importedSettings).length > 0) {
             if (typeof importedSettings.strengthRestDuration === "number") {
-              setStrengthRestDuration(() => importedSettings.strengthRestDuration);
+              setStrengthRestDuration(importedSettings.strengthRestDuration);
             }
             if (typeof importedSettings.hypertrophyRestDuration === "number") {
-              setHypertrophyRestDuration(() => importedSettings.hypertrophyRestDuration);
+              setHypertrophyRestDuration(importedSettings.hypertrophyRestDuration);
             }
             if (typeof importedSettings.soundEnabled === "boolean") {
-              setSoundEnabled(() => importedSettings.soundEnabled);
+              setSoundEnabled(importedSettings.soundEnabled);
             }
             if (importedSettings.weightUnit === "kg" || importedSettings.weightUnit === "lbs") {
-              setWeightUnit(() => importedSettings.weightUnit);
+              setWeightUnit(importedSettings.weightUnit);
             }
           }
           setActiveDayIndex((currentIndex) =>
@@ -918,6 +935,7 @@ export default function App() {
     [
       safeWorkoutTemplate,
       setBodyWeightEntries,
+      setCustomExercises,
       setExerciseNotes,
       setHypertrophyRestDuration,
       setProgress,

@@ -1,15 +1,29 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { StretchingProgram, Stretch } from '../types';
-import { X, Play, Pause, SkipForward, RotateCcw, CheckCircle2, Timer } from 'lucide-react';
-import { cn, formatTime } from '../utils';
+import { StretchingProgram } from '../types';
+import { X, Play, Pause, SkipForward, RotateCcw, CheckCircle2 } from 'lucide-react';
+import { cn } from '../utils';
 
 interface GuidedStretchingSessionProps {
     program: StretchingProgram;
     onClose: () => void;
     soundEnabled: boolean;
 }
+
+interface WakeLockSentinelLike {
+    release: () => Promise<void>;
+}
+
+type NavigatorWithWakeLock = Navigator & {
+    wakeLock?: {
+        request: (type: 'screen') => Promise<WakeLockSentinelLike>;
+    };
+};
+
+type WindowWithWebkitAudioContext = Window & typeof globalThis & {
+    webkitAudioContext?: typeof AudioContext;
+};
 
 export default function GuidedStretchingSession({ program, onClose, soundEnabled }: GuidedStretchingSessionProps) {
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -21,13 +35,16 @@ export default function GuidedStretchingSession({ program, onClose, soundEnabled
     const BREAK_DURATION = 10;
 
     const audioCtxRef = useRef<AudioContext | null>(null);
-    const wakeLockRef = useRef<any | null>(null);
+    const wakeLockRef = useRef<WakeLockSentinelLike | null>(null);
 
     const playSound = useCallback((type: 'tick' | 'complete' | 'break') => {
         if (!soundEnabled) return;
         try {
             if (!audioCtxRef.current) {
-                const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+                const AudioCtx =
+                    window.AudioContext ||
+                    (window as WindowWithWebkitAudioContext).webkitAudioContext;
+                if (!AudioCtx) return;
                 audioCtxRef.current = new AudioCtx();
             }
             const ctx = audioCtxRef.current;
@@ -61,56 +78,56 @@ export default function GuidedStretchingSession({ program, onClose, soundEnabled
     }, [soundEnabled]);
 
     useEffect(() => {
-        let interval: NodeJS.Timeout;
+        if (!isActive) return;
 
-        if (isActive && timeLeft > 0) {
-            interval = setInterval(() => {
-                setTimeLeft((prev) => {
-                    if (prev <= 4 && prev > 1) playSound('tick');
+        const interval = setInterval(() => {
+            setTimeLeft((prev) => {
+                if (prev > 1) {
+                    if (prev <= 4) playSound('tick');
                     return prev - 1;
-                });
-            }, 1000);
-        } else if (isActive && timeLeft === 0) {
-            if (isBreak) {
-                setIsBreak(false);
-                setSideIndex(0);
-                setTimeLeft(program.stretches[currentIndex].duration);
-                playSound('complete');
-            } else {
+                }
+
+                if (isBreak) {
+                    setIsBreak(false);
+                    setSideIndex(0);
+                    playSound('complete');
+                    return program.stretches[currentIndex].duration;
+                }
+
                 const currentStretch = program.stretches[currentIndex];
                 const sides = currentStretch.sides ?? 1;
 
-                // If this stretch should be done on multiple sides (e.g. each hand),
-                // repeat the timer for each side before moving on.
                 if (sides > 1 && sideIndex < sides - 1) {
-                    setSideIndex(prev => prev + 1);
-                    setTimeLeft(currentStretch.duration);
+                    setSideIndex((prevSide) => prevSide + 1);
                     playSound('break');
-                } else {
-                    if (currentIndex < program.stretches.length - 1) {
-                        setIsBreak(true);
-                        setTimeLeft(BREAK_DURATION);
-                        setCurrentIndex(prev => prev + 1);
-                        setSideIndex(0);
-                        playSound('break');
-                    } else {
-                        setIsActive(false);
-                        setIsComplete(true);
-                        playSound('complete');
-                    }
+                    return currentStretch.duration;
                 }
-            }
-        }
+
+                if (currentIndex < program.stretches.length - 1) {
+                    setIsBreak(true);
+                    setCurrentIndex((prevIndex) => prevIndex + 1);
+                    setSideIndex(0);
+                    playSound('break');
+                    return BREAK_DURATION;
+                }
+
+                setIsActive(false);
+                setIsComplete(true);
+                playSound('complete');
+                return 0;
+            });
+        }, 1000);
 
         return () => clearInterval(interval);
-    }, [isActive, timeLeft, currentIndex, isBreak, program.stretches, playSound, sideIndex]);
+    }, [BREAK_DURATION, currentIndex, isActive, isBreak, playSound, program.stretches, sideIndex]);
 
     // Keep the screen awake while the timer is actively running (where supported).
     useEffect(() => {
         const requestWakeLock = async () => {
             try {
-                if ('wakeLock' in navigator && (navigator as any).wakeLock?.request) {
-                    wakeLockRef.current = await (navigator as any).wakeLock.request('screen');
+                const wakeLockNavigator = navigator as NavigatorWithWakeLock;
+                if (wakeLockNavigator.wakeLock?.request) {
+                    wakeLockRef.current = await wakeLockNavigator.wakeLock.request('screen');
                 }
             } catch (err) {
                 console.log('Wake lock request failed', err);
@@ -169,7 +186,7 @@ export default function GuidedStretchingSession({ program, onClose, soundEnabled
                     <CheckCircle2 size={48} className="text-lime-400" />
                 </div>
                 <h2 className="text-3xl font-black uppercase tracking-tighter text-white mb-2">Session Complete!</h2>
-                <p className="text-neutral-400 mb-8 max-w-xs">You've finished the {program.name} program. Great job!</p>
+                <p className="text-neutral-400 mb-8 max-w-xs">You&apos;ve finished the {program.name} program. Great job!</p>
                 <button
                     onClick={onClose}
                     className="w-full max-w-xs py-4 bg-lime-400 text-neutral-950 font-black uppercase tracking-widest rounded-2xl active:scale-95 transition-all"
