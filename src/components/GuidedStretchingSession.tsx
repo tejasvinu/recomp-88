@@ -17,9 +17,11 @@ export default function GuidedStretchingSession({ program, onClose, soundEnabled
     const [isActive, setIsActive] = useState(false);
     const [isComplete, setIsComplete] = useState(false);
     const [isBreak, setIsBreak] = useState(false);
+    const [sideIndex, setSideIndex] = useState(0); // 0-based index for multi-side stretches
     const BREAK_DURATION = 10;
 
     const audioCtxRef = useRef<AudioContext | null>(null);
+    const wakeLockRef = useRef<any | null>(null);
 
     const playSound = useCallback((type: 'tick' | 'complete' | 'break') => {
         if (!soundEnabled) return;
@@ -71,24 +73,75 @@ export default function GuidedStretchingSession({ program, onClose, soundEnabled
         } else if (isActive && timeLeft === 0) {
             if (isBreak) {
                 setIsBreak(false);
+                setSideIndex(0);
                 setTimeLeft(program.stretches[currentIndex].duration);
                 playSound('complete');
             } else {
-                if (currentIndex < program.stretches.length - 1) {
-                    setIsBreak(true);
-                    setTimeLeft(BREAK_DURATION);
-                    setCurrentIndex(prev => prev + 1);
+                const currentStretch = program.stretches[currentIndex];
+                const sides = currentStretch.sides ?? 1;
+
+                // If this stretch should be done on multiple sides (e.g. each hand),
+                // repeat the timer for each side before moving on.
+                if (sides > 1 && sideIndex < sides - 1) {
+                    setSideIndex(prev => prev + 1);
+                    setTimeLeft(currentStretch.duration);
                     playSound('break');
                 } else {
-                    setIsActive(false);
-                    setIsComplete(true);
-                    playSound('complete');
+                    if (currentIndex < program.stretches.length - 1) {
+                        setIsBreak(true);
+                        setTimeLeft(BREAK_DURATION);
+                        setCurrentIndex(prev => prev + 1);
+                        setSideIndex(0);
+                        playSound('break');
+                    } else {
+                        setIsActive(false);
+                        setIsComplete(true);
+                        playSound('complete');
+                    }
                 }
             }
         }
 
         return () => clearInterval(interval);
-    }, [isActive, timeLeft, currentIndex, isBreak, program.stretches, playSound]);
+    }, [isActive, timeLeft, currentIndex, isBreak, program.stretches, playSound, sideIndex]);
+
+    // Keep the screen awake while the timer is actively running (where supported).
+    useEffect(() => {
+        const requestWakeLock = async () => {
+            try {
+                if ('wakeLock' in navigator && (navigator as any).wakeLock?.request) {
+                    wakeLockRef.current = await (navigator as any).wakeLock.request('screen');
+                }
+            } catch (err) {
+                console.log('Wake lock request failed', err);
+            }
+        };
+
+        if (isActive) {
+            requestWakeLock();
+        } else if (wakeLockRef.current) {
+            wakeLockRef.current.release().catch(() => {}).finally(() => {
+                wakeLockRef.current = null;
+            });
+        }
+
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible' && isActive) {
+                requestWakeLock();
+            }
+        };
+
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            if (wakeLockRef.current) {
+                wakeLockRef.current.release().catch(() => {}).finally(() => {
+                    wakeLockRef.current = null;
+                });
+            }
+        };
+    }, [isActive]);
 
     useEffect(() => {
         // Request fullscreen on mount
@@ -104,6 +157,7 @@ export default function GuidedStretchingSession({ program, onClose, soundEnabled
     }, []);
 
     const currentStretch = program.stretches[currentIndex];
+    const sides = currentStretch.sides ?? 1;
     const progress = isBreak 
         ? (1 - timeLeft / BREAK_DURATION) * 100 
         : (1 - timeLeft / currentStretch.duration) * 100;
@@ -132,8 +186,13 @@ export default function GuidedStretchingSession({ program, onClose, soundEnabled
             <div className="p-6 flex items-center justify-between">
                 <div>
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] text-lime-400 mb-1">{program.name}</p>
-                    <h1 className="text-xl font-black uppercase tracking-tight">
+                    <h1 className="text-xl font-black uppercase tracking-tight flex items-center gap-2">
                         {isBreak ? "Next Up" : currentStretch.name}
+                        {!isBreak && sides > 1 && (
+                            <span className="text-[10px] font-mono font-bold uppercase tracking-[0.18em] text-neutral-500">
+                                Side {sideIndex + 1} of {sides}
+                            </span>
+                        )}
                     </h1>
                 </div>
                 <button 
@@ -185,7 +244,17 @@ export default function GuidedStretchingSession({ program, onClose, soundEnabled
                         {isBreak ? currentStretch.name : currentStretch.name}
                     </h2>
                     <p className="text-neutral-400 text-sm leading-relaxed min-h-[3rem]">
-                        {isBreak ? `Get ready for the next stretch.` : currentStretch.description}
+                        {isBreak
+                            ? `Get ready for the next stretch.`
+                            : sides > 1
+                                ? `${currentStretch.description ?? ""} ${
+                                      sides === 2
+                                          ? sideIndex === 0
+                                              ? "(first side)"
+                                              : "(second side)"
+                                          : `(side ${sideIndex + 1} of ${sides})`
+                                  }`
+                                : currentStretch.description}
                     </p>
                 </div>
             </div>
@@ -195,6 +264,9 @@ export default function GuidedStretchingSession({ program, onClose, soundEnabled
                 <button 
                     onClick={() => {
                         setTimeLeft(isBreak ? BREAK_DURATION : currentStretch.duration);
+                        if (!isBreak) {
+                            setSideIndex(0);
+                        }
                         setIsActive(false);
                     }}
                     className="w-14 h-14 flex items-center justify-center rounded-2xl bg-white/5 border border-white/10 text-neutral-400 active:scale-90 transition-all"

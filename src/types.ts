@@ -58,6 +58,11 @@ export interface Stretch {
     id: string;
     name: string;
     duration: number; // seconds
+    /**
+     * Number of sides the stretch should be performed on (e.g. left/right hand).
+     * Defaults to 1 when omitted.
+     */
+    sides?: number;
     description?: string;
     image?: string; // URL or path
     targetAreas?: string[];

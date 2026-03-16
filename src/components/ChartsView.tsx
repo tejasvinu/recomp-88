@@ -278,12 +278,30 @@ export default function ChartsView({
     return { series, exercises: strengthExercises };
   }, [sessions, activeDay, weightUnit, bodyWeightEntries]);
 
-  // ─── Week-over-week comparison ──────────────────────────────────────────
+  // ─── Week-over-week comparison (calendar weeks, Mon–Sun) ────────────────
   const weekComparison = useMemo(() => {
-    const now = Date.now();
-    const oneWeekMs = 7 * 24 * 60 * 60 * 1000;
-    const oneWeekAgo = now - oneWeekMs;
-    const twoWeeksAgo = now - 2 * oneWeekMs;
+    const oneDayMs = 24 * 60 * 60 * 1000;
+    const oneWeekMs = 7 * oneDayMs;
+
+    const normalizeToLocalMidnight = (date: Date) => {
+      const d = new Date(date);
+      d.setHours(0, 0, 0, 0);
+      return d;
+    };
+
+    // ISO-style week start: Monday
+    const getWeekStart = (date: Date) => {
+      const d = normalizeToLocalMidnight(date);
+      const jsDay = d.getDay(); // 0 = Sun, 1 = Mon, ... 6 = Sat
+      const offsetFromMonday = (jsDay + 6) % 7; // 0 = Mon, 6 = Sun
+      d.setDate(d.getDate() - offsetFromMonday);
+      return d;
+    };
+
+    const today = new Date();
+    const thisWeekStart = getWeekStart(today).getTime();
+    const nextWeekStart = thisWeekStart + oneWeekMs;
+    const lastWeekStart = thisWeekStart - oneWeekMs;
 
     const defaultBw = weightUnit === "lbs" ? 175 : 80;
     const getSessionVolume = (s: SessionHistory[number]) => {
@@ -300,10 +318,14 @@ export default function ChartsView({
       );
     };
 
-    const thisWeekSessions = sessions.filter((s) => new Date(s.date).getTime() >= oneWeekAgo);
+    const thisWeekSessions = sessions.filter((s) => {
+      const t = new Date(s.date).getTime();
+      return t >= thisWeekStart && t < nextWeekStart;
+    });
+
     const lastWeekSessions = sessions.filter((s) => {
       const t = new Date(s.date).getTime();
-      return t >= twoWeeksAgo && t < oneWeekAgo;
+      return t >= lastWeekStart && t < thisWeekStart;
     });
 
     const thisWeekVol = Math.round(thisWeekSessions.reduce((a, s) => a + getSessionVolume(s), 0));

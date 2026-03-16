@@ -5,6 +5,7 @@ const STRETCH_LIBRARY: Record<string, Stretch> = {
         id: "cross-body-shoulder",
         name: "Cross-Body Shoulder Stretch",
         duration: 35,
+        sides: 2,
         description: "Pull one arm across the chest to open the rear shoulder and upper back.",
         targetAreas: ["rear delts", "posterior shoulder", "upper back"],
         cues: [
@@ -24,6 +25,7 @@ const STRETCH_LIBRARY: Record<string, Stretch> = {
         id: "overhead-tricep",
         name: "Overhead Tricep Stretch",
         duration: 35,
+        sides: 2,
         description: "Reach one hand down the back and guide the elbow overhead for tricep and lat length.",
         targetAreas: ["triceps", "lats", "long head shoulder tissues"],
         cues: [
@@ -43,6 +45,7 @@ const STRETCH_LIBRARY: Record<string, Stretch> = {
         id: "doorway-chest",
         name: "Doorway Chest Stretch",
         duration: 40,
+        sides: 2,
         description: "Use a wall or door frame to open the pecs and front delts after pressing.",
         targetAreas: ["chest", "front delts", "biceps tendon"],
         cues: [
@@ -347,6 +350,7 @@ const STRETCH_LIBRARY: Record<string, Stretch> = {
         id: "wrist-extensor",
         name: "Wrist Extensor Stretch",
         duration: 25,
+        sides: 2,
         description: "A simple forearm and wrist opener for lifters who spend a lot of time gripping bars, handles, and keyboards.",
         targetAreas: ["forearms", "wrists"],
         cues: [
