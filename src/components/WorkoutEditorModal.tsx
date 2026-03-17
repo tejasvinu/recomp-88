@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { ArrowLeftRight, Plus, Save, Trash2, X } from "lucide-react";
-import { cloneWorkoutTemplate, createTemplateSet } from "../data";
+import { cloneWorkoutTemplate, createTemplateSet, sanitizeExerciseLinks } from "../data";
 import { useModalEscape } from "../hooks/useModalEscape";
 import { StretchingPrograms } from "../stretchingData";
 import {
   ExerciseWiki,
   Exercise,
+    ExerciseLinkType,
   ExerciseType,
   WorkoutTemplate,
 } from "../types";
@@ -156,7 +157,7 @@ export default function WorkoutEditorModal({
 
         updateDay((day) => ({
             ...day,
-            exercises: [
+            exercises: sanitizeExerciseLinks([
                 ...day.exercises,
                 {
                     id: makeId(`${day.id}-exercise`),
@@ -164,7 +165,7 @@ export default function WorkoutEditorModal({
                     type: "hypertrophy",
                     sets: [createTemplateSet(makeId("set"), "8-12")],
                 },
-            ],
+            ]),
         }));
     };
 
@@ -174,7 +175,37 @@ export default function WorkoutEditorModal({
 
             return {
                 ...day,
-                exercises: day.exercises.filter((exercise) => exercise.id !== exerciseId),
+                exercises: sanitizeExerciseLinks(
+                    day.exercises.filter((exercise) => exercise.id !== exerciseId)
+                ),
+            };
+        });
+    };
+
+    const setExerciseLink = (exerciseIndex: number, linkToNext?: ExerciseLinkType) => {
+        updateDay((day) => {
+            if (exerciseIndex < 0 || exerciseIndex >= day.exercises.length - 1) return day;
+
+            const nextExercises = day.exercises.map((exercise, index) => {
+                if (index === exerciseIndex) {
+                    return { ...exercise, linkToNext };
+                }
+
+                if (
+                    linkToNext &&
+                    (index === exerciseIndex - 1 || index === exerciseIndex + 1) &&
+                    exercise.linkToNext &&
+                    exercise.linkToNext !== linkToNext
+                ) {
+                    return { ...exercise, linkToNext: undefined };
+                }
+
+                return { ...exercise };
+            });
+
+            return {
+                ...day,
+                exercises: sanitizeExerciseLinks(nextExercises),
             };
         });
     };
@@ -394,268 +425,369 @@ export default function WorkoutEditorModal({
                                     activeDay.name,
                                     customExercises
                                 );
+                                const previousLink = exerciseIndex > 0
+                                    ? activeDay.exercises[exerciseIndex - 1]?.linkToNext
+                                    : undefined;
+                                const currentLinkType = previousLink ?? exercise.linkToNext;
+                                const nextExercise = activeDay.exercises[exerciseIndex + 1];
 
                                 return (
-                                    <div
-                                        key={exercise.id}
-                                        className="bg-white/3 border border-white/7 rounded-2xl p-4"
-                                    >
-                                        <div className="flex items-center justify-between gap-4 mb-4">
-                                            <div>
-                                                <p className="text-[10px] text-neutral-500 font-black uppercase tracking-widest">
-                                                    Exercise {exerciseIndex + 1}
-                                                </p>
-                                                <p className="text-[12px] text-neutral-300 font-medium mt-1">
-                                                    {exercise.id}
-                                                </p>
-                                            </div>
-
-                                            <button
-                                                type="button"
-                                                onClick={() => removeExercise(exercise.id)}
-                                                disabled={activeDay.exercises.length === 1}
-                                                className={cn(
-                                                    "w-9 h-9 rounded-xl border flex items-center justify-center transition-all",
-                                                    activeDay.exercises.length === 1
-                                                        ? "bg-white/4 border-white/6 text-neutral-700 cursor-not-allowed"
-                                                        : "bg-red-400/8 border-red-400/20 text-red-400 hover:bg-red-400/14"
-                                                )}
-                                                aria-label={`Remove ${exercise.name}`}
-                                            >
-                                                <Trash2 size={14} />
-                                            </button>
-                                        </div>
-
-                                        <div className="grid grid-cols-1 md:grid-cols-[1.2fr_180px] gap-3">
-                                            <label className="flex flex-col gap-1.5">
-                                                <div className="flex items-center justify-between gap-2">
-                                                    <span className="text-[10px] text-neutral-500 font-black uppercase tracking-widest">
-                                                        Exercise Name
-                                                    </span>
-                                                    {exercise.name && !findWikiEntry(exercise.name) && !customExercises.find(ex => ex.name === exercise.name) && (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => onSaveCustomExercise({
-                                                                id: makeId('custom'),
-                                                                name: exercise.name,
-                                                                category: swapOptions.category || 'Push',
-                                                                muscles: { primary: [], secondary: [] },
-                                                                biomechanics: 'User-defined custom exercise.',
-                                                                cues: [],
-                                                                commonMistakes: [],
-                                                                alternatives: [],
-                                                                notes: '',
-                                                            })}
-                                                            className="text-[9px] text-lime-400 font-black uppercase tracking-widest hover:text-lime-300 transition-colors"
-                                                        >
-                                                            + Save to Library
-                                                        </button>
-                                                    )}
-                                                </div>
-                                                <input
-                                                    value={exercise.name}
-                                                    onChange={(event) =>
-                                                        updateExercise(exercise.id, (currentExercise) => ({
-                                                            ...currentExercise,
-                                                            name: event.target.value,
-                                                        }))
-                                                    }
-                                                    className="bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm font-semibold text-white placeholder-neutral-600 outline-none focus:ring-1 focus:ring-lime-400/30 focus:border-lime-400/20 transition-all"
-                                                    placeholder="Bench Press"
-                                                />
-                                            </label>
-
-                                            <label className="flex flex-col gap-1.5">
-                                                <span className="text-[10px] text-neutral-500 font-black uppercase tracking-widest">
-                                                    Type
-                                                </span>
-                                                <select
-                                                    value={exercise.type}
-                                                    onChange={(event) =>
-                                                        updateExercise(exercise.id, (currentExercise) => ({
-                                                            ...currentExercise,
-                                                            type: event.target.value as ExerciseType,
-                                                        }))
-                                                    }
-                                                    className="bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm font-semibold text-white outline-none focus:ring-1 focus:ring-lime-400/30 focus:border-lime-400/20 transition-all"
-                                                >
-                                                    {EXERCISE_TYPES.map((option) => (
-                                                        <option key={option.value} value={option.value}>
-                                                            {option.label}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                            </label>
-                                        </div>
-
-                                        <div className="mt-3 rounded-2xl border border-lime-400/10 bg-[linear-gradient(135deg,rgba(163,230,53,0.07),rgba(255,255,255,0.03))] p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
-                                            <div className="flex items-start gap-3">
-                                                <div className="w-9 h-9 rounded-xl bg-lime-400/10 border border-lime-400/20 flex items-center justify-center shrink-0">
-                                                    <ArrowLeftRight size={15} className="text-lime-400" />
-                                                </div>
-                                                <div className="min-w-0 flex-1">
-                                                    <div className="flex flex-wrap items-center gap-2">
-                                                        <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white">
-                                                            Alternative Swaps
+                                    <div key={exercise.id} className="flex flex-col gap-3">
+                                        <div className="bg-white/3 border border-white/7 rounded-2xl p-4">
+                                            <div className="flex items-center justify-between gap-4 mb-4">
+                                                <div>
+                                                    <p className="text-[10px] text-neutral-500 font-black uppercase tracking-widest">
+                                                        Exercise {exerciseIndex + 1}
+                                                    </p>
+                                                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                                                        <p className="text-[12px] text-neutral-300 font-medium">
+                                                            {exercise.id}
                                                         </p>
-                                                        {swapOptions.category && (
-                                                            <span className="px-2 py-0.5 rounded-full border border-lime-400/20 bg-lime-400/10 text-[9px] font-black uppercase tracking-[0.16em] text-lime-400">
-                                                                {swapOptions.category}
-                                                            </span>
-                                                        )}
-                                                    {swapOptions.currentEntry &&
-                                                        isHomeGymFriendly(swapOptions.currentEntry) && (
-                                                            <span className="px-2 py-0.5 rounded-full border border-sky-400/20 bg-sky-400/10 text-[9px] font-black uppercase tracking-[0.16em] text-sky-400">
-                                                                Home Gym Friendly
+                                                        {currentLinkType && (
+                                                            <span
+                                                                className={cn(
+                                                                    "px-2 py-0.5 rounded-full border text-[9px] font-black uppercase tracking-[0.16em]",
+                                                                    currentLinkType === "superset"
+                                                                        ? "border-lime-400/20 bg-lime-400/10 text-lime-400"
+                                                                        : "border-sky-400/20 bg-sky-400/10 text-sky-400"
+                                                                )}
+                                                            >
+                                                                {currentLinkType}
                                                             </span>
                                                         )}
                                                     </div>
-                                                    <p className="text-[10px] text-neutral-500 font-medium mt-1.5 leading-relaxed">
-                                                    Quick picks now prioritize free-weight and
-                                                    low-access alternatives so the program still
-                                                    works when cables or machines are missing.
-                                                    </p>
                                                 </div>
-                                            </div>
-
-                                            {swapOptions.featuredNames.length > 0 && (
-                                                <div className="flex flex-wrap gap-2 mt-3">
-                                                    {swapOptions.featuredNames.map((alternativeName) => (
-                                                        <button
-                                                            key={alternativeName}
-                                                            type="button"
-                                                            onClick={() =>
-                                                                swapExercise(
-                                                                    exercise.id,
-                                                                    alternativeName
-                                                                )
-                                                            }
-                                                            className="px-3 py-1.5 rounded-xl bg-black/25 border border-white/8 text-[10px] font-black uppercase tracking-[0.14em] text-neutral-200 hover:border-lime-400/25 hover:bg-lime-400/10 hover:text-lime-400 transition-all"
-                                                        >
-                                                            {alternativeName}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            )}
-
-                                            <label className="flex flex-col gap-1.5 mt-3">
-                                                <span className="text-[10px] text-neutral-500 font-black uppercase tracking-widest">
-                                                    Exercise Library
-                                                </span>
-                                                <select
-                                                    defaultValue=""
-                                                    onChange={(event) => {
-                                                        const nextExerciseName = event.target.value;
-                                                        if (nextExerciseName) {
-                                                            swapExercise(
-                                                                exercise.id,
-                                                                nextExerciseName
-                                                            );
-                                                            event.target.value = "";
-                                                        }
-                                                    }}
-                                                    className="bg-black/25 border border-white/8 rounded-xl px-3 py-2.5 text-sm font-semibold text-white outline-none focus:ring-1 focus:ring-lime-400/30 focus:border-lime-400/20 transition-all"
-                                                >
-                                                    <option value="">
-                                                        Choose a compatible alternative...
-                                                    </option>
-                                                    {swapOptions.libraryNames.map((libraryName) => (
-                                                        <option
-                                                            key={libraryName}
-                                                            value={libraryName}
-                                                        >
-                                                            {libraryName}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                            </label>
-                                        </div>
-
-                                        <label className="flex flex-col gap-1.5 mt-3">
-                                            <span className="text-[10px] text-neutral-500 font-black uppercase tracking-widest">
-                                                Details
-                                            </span>
-                                            <input
-                                                value={exercise.details ?? ""}
-                                                onChange={(event) =>
-                                                    updateExercise(exercise.id, (currentExercise) => ({
-                                                        ...currentExercise,
-                                                        details: event.target.value || undefined,
-                                                    }))
-                                                }
-                                                className="bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm font-semibold text-white placeholder-neutral-600 outline-none focus:ring-1 focus:ring-lime-400/30 focus:border-lime-400/20 transition-all"
-                                                placeholder={
-                                                    exercise.type === "other"
-                                                        ? "45 mins, incline walk, mobility block..."
-                                                        : "Optional cues or equipment notes"
-                                                }
-                                            />
-                                        </label>
-
-                                        <div className="mt-4">
-                                            <div className="flex items-center justify-between gap-4 mb-2.5">
-                                                <p className="text-[10px] text-neutral-500 font-black uppercase tracking-widest">
-                                                    Sets
-                                                </p>
 
                                                 <button
                                                     type="button"
-                                                    onClick={() => addSet(exercise.id, exercise.type)}
-                                                    className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/8 text-[10px] font-black uppercase tracking-widest text-neutral-300 hover:bg-white/8 transition-all"
+                                                    onClick={() => removeExercise(exercise.id)}
+                                                    disabled={activeDay.exercises.length === 1}
+                                                    className={cn(
+                                                        "w-9 h-9 rounded-xl border flex items-center justify-center transition-all",
+                                                        activeDay.exercises.length === 1
+                                                            ? "bg-white/4 border-white/6 text-neutral-700 cursor-not-allowed"
+                                                            : "bg-red-400/8 border-red-400/20 text-red-400 hover:bg-red-400/14"
+                                                    )}
+                                                    aria-label={`Remove ${exercise.name}`}
                                                 >
-                                                    <Plus size={11} />
-                                                    Add Set
+                                                    <Trash2 size={14} />
                                                 </button>
                                             </div>
 
-                                            <div className="flex flex-col gap-2">
-                                                {exercise.sets.map((set, setIndex) => (
-                                                    <div
-                                                        key={set.id}
-                                                        className="grid grid-cols-[auto_1fr_auto] gap-2 items-center bg-black/20 border border-white/6 rounded-xl px-3 py-2.5"
-                                                    >
-                                                        <span className="text-[10px] font-black uppercase tracking-widest text-neutral-500">
-                                                            Set {setIndex + 1}
+                                            <div className="grid grid-cols-1 md:grid-cols-[1.2fr_180px] gap-3">
+                                                <label className="flex flex-col gap-1.5">
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <span className="text-[10px] text-neutral-500 font-black uppercase tracking-widest">
+                                                            Exercise Name
                                                         </span>
-
-                                                        <input
-                                                            value={set.targetReps}
-                                                            onChange={(event) =>
-                                                                updateExercise(exercise.id, (currentExercise) => ({
-                                                                    ...currentExercise,
-                                                                    sets: currentExercise.sets.map((currentSet) =>
-                                                                        currentSet.id === set.id
-                                                                            ? {
-                                                                                  ...currentSet,
-                                                                                  targetReps:
-                                                                                      event.target.value,
-                                                                              }
-                                                                            : currentSet
-                                                                    ),
-                                                                }))
-                                                            }
-                                                            className="bg-white/5 border border-white/8 rounded-lg px-3 py-2 text-sm font-semibold text-white placeholder-neutral-600 outline-none focus:ring-1 focus:ring-lime-400/30 focus:border-lime-400/20 transition-all"
-                                                            placeholder="6-8"
-                                                        />
-
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => removeSet(exercise.id, set.id)}
-                                                            disabled={exercise.sets.length === 1}
-                                                            className={cn(
-                                                                "w-8 h-8 rounded-lg border flex items-center justify-center transition-all",
-                                                                exercise.sets.length === 1
-                                                                    ? "bg-white/4 border-white/6 text-neutral-700 cursor-not-allowed"
-                                                                    : "bg-red-400/8 border-red-400/20 text-red-400 hover:bg-red-400/14"
-                                                            )}
-                                                            aria-label={`Remove set ${setIndex + 1}`}
-                                                        >
-                                                            <Trash2 size={12} />
-                                                        </button>
+                                                        {exercise.name && !findWikiEntry(exercise.name) && !customExercises.find(ex => ex.name === exercise.name) && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => onSaveCustomExercise({
+                                                                    id: makeId('custom'),
+                                                                    name: exercise.name,
+                                                                    category: swapOptions.category || 'Push',
+                                                                    muscles: { primary: [], secondary: [] },
+                                                                    biomechanics: 'User-defined custom exercise.',
+                                                                    cues: [],
+                                                                    commonMistakes: [],
+                                                                    alternatives: [],
+                                                                    notes: '',
+                                                                })}
+                                                                className="text-[9px] text-lime-400 font-black uppercase tracking-widest hover:text-lime-300 transition-colors"
+                                                            >
+                                                                + Save to Library
+                                                            </button>
+                                                        )}
                                                     </div>
-                                                ))}
+                                                    <input
+                                                        value={exercise.name}
+                                                        onChange={(event) =>
+                                                            updateExercise(exercise.id, (currentExercise) => ({
+                                                                ...currentExercise,
+                                                                name: event.target.value,
+                                                            }))
+                                                        }
+                                                        className="bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm font-semibold text-white placeholder-neutral-600 outline-none focus:ring-1 focus:ring-lime-400/30 focus:border-lime-400/20 transition-all"
+                                                        placeholder="Bench Press"
+                                                    />
+                                                </label>
+
+                                                <label className="flex flex-col gap-1.5">
+                                                    <span className="text-[10px] text-neutral-500 font-black uppercase tracking-widest">
+                                                        Type
+                                                    </span>
+                                                    <select
+                                                        value={exercise.type}
+                                                        onChange={(event) =>
+                                                            updateExercise(exercise.id, (currentExercise) => ({
+                                                                ...currentExercise,
+                                                                type: event.target.value as ExerciseType,
+                                                            }))
+                                                        }
+                                                        className="bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm font-semibold text-white outline-none focus:ring-1 focus:ring-lime-400/30 focus:border-lime-400/20 transition-all"
+                                                    >
+                                                        {EXERCISE_TYPES.map((option) => (
+                                                            <option key={option.value} value={option.value}>
+                                                                {option.label}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                </label>
+                                            </div>
+
+                                            <div className="mt-3 rounded-2xl border border-lime-400/10 bg-[linear-gradient(135deg,rgba(163,230,53,0.07),rgba(255,255,255,0.03))] p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+                                                <div className="flex items-start gap-3">
+                                                    <div className="w-9 h-9 rounded-xl bg-lime-400/10 border border-lime-400/20 flex items-center justify-center shrink-0">
+                                                        <ArrowLeftRight size={15} className="text-lime-400" />
+                                                    </div>
+                                                    <div className="min-w-0 flex-1">
+                                                        <div className="flex flex-wrap items-center gap-2">
+                                                            <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white">
+                                                                Alternative Swaps
+                                                            </p>
+                                                            {swapOptions.category && (
+                                                                <span className="px-2 py-0.5 rounded-full border border-lime-400/20 bg-lime-400/10 text-[9px] font-black uppercase tracking-[0.16em] text-lime-400">
+                                                                    {swapOptions.category}
+                                                                </span>
+                                                            )}
+                                                            {swapOptions.currentEntry &&
+                                                                isHomeGymFriendly(swapOptions.currentEntry) && (
+                                                                    <span className="px-2 py-0.5 rounded-full border border-sky-400/20 bg-sky-400/10 text-[9px] font-black uppercase tracking-[0.16em] text-sky-400">
+                                                                        Home Gym Friendly
+                                                                    </span>
+                                                                )}
+                                                        </div>
+                                                        <p className="text-[10px] text-neutral-500 font-medium mt-1.5 leading-relaxed">
+                                                            Quick picks now prioritize free-weight and
+                                                            low-access alternatives so the program still
+                                                            works when cables or machines are missing.
+                                                        </p>
+                                                    </div>
+                                                </div>
+
+                                                {swapOptions.featuredNames.length > 0 && (
+                                                    <div className="flex flex-wrap gap-2 mt-3">
+                                                        {swapOptions.featuredNames.map((alternativeName) => (
+                                                            <button
+                                                                key={alternativeName}
+                                                                type="button"
+                                                                onClick={() =>
+                                                                    swapExercise(
+                                                                        exercise.id,
+                                                                        alternativeName
+                                                                    )
+                                                                }
+                                                                className="px-3 py-1.5 rounded-xl bg-black/25 border border-white/8 text-[10px] font-black uppercase tracking-[0.14em] text-neutral-200 hover:border-lime-400/25 hover:bg-lime-400/10 hover:text-lime-400 transition-all"
+                                                            >
+                                                                {alternativeName}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                )}
+
+                                                <label className="flex flex-col gap-1.5 mt-3">
+                                                    <span className="text-[10px] text-neutral-500 font-black uppercase tracking-widest">
+                                                        Exercise Library
+                                                    </span>
+                                                    <select
+                                                        defaultValue=""
+                                                        onChange={(event) => {
+                                                            const nextExerciseName = event.target.value;
+                                                            if (nextExerciseName) {
+                                                                swapExercise(
+                                                                    exercise.id,
+                                                                    nextExerciseName
+                                                                );
+                                                                event.target.value = "";
+                                                            }
+                                                        }}
+                                                        className="bg-black/25 border border-white/8 rounded-xl px-3 py-2.5 text-sm font-semibold text-white outline-none focus:ring-1 focus:ring-lime-400/30 focus:border-lime-400/20 transition-all"
+                                                    >
+                                                        <option value="">
+                                                            Choose a compatible alternative...
+                                                        </option>
+                                                        {swapOptions.libraryNames.map((libraryName) => (
+                                                            <option
+                                                                key={libraryName}
+                                                                value={libraryName}
+                                                            >
+                                                                {libraryName}
+                                                            </option>
+                                                        ))}
+                                                    </select>
+                                                </label>
+                                            </div>
+
+                                            <label className="flex flex-col gap-1.5 mt-3">
+                                                <span className="text-[10px] text-neutral-500 font-black uppercase tracking-widest">
+                                                    Details
+                                                </span>
+                                                <input
+                                                    value={exercise.details ?? ""}
+                                                    onChange={(event) =>
+                                                        updateExercise(exercise.id, (currentExercise) => ({
+                                                            ...currentExercise,
+                                                            details: event.target.value || undefined,
+                                                        }))
+                                                    }
+                                                    className="bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm font-semibold text-white placeholder-neutral-600 outline-none focus:ring-1 focus:ring-lime-400/30 focus:border-lime-400/20 transition-all"
+                                                    placeholder={
+                                                        exercise.type === "other"
+                                                            ? "45 mins, incline walk, mobility block..."
+                                                            : "Optional cues or equipment notes"
+                                                    }
+                                                />
+                                            </label>
+
+                                            <div className="mt-4">
+                                                <div className="flex items-center justify-between gap-4 mb-2.5">
+                                                    <p className="text-[10px] text-neutral-500 font-black uppercase tracking-widest">
+                                                        Sets
+                                                    </p>
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => addSet(exercise.id, exercise.type)}
+                                                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/8 text-[10px] font-black uppercase tracking-widest text-neutral-300 hover:bg-white/8 transition-all"
+                                                    >
+                                                        <Plus size={11} />
+                                                        Add Set
+                                                    </button>
+                                                </div>
+
+                                                <div className="flex flex-col gap-2">
+                                                    {exercise.sets.map((set, setIndex) => (
+                                                        <div
+                                                            key={set.id}
+                                                            className="grid grid-cols-[auto_1fr_auto] gap-2 items-center bg-black/20 border border-white/6 rounded-xl px-3 py-2.5"
+                                                        >
+                                                            <span className="text-[10px] font-black uppercase tracking-widest text-neutral-500">
+                                                                Set {setIndex + 1}
+                                                            </span>
+
+                                                            <input
+                                                                value={set.targetReps}
+                                                                onChange={(event) =>
+                                                                    updateExercise(exercise.id, (currentExercise) => ({
+                                                                        ...currentExercise,
+                                                                        sets: currentExercise.sets.map((currentSet) =>
+                                                                            currentSet.id === set.id
+                                                                                ? {
+                                                                                      ...currentSet,
+                                                                                      targetReps:
+                                                                                          event.target.value,
+                                                                                  }
+                                                                                : currentSet
+                                                                        ),
+                                                                    }))
+                                                                }
+                                                                className="bg-white/5 border border-white/8 rounded-lg px-3 py-2 text-sm font-semibold text-white placeholder-neutral-600 outline-none focus:ring-1 focus:ring-lime-400/30 focus:border-lime-400/20 transition-all"
+                                                                placeholder="6-8"
+                                                            />
+
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => removeSet(exercise.id, set.id)}
+                                                                disabled={exercise.sets.length === 1}
+                                                                className={cn(
+                                                                    "w-8 h-8 rounded-lg border flex items-center justify-center transition-all",
+                                                                    exercise.sets.length === 1
+                                                                        ? "bg-white/4 border-white/6 text-neutral-700 cursor-not-allowed"
+                                                                        : "bg-red-400/8 border-red-400/20 text-red-400 hover:bg-red-400/14"
+                                                                )}
+                                                                aria-label={`Remove set ${setIndex + 1}`}
+                                                            >
+                                                                <Trash2 size={12} />
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                </div>
                                             </div>
                                         </div>
+
+                                        {nextExercise && (
+                                            <div className="relative px-2">
+                                                <div className="absolute left-6 top-0 bottom-0 w-px bg-white/6" />
+                                                <div className="relative ml-10 rounded-2xl border border-white/7 bg-black/20 px-3.5 py-3">
+                                                    <div className="flex flex-wrap items-center justify-between gap-2">
+                                                        <div>
+                                                            <p className="text-[10px] text-neutral-500 font-black uppercase tracking-widest">
+                                                                Link to Next Exercise
+                                                            </p>
+                                                            <p className="text-[11px] text-neutral-300 font-medium mt-1">
+                                                                {exercise.name} → {nextExercise.name}
+                                                            </p>
+                                                        </div>
+                                                        {exercise.linkToNext && (
+                                                            <span
+                                                                className={cn(
+                                                                    "px-2 py-0.5 rounded-full border text-[9px] font-black uppercase tracking-[0.16em]",
+                                                                    exercise.linkToNext === "superset"
+                                                                        ? "border-lime-400/20 bg-lime-400/10 text-lime-400"
+                                                                        : "border-sky-400/20 bg-sky-400/10 text-sky-400"
+                                                                )}
+                                                            >
+                                                                {exercise.linkToNext}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex flex-wrap gap-2 mt-3">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                setExerciseLink(
+                                                                    exerciseIndex,
+                                                                    exercise.linkToNext === "superset"
+                                                                        ? undefined
+                                                                        : "superset"
+                                                                )
+                                                            }
+                                                            className={cn(
+                                                                "px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-[0.16em] transition-all",
+                                                                exercise.linkToNext === "superset"
+                                                                    ? "border-lime-400/25 bg-lime-400/12 text-lime-400"
+                                                                    : "border-white/8 bg-white/4 text-neutral-300 hover:border-lime-400/20 hover:bg-lime-400/10 hover:text-lime-400"
+                                                            )}
+                                                        >
+                                                            Superset
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() =>
+                                                                setExerciseLink(
+                                                                    exerciseIndex,
+                                                                    exercise.linkToNext === "circuit"
+                                                                        ? undefined
+                                                                        : "circuit"
+                                                                )
+                                                            }
+                                                            className={cn(
+                                                                "px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-[0.16em] transition-all",
+                                                                exercise.linkToNext === "circuit"
+                                                                    ? "border-sky-400/25 bg-sky-400/12 text-sky-400"
+                                                                    : "border-white/8 bg-white/4 text-neutral-300 hover:border-sky-400/20 hover:bg-sky-400/10 hover:text-sky-400"
+                                                            )}
+                                                        >
+                                                            Circuit
+                                                        </button>
+                                                        {exercise.linkToNext && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setExerciseLink(exerciseIndex, undefined)}
+                                                                className="px-3 py-1.5 rounded-xl border border-white/8 bg-white/3 text-[10px] font-black uppercase tracking-[0.16em] text-neutral-400 hover:bg-white/6 hover:text-white transition-all"
+                                                            >
+                                                                Clear Link
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                    <p className="text-[10px] text-neutral-500 font-medium mt-2.5 leading-relaxed">
+                                                        Links stay adjacent. Matching links can chain
+                                                        into longer circuits or supersets without extra setup.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 );
                             })}

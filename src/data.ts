@@ -1,6 +1,7 @@
 import type {
     DayRoutine,
     Exercise,
+    ExerciseLinkType,
     ExerciseType,
     SavedSetState,
     SetData,
@@ -174,6 +175,27 @@ const normalizeExerciseType = (value: unknown): ExerciseType =>
         ? value
         : "hypertrophy";
 
+const normalizeExerciseLinkType = (value: unknown): ExerciseLinkType | undefined =>
+    value === "superset" || value === "circuit" ? value : undefined;
+
+export const sanitizeExerciseLinks = (exercises: Exercise[]): Exercise[] => {
+    const sanitized = exercises.map((exercise) => ({ ...exercise }));
+
+    sanitized.forEach((exercise, index) => {
+        if (index >= sanitized.length - 1) {
+            exercise.linkToNext = undefined;
+            return;
+        }
+
+        const previousLink = index > 0 ? sanitized[index - 1].linkToNext : undefined;
+        if (previousLink && exercise.linkToNext && previousLink !== exercise.linkToNext) {
+            exercise.linkToNext = undefined;
+        }
+    });
+
+    return sanitized;
+};
+
 const normalizeSavedSetState = (value: unknown): SavedSetState | null => {
     if (!isRecord(value)) return null;
     return {
@@ -202,7 +224,8 @@ export const normalizeWorkoutTemplate = (value: unknown): WorkoutTemplate | null
                 ? dayValue.name.trim()
                 : title;
         const exercisesValue = Array.isArray(dayValue.exercises) ? dayValue.exercises : [];
-        const exercises = exercisesValue.flatMap((exerciseValue, exerciseIndex) => {
+        const exercises = sanitizeExerciseLinks(
+            exercisesValue.flatMap((exerciseValue, exerciseIndex) => {
             if (!isRecord(exerciseValue)) return [];
 
             const type = normalizeExerciseType(exerciseValue.type);
@@ -241,10 +264,12 @@ export const normalizeWorkoutTemplate = (value: unknown): WorkoutTemplate | null
                         typeof exerciseValue.details === "string" && exerciseValue.details.trim()
                             ? exerciseValue.details.trim()
                             : undefined,
+                    linkToNext: normalizeExerciseLinkType(exerciseValue.linkToNext),
                     sets,
                 } satisfies Exercise,
             ];
-        });
+            })
+        );
 
         if (exercises.length === 0) {
             exercises.push({
@@ -252,6 +277,7 @@ export const normalizeWorkoutTemplate = (value: unknown): WorkoutTemplate | null
                 name: "New Exercise",
                 type: "hypertrophy",
                 details: undefined,
+                linkToNext: undefined,
                 sets: [createTemplateSet("set-1", "8-12")],
             });
         }

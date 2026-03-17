@@ -5,10 +5,12 @@ import type {
   WorkoutProgress,
   SessionHistory,
   BodyWeightEntry,
+  ExerciseWiki,
   WorkoutTemplate,
 } from "../types";
 import { isTrainingDay } from "../data";
 import { cn, getClosestBodyWeight, resolveWeight } from "../utils";
+import { findWikiEntry } from "../wikiData";
 import {
   XAxis,
   YAxis,
@@ -43,6 +45,7 @@ interface ChartsViewProps {
   workoutTemplate: WorkoutTemplate;
   progress: WorkoutProgress;
   sessions: SessionHistory;
+  customExercises?: ExerciseWiki[];
   onOpenExercise?: (name: string) => void;
   onDeleteSession: (id: string) => void;
   bodyWeightEntries: BodyWeightEntry[];
@@ -50,10 +53,185 @@ interface ChartsViewProps {
   weightUnit?: "kg" | "lbs";
 }
 
+type AnalyticsViewMode = "overview" | "heatmap";
+type HeatmapSide = "front" | "back";
+type ActualRmTarget = 8 | 10;
+type MuscleRecoveryStatus = "fatigued" | "recovering" | "ready" | "undertrained";
+type MuscleRegionId =
+  | "chest"
+  | "frontShoulders"
+  | "biceps"
+  | "abs"
+  | "quads"
+  | "calves"
+  | "rearShoulders"
+  | "triceps"
+  | "upperBack"
+  | "lats"
+  | "lowerBack"
+  | "glutes"
+  | "hamstrings";
+
+const EXERCISE_AXIS_MAX_LENGTH = 14;
+const EPLEY_REP_CAP = 15;
+const RECOVERY_LOOKBACK_DAYS = 7;
+const PRIMARY_MUSCLE_WEIGHT = 1;
+const SECONDARY_MUSCLE_WEIGHT = 0.55;
+
+const formatExerciseAxisLabel = (value: string) =>
+  value.length > EXERCISE_AXIS_MAX_LENGTH
+    ? `${value.slice(0, EXERCISE_AXIS_MAX_LENGTH - 1)}…`
+    : value;
+
+const formatSessionDateLabel = (value: string) => {
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime())
+    ? value
+    : parsed.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+};
+
+const formatSessionTooltipLabel = (value: string) => {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+
+  return parsed.toLocaleString("en-GB", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const roundMetric = (value: number) => Math.round(value * 10) / 10;
+
+const calculateEstimatedOneRepMax = (weight: number, reps: number) => {
+  if (weight <= 0 || reps <= 0) return 0;
+  const cappedReps = Math.min(reps, EPLEY_REP_CAP);
+  return weight * (1 + cappedReps / 30);
+};
+
+const matchesRepTarget = (reps: number, target: number) => Math.abs(reps - target) < 0.001;
+
+const buildSessionTimeline = (orderedSessions: SessionHistory) => {
+  const dayCounts = new Map<string, number>();
+
+  return orderedSessions.map((session) => {
+    const dayKey = session.date.slice(0, 10);
+    const nextCount = (dayCounts.get(dayKey) ?? 0) + 1;
+    dayCounts.set(dayKey, nextCount);
+
+    return {
+      session,
+      dateKey: session.date,
+      displayDate:
+        nextCount > 1
+          ? `${formatSessionDateLabel(session.date)} · ${nextCount}`
+          : formatSessionDateLabel(session.date),
+    };
+  });
+};
+
+const getBestSetAtRepTarget = (
+  sets: SessionHistory[number]["exercises"][number]["sets"],
+  fallbackBodyWeight: number,
+  targetReps: number
+) => {
+  let bestWeight = 0;
+  let bestSet = "";
+
+  sets.forEach((set) => {
+    const reps = parseFloat(set.loggedReps) || 0;
+    if (!matchesRepTarget(reps, targetReps)) return;
+
+    const weight = resolveWeight(set.loggedWeight, fallbackBodyWeight);
+    if (weight <= bestWeight) return;
+
+    bestWeight = weight;
+    bestSet = `${set.loggedWeight} × ${reps}`;
+  });
+
+  return {
+    bestWeight,
+    bestSet,
+  };
+};
+
+const MUSCLE_REGIONS: Array<{
+  id: MuscleRegionId;
+  label: string;
+  matchers: string[];
+}> = [
+  { id: "chest", label: "Chest", matchers: ["pectoralis", "pec", "serratus"] },
+  { id: "frontShoulders", label: "Front Delts", matchers: ["anterior deltoid", "lateral deltoid"] },
+  { id: "biceps", label: "Biceps / Forearms", matchers: ["biceps", "brachialis", "brachioradialis"] },
+  { id: "abs", label: "Core", matchers: ["rectus abdominis", "oblique", "core"] },
+  { id: "quads", label: "Quads", matchers: ["quadriceps", "vastus", "rectus femoris", "adductors"] },
+  { id: "calves", label: "Calves", matchers: ["calf", "gastrocnemius", "soleus"] },
+  { id: "rearShoulders", label: "Rear Delts", matchers: ["posterior deltoid", "rear delt", "infraspinatus", "teres minor"] },
+  { id: "triceps", label: "Triceps", matchers: ["triceps", "anconeus"] },
+  { id: "upperBack", label: "Upper Back", matchers: ["rhomboid", "trapezius", "teres major"] },
+  { id: "lats", label: "Lats", matchers: ["latissimus"] },
+  { id: "lowerBack", label: "Lower Back", matchers: ["erector spinae"] },
+  { id: "glutes", label: "Glutes", matchers: ["glute"] },
+  { id: "hamstrings", label: "Hamstrings", matchers: ["hamstring", "biceps femoris", "semitendinosus", "semimembranosus"] },
+];
+
+const MUSCLE_STATUS_STYLES: Record<
+  MuscleRecoveryStatus,
+  {
+    fill: string;
+    stroke: string;
+    chip: string;
+    copy: string;
+  }
+> = {
+  fatigued: {
+    fill: "rgba(248, 113, 113, 0.88)",
+    stroke: "rgba(252, 165, 165, 0.95)",
+    chip: "text-red-300 bg-red-400/12 border-red-400/25",
+    copy: "High recent workload",
+  },
+  recovering: {
+    fill: "rgba(251, 191, 36, 0.82)",
+    stroke: "rgba(252, 211, 77, 0.95)",
+    chip: "text-amber-300 bg-amber-400/12 border-amber-400/25",
+    copy: "Still settling from recent work",
+  },
+  ready: {
+    fill: "rgba(163, 230, 53, 0.78)",
+    stroke: "rgba(190, 242, 100, 0.95)",
+    chip: "text-lime-300 bg-lime-400/12 border-lime-400/25",
+    copy: "Recovered and ready",
+  },
+  undertrained: {
+    fill: "rgba(82, 82, 91, 0.55)",
+    stroke: "rgba(161, 161, 170, 0.65)",
+    chip: "text-neutral-300 bg-white/6 border-white/10",
+    copy: "Very little weighted work this week",
+  },
+};
+
+const resolveMuscleRegionId = (muscleName: string): MuscleRegionId | null => {
+  const normalizedName = muscleName.toLowerCase();
+  const region = MUSCLE_REGIONS.find((candidate) =>
+    candidate.matchers.some((matcher) => normalizedName.includes(matcher))
+  );
+  return region?.id ?? null;
+};
+
+const formatLastHitLabel = (value: number | null) => {
+  if (value === null) return "No recent hits";
+  if (value < 1) return "Hit today";
+  if (value < 2) return "Hit yesterday";
+  return `Hit ${Math.round(value)}d ago`;
+};
+
 export default function ChartsView({
   workoutTemplate,
   progress,
   sessions,
+  customExercises = [],
   onOpenExercise,
   onDeleteSession,
   bodyWeightEntries,
@@ -64,11 +242,21 @@ export default function ChartsView({
   const [expandedSessionId, setExpandedSessionId] = useState<string | null>(null);
   const [bwInput, setBwInput] = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [analyticsView, setAnalyticsView] = useState<AnalyticsViewMode>("overview");
+  const [heatmapSide, setHeatmapSide] = useState<HeatmapSide>("front");
+  const [actualRmTarget, setActualRmTarget] = useState<ActualRmTarget>(10);
   const trainingDays = useMemo(
     () => workoutTemplate.filter(isTrainingDay),
     [workoutTemplate]
   );
   const activeDay = trainingDays[selectedDayIdx] ?? trainingDays[0] ?? null;
+  const customExerciseMap = useMemo(
+    () =>
+      new Map(
+        customExercises.map((exercise) => [exercise.name.toLowerCase().trim(), exercise])
+      ),
+    [customExercises]
+  );
 
   useEffect(() => {
     if (selectedDayIdx >= trainingDays.length && trainingDays.length > 0) {
@@ -94,8 +282,21 @@ export default function ChartsView({
         .filter((ex) => ex.type !== "other")
         .map((exercise) => {
           const exProgress = dayProgress[exercise.id];
-          if (!exProgress) return { name: exercise.name, totalVolume: 0, maxWeight: 0, avgReps: 0, sets: 0 };
-          let totalVolume = 0, maxWeight = 0, totalReps = 0, setsWithData = 0;
+          if (!exProgress) {
+            return {
+              exerciseId: exercise.id,
+              fullName: exercise.name,
+              totalVolume: 0,
+              maxWeight: 0,
+              avgReps: 0,
+              sets: 0,
+            };
+          }
+
+          let totalVolume = 0;
+          let maxWeight = 0;
+          let totalReps = 0;
+          let setsWithData = 0;
           Object.values(exProgress).forEach((setData) => {
             const defaultBw = weightUnit === "lbs" ? 175 : 80;
             const bw = getClosestBodyWeight(new Date().toISOString(), bodyWeightEntries, defaultBw);
@@ -109,10 +310,11 @@ export default function ChartsView({
             }
           });
           return {
-            name: exercise.name.length > 14 ? exercise.name.substring(0, 12) + "…" : exercise.name,
+            exerciseId: exercise.id,
             fullName: exercise.name,
             totalVolume: Math.round(totalVolume),
-            maxWeight, avgReps: setsWithData > 0 ? Math.round(totalReps / setsWithData) : 0,
+            maxWeight,
+            avgReps: setsWithData > 0 ? Math.round(totalReps / setsWithData) : 0,
             sets: setsWithData,
           };
         });
@@ -125,44 +327,54 @@ export default function ChartsView({
     return activeDay.exercises
       .filter((exercise) => exercise.type !== "other")
       .map((exercise) => {
-      const sessionExercise = latestSession.exercises.find(
-        (entry) => entry.exerciseId === exercise.id || entry.name === exercise.name
-      );
+        const sessionExercise = latestSession.exercises.find(
+          (entry) => entry.exerciseId === exercise.id || entry.name === exercise.name
+        );
 
-      if (!sessionExercise) {
-        return {
-          name: exercise.name.length > 14 ? exercise.name.substring(0, 12) + "…" : exercise.name,
-          fullName: exercise.name,
-          totalVolume: 0,
-          maxWeight: 0,
-          avgReps: 0,
-          sets: 0,
-        };
-      }
-
-      let totalVolume = 0, maxWeight = 0, totalReps = 0, setsWithData = 0;
-      sessionExercise.sets.forEach((set) => {
-        const weight = resolveWeight(set.loggedWeight, bw);
-        const reps = parseFloat(set.loggedReps) || 0;
-        if (weight > 0 || reps > 0) {
-          totalVolume += weight * reps;
-          maxWeight = Math.max(maxWeight, weight);
-          totalReps += reps;
-          setsWithData++;
-        } else if (sessionExercise.type === "other" && set.completed) {
-          setsWithData++;
+        if (!sessionExercise) {
+          return {
+            exerciseId: exercise.id,
+            fullName: exercise.name,
+            totalVolume: 0,
+            maxWeight: 0,
+            avgReps: 0,
+            sets: 0,
+          };
         }
+
+        let totalVolume = 0;
+        let maxWeight = 0;
+        let totalReps = 0;
+        let setsWithData = 0;
+
+        sessionExercise.sets.forEach((set) => {
+          const weight = resolveWeight(set.loggedWeight, bw);
+          const reps = parseFloat(set.loggedReps) || 0;
+          if (weight > 0 || reps > 0) {
+            totalVolume += weight * reps;
+            maxWeight = Math.max(maxWeight, weight);
+            totalReps += reps;
+            setsWithData++;
+          } else if (sessionExercise.type === "other" && set.completed) {
+            setsWithData++;
+          }
+        });
+
+        return {
+          exerciseId: exercise.id,
+          fullName: exercise.name,
+          totalVolume: Math.round(totalVolume),
+          maxWeight,
+          avgReps: setsWithData > 0 ? Math.round(totalReps / setsWithData) : 0,
+          sets: setsWithData,
+        };
       });
-      return {
-        name: exercise.name.length > 14 ? exercise.name.substring(0, 12) + "…" : exercise.name,
-        fullName: exercise.name,
-        totalVolume: Math.round(totalVolume),
-        maxWeight,
-        avgReps: setsWithData > 0 ? Math.round(totalReps / setsWithData) : 0,
-        sets: setsWithData,
-      };
-    });
   }, [sessions, progress, activeDay, weightUnit, bodyWeightEntries]);
+
+  const exerciseStatsById = useMemo(
+    () => new Map(exerciseStats.map((exercise) => [exercise.exerciseId, exercise.fullName])),
+    [exerciseStats]
+  );
 
   const estimatedMaxes = useMemo(() => {
     if (!activeDay) return [];
@@ -179,7 +391,7 @@ export default function ChartsView({
       .filter((ex) => ex.type === "strength")
       .map((exercise) => {
         const sessionEx = latestSession.exercises.find((e) => e.exerciseId === exercise.id || e.name === exercise.name);
-        if (!sessionEx) return { name: exercise.name, estimated1RM: 0, bestSet: "" };
+        if (!sessionEx) return { exerciseId: exercise.id, name: exercise.name, estimated1RM: 0, bestSet: "" };
 
         let best1RM = 0;
         let bestSet = "";
@@ -191,7 +403,7 @@ export default function ChartsView({
           const weight = resolveWeight(set.loggedWeight, bw);
           const reps = parseFloat(set.loggedReps) || 0;
           if (weight > 0 && reps > 0) {
-            const estimated = weight * (1 + reps / 30);
+            const estimated = calculateEstimatedOneRepMax(weight, reps);
             if (estimated > best1RM) {
               best1RM = estimated;
               bestSet = `${set.loggedWeight} × ${reps}`;
@@ -200,8 +412,9 @@ export default function ChartsView({
         });
 
         return {
+          exerciseId: exercise.id,
           name: exercise.name,
-          estimated1RM: Math.round(best1RM * 10) / 10,
+          estimated1RM: roundMetric(best1RM),
           bestSet,
         };
       })
@@ -247,36 +460,115 @@ export default function ChartsView({
 
     const strengthExercises = activeDay.exercises
       .filter((ex) => ex.type === "strength")
-      .map((ex) => ex.name);
+      .map((exercise) => ({
+        key: exercise.id,
+        label: exercise.name,
+      }));
 
     if (strengthExercises.length === 0) return null;
 
     const defaultBw = weightUnit === "lbs" ? 175 : 80;
+    const timeline = buildSessionTimeline(daySessions);
 
-    const series = daySessions.map((session) => {
+    const series = timeline.map(({ session, dateKey, displayDate }) => {
       const bw = getClosestBodyWeight(session.date, bodyWeightEntries, defaultBw);
-      const point: Record<string, string | number> = {
-        date: new Date(session.date).toLocaleDateString("en-GB", { day: "numeric", month: "short" }),
+      const point: Record<string, string | number | null> = {
+        dateKey,
+        displayDate,
       };
-      strengthExercises.forEach((exName) => {
-        const ex = session.exercises.find((e) => e.name === exName);
-        if (!ex) { point[exName] = 0; return; }
+
+      strengthExercises.forEach((exercise) => {
+        const ex = session.exercises.find(
+          (entry) => entry.exerciseId === exercise.key || entry.name === exercise.label
+        );
+        if (!ex) {
+          point[exercise.key] = null;
+          return;
+        }
+
         let best1RM = 0;
         ex.sets.forEach((set) => {
           const w = resolveWeight(set.loggedWeight, bw);
           const r = parseFloat(set.loggedReps) || 0;
           if (w > 0 && r > 0) {
-            const e1rm = w * (1 + r / 30);
+            const e1rm = calculateEstimatedOneRepMax(w, r);
             if (e1rm > best1RM) best1RM = e1rm;
           }
         });
-        point[exName] = Math.round(best1RM * 10) / 10;
+
+        point[exercise.key] = best1RM > 0 ? roundMetric(best1RM) : null;
       });
       return point;
     });
 
-    return { series, exercises: strengthExercises };
+    const populatedExercises = strengthExercises.filter((exercise) =>
+      series.some((point) => typeof point[exercise.key] === "number")
+    );
+
+    if (populatedExercises.length === 0) return null;
+
+    return { series, exercises: populatedExercises };
   }, [sessions, activeDay, weightUnit, bodyWeightEntries]);
+
+  const actualRepMaxHistory = useMemo(() => {
+    if (!activeDay) return null;
+
+    const daySessions = sessions
+      .filter((session) => session.dayId === activeDay.id)
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+
+    if (daySessions.length < 2) return null;
+
+    const trackedExercises = activeDay.exercises
+      .filter((exercise) => exercise.type !== "other")
+      .map((exercise) => ({
+        key: exercise.id,
+        label: exercise.name,
+      }));
+
+    if (trackedExercises.length === 0) return null;
+
+    const defaultBw = weightUnit === "lbs" ? 175 : 80;
+    const timeline = buildSessionTimeline(daySessions);
+
+    const series = timeline.map(({ session, dateKey, displayDate }) => {
+      const bw = getClosestBodyWeight(session.date, bodyWeightEntries, defaultBw);
+      const point: Record<string, string | number | null> = {
+        dateKey,
+        displayDate,
+      };
+
+      trackedExercises.forEach((exercise) => {
+        const sessionExercise = session.exercises.find(
+          (entry) => entry.exerciseId === exercise.key || entry.name === exercise.label
+        );
+        if (!sessionExercise) {
+          point[exercise.key] = null;
+          return;
+        }
+
+        const { bestWeight } = getBestSetAtRepTarget(
+          sessionExercise.sets,
+          bw,
+          actualRmTarget
+        );
+        point[exercise.key] = bestWeight > 0 ? roundMetric(bestWeight) : null;
+      });
+
+      return point;
+    });
+
+    const populatedExercises = trackedExercises.filter((exercise) =>
+      series.some((point) => typeof point[exercise.key] === "number")
+    );
+
+    if (populatedExercises.length === 0) return null;
+
+    return {
+      series,
+      exercises: populatedExercises,
+    };
+  }, [sessions, activeDay, weightUnit, bodyWeightEntries, actualRmTarget]);
 
   // ─── Week-over-week comparison (calendar weeks, Mon–Sun) ────────────────
   const weekComparison = useMemo(() => {
@@ -357,6 +649,105 @@ export default function ChartsView({
     }));
   }, [bodyWeightEntries]);
 
+  const muscleRecovery = useMemo(() => {
+    const lookbackWindowMs = RECOVERY_LOOKBACK_DAYS * 24 * 60 * 60 * 1000;
+    const now = Date.now();
+    const defaultBw = weightUnit === "lbs" ? 175 : 80;
+    const regionMetrics = Object.fromEntries(
+      MUSCLE_REGIONS.map((region) => [
+        region.id,
+        {
+          id: region.id,
+          label: region.label,
+          volume: 0,
+          score: 0,
+          lastHitDays: null as number | null,
+        },
+      ])
+    ) as Record<
+      MuscleRegionId,
+      {
+        id: MuscleRegionId;
+        label: string;
+        volume: number;
+        score: number;
+        lastHitDays: number | null;
+      }
+    >;
+
+    sessions.forEach((session) => {
+      const sessionTime = new Date(session.date).getTime();
+      if (!Number.isFinite(sessionTime) || now - sessionTime > lookbackWindowMs) {
+        return;
+      }
+
+      const ageDays = Math.max(0, (now - sessionTime) / (24 * 60 * 60 * 1000));
+      const recencyFactor = Math.max(0.2, 1 - ageDays / RECOVERY_LOOKBACK_DAYS);
+      const bw = getClosestBodyWeight(session.date, bodyWeightEntries, defaultBw);
+
+      session.exercises.forEach((exercise) => {
+        if (exercise.type === "other") return;
+
+        const wikiEntry =
+          findWikiEntry(exercise.name) ??
+          customExerciseMap.get(exercise.name.toLowerCase().trim());
+        if (!wikiEntry) return;
+
+        const exerciseVolume = exercise.sets.reduce((total, set) => {
+          const reps = parseFloat(set.loggedReps) || 0;
+          const weight = resolveWeight(set.loggedWeight, bw);
+          return total + weight * reps;
+        }, 0);
+
+        if (exerciseVolume <= 0) return;
+
+        const applyStimulus = (muscles: string[], multiplier: number) => {
+          muscles.forEach((muscle) => {
+            const regionId = resolveMuscleRegionId(muscle);
+            if (!regionId) return;
+
+            regionMetrics[regionId].volume += exerciseVolume * multiplier;
+            regionMetrics[regionId].score += exerciseVolume * multiplier * recencyFactor;
+            regionMetrics[regionId].lastHitDays =
+              regionMetrics[regionId].lastHitDays === null
+                ? ageDays
+                : Math.min(regionMetrics[regionId].lastHitDays, ageDays);
+          });
+        };
+
+        applyStimulus(wikiEntry.muscles.primary, PRIMARY_MUSCLE_WEIGHT);
+        applyStimulus(wikiEntry.muscles.secondary, SECONDARY_MUSCLE_WEIGHT);
+      });
+    });
+
+    const maxScore = Math.max(
+      ...Object.values(regionMetrics).map((region) => region.score),
+      0
+    );
+
+    return MUSCLE_REGIONS.map((region) => {
+      const metrics = regionMetrics[region.id];
+      const intensity = maxScore > 0 ? metrics.score / maxScore : 0;
+
+      let status: MuscleRecoveryStatus = "undertrained";
+      if (metrics.volume <= 0 || intensity < 0.14) {
+        status = "undertrained";
+      } else if (metrics.lastHitDays !== null && metrics.lastHitDays <= 2 && intensity >= 0.55) {
+        status = "fatigued";
+      } else if (metrics.lastHitDays !== null && metrics.lastHitDays <= 4 && intensity >= 0.28) {
+        status = "recovering";
+      } else {
+        status = "ready";
+      }
+
+      return {
+        ...metrics,
+        intensity,
+        status,
+      };
+    }).sort((left, right) => right.score - left.score);
+  }, [sessions, bodyWeightEntries, customExerciseMap, weightUnit]);
+
   const todayBw = bodyWeightEntries.find(
     (e) => e.date === new Date().toISOString().slice(0, 10)
   );
@@ -383,10 +774,41 @@ export default function ChartsView({
         <div>
           <h2 className="text-xl font-black text-white tracking-wide">Progression</h2>
           <p className="text-[11px] text-neutral-500 font-medium uppercase tracking-widest">
-            Volume · tonnage · estimated 1RM
+            Volume · tonnage · rep maxes · recovery map
           </p>
         </div>
       </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        {([
+          { id: "overview" as AnalyticsViewMode, label: "Overview" },
+          { id: "heatmap" as AnalyticsViewMode, label: "Heatmap" },
+        ]).map((view) => (
+          <button
+            key={view.id}
+            type="button"
+            onClick={() => setAnalyticsView(view.id)}
+            className={cn(
+              "rounded-xl border px-3 py-2.5 text-[11px] font-black uppercase tracking-[0.18em] transition-all",
+              analyticsView === view.id
+                ? "bg-lime-400/12 border-lime-400/25 text-lime-400"
+                : "bg-white/4 border-white/7 text-neutral-500 hover:bg-white/7 hover:text-neutral-300"
+            )}
+          >
+            {view.label}
+          </button>
+        ))}
+      </div>
+
+      {analyticsView === "heatmap" ? (
+        <MuscleRecoveryHeatmapCard
+          regions={muscleRecovery}
+          activeSide={heatmapSide}
+          onChangeSide={setHeatmapSide}
+          weightUnit={weightUnit}
+        />
+      ) : (
+        <>
 
       {/* Body Weight Tracker */}
       <div className="bg-neutral-900/50 border border-white/6 rounded-2xl p-4 shadow-lg">
@@ -671,12 +1093,17 @@ export default function ChartsView({
                       tickLine={false}
                     />
                     <YAxis
-                      dataKey="name"
+                      dataKey="exerciseId"
                       type="category"
                       width={82}
                       tick={{ fill: "#c4c4c4", fontSize: 10, fontWeight: 700 }}
                       axisLine={false}
                       tickLine={false}
+                      tickFormatter={(value) =>
+                        formatExerciseAxisLabel(
+                          exerciseStatsById.get(String(value)) ?? String(value)
+                        )
+                      }
                     />
                     <Tooltip
                       contentStyle={{
@@ -691,6 +1118,9 @@ export default function ChartsView({
                         `${Number(value).toLocaleString()} ${weightUnit}`,
                         "Volume",
                       ]}
+                      labelFormatter={(label: unknown) =>
+                        exerciseStatsById.get(String(label)) ?? String(label)
+                      }
                       cursor={{ fill: "rgba(163,230,53,0.04)" }}
                     />
                     <Bar
@@ -743,7 +1173,7 @@ export default function ChartsView({
               <div className="flex flex-col gap-2">
                 {estimatedMaxes.map((entry) => (
                   <div
-                    key={entry.name}
+                    key={entry.exerciseId}
                     className="flex items-center justify-between bg-white/4 border border-white/7 rounded-xl p-3.5 hover:bg-white/7 transition-colors"
                   >
                     <div className="flex-1 min-w-0">
@@ -781,7 +1211,7 @@ export default function ChartsView({
               </div>
 
               <p className="text-[10px] text-neutral-600 mt-3 text-center font-medium">
-                1RM = weight × (1 + reps ÷ 30) · most accurate for 1–10 rep sets
+                1RM = weight × (1 + reps ÷ 30) · reps are capped at 15 to avoid endurance-set inflation
               </p>
             </div>
           )}
@@ -810,10 +1240,14 @@ export default function ChartsView({
                   >
                     <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" />
                     <XAxis
-                      dataKey="date"
+                      dataKey="dateKey"
                       tick={{ fill: "#525252", fontSize: 9, fontWeight: 700 }}
                       axisLine={false}
                       tickLine={false}
+                      tickFormatter={(value) => {
+                        const entry = prHistory.series.find((point) => point.dateKey === value);
+                        return entry ? String(entry.displayDate) : formatSessionDateLabel(String(value));
+                      }}
                     />
                     <YAxis
                       tick={{ fill: "#525252", fontSize: 9 }}
@@ -839,15 +1273,18 @@ export default function ChartsView({
                       }}
                       formatter={(value: unknown, name: unknown) => [
                         `${value} ${weightUnit}`,
-                        String(name),
+                        prHistory.exercises.find((exercise) => exercise.key === name)?.label ?? String(name),
                       ]}
+                      labelFormatter={(label: unknown) =>
+                        formatSessionTooltipLabel(String(label))
+                      }
                       cursor={{ stroke: "rgba(255,255,255,0.06)" }}
                     />
-                    {prHistory.exercises.map((exerciseName, index) => (
+                    {prHistory.exercises.map((exercise, index) => (
                       <Line
-                        key={exerciseName}
+                        key={exercise.key}
                         type="monotone"
-                        dataKey={exerciseName}
+                        dataKey={exercise.key}
                         stroke={LINE_COLORS[index % LINE_COLORS.length]}
                         strokeWidth={2}
                         dot={{
@@ -864,18 +1301,144 @@ export default function ChartsView({
               </div>
 
               <div className="flex flex-wrap gap-2 mt-3">
-                {prHistory.exercises.map((exerciseName, index) => (
-                  <div key={exerciseName} className="flex items-center gap-1.5">
+                {prHistory.exercises.map((exercise, index) => (
+                  <div key={exercise.key} className="flex items-center gap-1.5">
                     <span
                       className="w-3 h-0.5 rounded-full shrink-0"
                       style={{ backgroundColor: LINE_COLORS[index % LINE_COLORS.length] }}
                     />
                     <span className="text-[9px] font-bold text-neutral-500 uppercase tracking-wider">
-                      {exerciseName}
+                      {exercise.label}
                     </span>
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {activeDay.exercises.some((exercise) => exercise.type !== "other") && (
+            <div className="bg-neutral-900/50 border border-white/6 rounded-2xl p-4 shadow-lg">
+              <div className="flex items-center gap-2 mb-1">
+                <Award size={15} className="text-sky-400" />
+                <h3 className="text-[12px] font-black text-white uppercase tracking-widest">
+                  Actual Rep Max
+                </h3>
+                <div className="ml-auto flex gap-1">
+                  {([8, 10] as const).map((target) => (
+                    <button
+                      key={target}
+                      type="button"
+                      onClick={() => setActualRmTarget(target)}
+                      className={cn(
+                        "px-2 py-1 rounded-md border text-[9px] font-black uppercase tracking-widest transition-all",
+                        actualRmTarget === target
+                          ? "bg-sky-400/12 border-sky-400/25 text-sky-400"
+                          : "bg-white/4 border-white/8 text-neutral-500 hover:bg-white/7 hover:text-neutral-300"
+                      )}
+                    >
+                      {target}RM
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <p className="text-[10px] text-neutral-500 font-medium mb-4 uppercase tracking-wider">
+                Heaviest logged set with exactly {actualRmTarget} reps
+              </p>
+
+              {actualRepMaxHistory ? (
+                <>
+                  <div className="h-44">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart
+                        data={actualRepMaxHistory.series}
+                        margin={{ top: 4, right: 4, left: 0, bottom: 0 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" />
+                        <XAxis
+                          dataKey="dateKey"
+                          tick={{ fill: "#525252", fontSize: 9, fontWeight: 700 }}
+                          axisLine={false}
+                          tickLine={false}
+                          tickFormatter={(value) => {
+                            const entry = actualRepMaxHistory.series.find(
+                              (point) => point.dateKey === value
+                            );
+                            return entry
+                              ? String(entry.displayDate)
+                              : formatSessionDateLabel(String(value));
+                          }}
+                        />
+                        <YAxis
+                          tick={{ fill: "#525252", fontSize: 9 }}
+                          axisLine={false}
+                          tickLine={false}
+                          width={32}
+                          tickFormatter={(value) => `${value}`}
+                        />
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: "#111",
+                            border: "1px solid #2a2a2a",
+                            borderRadius: 10,
+                            fontSize: 11,
+                            fontFamily: "DM Mono, monospace",
+                          }}
+                          labelStyle={{
+                            color: "#38bdf8",
+                            fontWeight: 800,
+                            textTransform: "uppercase" as const,
+                            fontSize: 9,
+                            letterSpacing: "0.1em",
+                          }}
+                          formatter={(value: unknown, name: unknown) => [
+                            `${value} ${weightUnit}`,
+                            actualRepMaxHistory.exercises.find((exercise) => exercise.key === name)?.label ??
+                              String(name),
+                          ]}
+                          labelFormatter={(label: unknown) =>
+                            formatSessionTooltipLabel(String(label))
+                          }
+                          cursor={{ stroke: "rgba(255,255,255,0.06)" }}
+                        />
+                        {actualRepMaxHistory.exercises.map((exercise, index) => (
+                          <Line
+                            key={exercise.key}
+                            type="monotone"
+                            dataKey={exercise.key}
+                            stroke={LINE_COLORS[index % LINE_COLORS.length]}
+                            strokeWidth={2}
+                            dot={{
+                              r: 3,
+                              fill: LINE_COLORS[index % LINE_COLORS.length],
+                              strokeWidth: 0,
+                            }}
+                            activeDot={{ r: 5, strokeWidth: 0 }}
+                            connectNulls
+                          />
+                        ))}
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {actualRepMaxHistory.exercises.map((exercise, index) => (
+                      <div key={exercise.key} className="flex items-center gap-1.5">
+                        <span
+                          className="w-3 h-0.5 rounded-full shrink-0"
+                          style={{ backgroundColor: LINE_COLORS[index % LINE_COLORS.length] }}
+                        />
+                        <span className="text-[9px] font-bold text-neutral-500 uppercase tracking-wider">
+                          {exercise.label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <EmptyState
+                  message={`Log exact ${actualRmTarget}-rep top sets across multiple sessions to see this line.`}
+                />
+              )}
             </div>
           )}
         </>
@@ -1071,6 +1634,8 @@ export default function ChartsView({
           </p>
         </div>
       )}
+        </>
+      )}
     </div>
   );
 }
@@ -1096,5 +1661,227 @@ function EmptyState({ message }: { message: string }) {
     <div className="py-7 text-center">
       <p className="text-[11px] text-neutral-600 font-medium">{message}</p>
     </div>
+  );
+}
+
+function MuscleRecoveryHeatmapCard({
+  regions,
+  activeSide,
+  onChangeSide,
+  weightUnit,
+}: {
+  regions: Array<{
+    id: MuscleRegionId;
+    label: string;
+    volume: number;
+    score: number;
+    intensity: number;
+    status: MuscleRecoveryStatus;
+    lastHitDays: number | null;
+  }>;
+  activeSide: HeatmapSide;
+  onChangeSide: (side: HeatmapSide) => void;
+  weightUnit: "kg" | "lbs";
+}) {
+  const regionsById = new Map(regions.map((region) => [region.id, region]));
+  const sideOrder: Record<HeatmapSide, MuscleRegionId[]> = {
+    front: ["chest", "frontShoulders", "biceps", "abs", "quads", "calves"],
+    back: ["rearShoulders", "triceps", "upperBack", "lats", "lowerBack", "glutes", "hamstrings", "calves"],
+  };
+  const visibleRegions = sideOrder[activeSide]
+    .map((regionId) => regionsById.get(regionId))
+    .filter(Boolean) as Array<(typeof regions)[number]>;
+  const hasTrackedLoad = regions.some((region) => region.volume > 0);
+
+  return (
+    <div className="bg-neutral-900/50 border border-white/6 rounded-2xl p-4 shadow-lg">
+      <div className="flex items-start justify-between gap-3 mb-4">
+        <div>
+          <h3 className="text-[12px] font-black text-white uppercase tracking-widest">
+            Muscle Recovery Heatmap
+          </h3>
+          <p className="text-[10px] text-neutral-500 font-medium mt-1 uppercase tracking-wider">
+            Last 7 days of weighted workload in {weightUnit}
+          </p>
+        </div>
+        <div className="flex gap-1">
+          {(["front", "back"] as const).map((side) => (
+            <button
+              key={side}
+              type="button"
+              onClick={() => onChangeSide(side)}
+              className={cn(
+                "px-2.5 py-1.5 rounded-lg border text-[9px] font-black uppercase tracking-[0.18em] transition-all",
+                activeSide === side
+                  ? "bg-lime-400/12 border-lime-400/25 text-lime-400"
+                  : "bg-white/4 border-white/8 text-neutral-500 hover:bg-white/7 hover:text-neutral-300"
+              )}
+            >
+              {side}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid gap-4">
+        <div className="rounded-2xl border border-white/7 bg-[radial-gradient(circle_at_top,rgba(163,230,53,0.08),transparent_55%),linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))] p-4">
+          <MuscleHeatmapFigure activeSide={activeSide} regionsById={regionsById} />
+        </div>
+
+        <div className="grid gap-2">
+          {visibleRegions.map((region) => {
+            const style = MUSCLE_STATUS_STYLES[region.status];
+            return (
+              <div
+                key={region.id}
+                className="rounded-xl border border-white/7 bg-white/3 px-3.5 py-3"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[12px] font-bold text-white">{region.label}</p>
+                  <span
+                    className={cn(
+                      "px-2 py-0.5 rounded-full border text-[9px] font-black uppercase tracking-[0.16em]",
+                      style.chip
+                    )}
+                  >
+                    {region.status}
+                  </span>
+                </div>
+                <div className="h-1.5 rounded-full bg-white/6 overflow-hidden mt-2.5">
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${Math.max(region.intensity * 100, region.volume > 0 ? 10 : 0)}%`,
+                      backgroundColor: style.stroke,
+                    }}
+                  />
+                </div>
+                <p className="text-[10px] text-neutral-500 font-medium mt-2 leading-relaxed">
+                  7d load: {Math.round(region.score).toLocaleString()} · {formatLastHitLabel(region.lastHitDays)}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="flex flex-wrap gap-2 mt-4">
+        {(["fatigued", "recovering", "ready", "undertrained"] as const).map((status) => (
+          <div
+            key={status}
+            className={cn(
+              "px-2.5 py-1 rounded-full border text-[9px] font-black uppercase tracking-[0.16em]",
+              MUSCLE_STATUS_STYLES[status].chip
+            )}
+          >
+            {status}
+          </div>
+        ))}
+      </div>
+
+      <p className="text-[10px] text-neutral-500 font-medium leading-relaxed mt-4">
+        {hasTrackedLoad
+          ? "Higher recent load trends hotter. As the week moves on, heavily trained regions cool into recovering and ready states."
+          : "Log a few weighted sessions and this map will light up automatically."}
+      </p>
+    </div>
+  );
+}
+
+function MuscleHeatmapFigure({
+  activeSide,
+  regionsById,
+}: {
+  activeSide: HeatmapSide;
+  regionsById: Map<
+    MuscleRegionId,
+    {
+      id: MuscleRegionId;
+      label: string;
+      volume: number;
+      score: number;
+      intensity: number;
+      status: MuscleRecoveryStatus;
+      lastHitDays: number | null;
+    }
+  >;
+}) {
+  const getPaint = (regionId: MuscleRegionId) => {
+    const region = regionsById.get(regionId);
+    const style = MUSCLE_STATUS_STYLES[region?.status ?? "undertrained"];
+
+    return {
+      fill: style.fill,
+      stroke: style.stroke,
+      fillOpacity: region ? 0.3 + region.intensity * 0.7 : 0.22,
+    };
+  };
+
+  return (
+    <svg viewBox="0 0 200 360" className="w-full h-auto" role="img" aria-label={`${activeSide} body heatmap`}>
+      <circle cx="100" cy="34" r="20" fill="#101214" stroke="#2a2a2a" />
+      <rect x="86" y="52" width="28" height="18" rx="10" fill="#101214" stroke="#2a2a2a" />
+      <path
+        d="M72 76 Q100 62 128 76 L122 170 Q120 188 128 232 L136 324 H120 L108 240 H92 L80 324 H64 L72 232 Q80 188 78 170 Z"
+        fill="#101214"
+        stroke="#2a2a2a"
+      />
+      <rect x="48" y="86" width="18" height="110" rx="9" fill="#101214" stroke="#2a2a2a" />
+      <rect x="134" y="86" width="18" height="110" rx="9" fill="#101214" stroke="#2a2a2a" />
+      <rect x="82" y="228" width="18" height="110" rx="9" fill="#101214" stroke="#2a2a2a" />
+      <rect x="100" y="228" width="18" height="110" rx="9" fill="#101214" stroke="#2a2a2a" />
+
+      {activeSide === "front" ? (
+        <>
+          <ellipse cx="74" cy="88" rx="18" ry="17" {...getPaint("frontShoulders")} />
+          <ellipse cx="126" cy="88" rx="18" ry="17" {...getPaint("frontShoulders")} />
+
+          <path d="M78 98 Q90 86 98 98 L98 126 Q86 132 78 120 Z" {...getPaint("chest")} />
+          <path d="M122 98 Q110 86 102 98 L102 126 Q114 132 122 120 Z" {...getPaint("chest")} />
+
+          <rect x="49" y="92" width="16" height="56" rx="8" {...getPaint("biceps")} />
+          <rect x="135" y="92" width="16" height="56" rx="8" {...getPaint("biceps")} />
+
+          <rect x="88" y="136" width="24" height="70" rx="12" {...getPaint("abs")} />
+
+          <rect x="82" y="226" width="17" height="78" rx="8.5" {...getPaint("quads")} />
+          <rect x="101" y="226" width="17" height="78" rx="8.5" {...getPaint("quads")} />
+
+          <rect x="84" y="304" width="13" height="42" rx="6.5" {...getPaint("calves")} />
+          <rect x="103" y="304" width="13" height="42" rx="6.5" {...getPaint("calves")} />
+        </>
+      ) : (
+        <>
+          <ellipse cx="74" cy="88" rx="18" ry="17" {...getPaint("rearShoulders")} />
+          <ellipse cx="126" cy="88" rx="18" ry="17" {...getPaint("rearShoulders")} />
+
+          <rect x="49" y="88" width="16" height="54" rx="8" {...getPaint("triceps")} />
+          <rect x="135" y="88" width="16" height="54" rx="8" {...getPaint("triceps")} />
+
+          <path d="M80 96 Q100 82 120 96 L114 138 Q100 144 86 138 Z" {...getPaint("upperBack")} />
+          <path d="M74 120 Q86 112 88 154 L78 186 Q64 178 66 150 Z" {...getPaint("lats")} />
+          <path d="M126 120 Q114 112 112 154 L122 186 Q136 178 134 150 Z" {...getPaint("lats")} />
+          <rect x="88" y="154" width="24" height="48" rx="12" {...getPaint("lowerBack")} />
+
+          <ellipse cx="90" cy="224" rx="12" ry="16" {...getPaint("glutes")} />
+          <ellipse cx="110" cy="224" rx="12" ry="16" {...getPaint("glutes")} />
+
+          <rect x="82" y="238" width="17" height="82" rx="8.5" {...getPaint("hamstrings")} />
+          <rect x="101" y="238" width="17" height="82" rx="8.5" {...getPaint("hamstrings")} />
+
+          <rect x="84" y="320" width="13" height="30" rx="6.5" {...getPaint("calves")} />
+          <rect x="103" y="320" width="13" height="30" rx="6.5" {...getPaint("calves")} />
+        </>
+      )}
+
+      <text
+        x="100"
+        y="354"
+        textAnchor="middle"
+        className="fill-neutral-500 text-[10px] font-bold uppercase tracking-[0.22em]"
+      >
+        {activeSide} view
+      </text>
+    </svg>
   );
 }

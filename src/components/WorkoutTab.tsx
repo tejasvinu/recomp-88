@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from "react";
-import type { DayRoutine, WorkoutProgress } from "../types";
+import { useMemo, useState } from "react";
+import type { DayRoutine, ExerciseLinkType, WorkoutProgress } from "../types";
 import { cn } from "../utils";
 import { RotateCcw, Timer } from "lucide-react";
 import ExerciseCard from "./ExerciseCard";
@@ -51,6 +51,45 @@ export default function WorkoutTab({
     onStartStretching,
 }: WorkoutTabProps) {
     const [expandedNoteId, setExpandedNoteId] = useState<string | null>(null);
+    const exerciseSegments = useMemo(() => {
+        const segments: Array<{
+            exercises: DayRoutine["exercises"];
+            linkType?: ExerciseLinkType;
+            startIndex: number;
+        }> = [];
+
+        let index = 0;
+        while (index < activeDay.exercises.length) {
+            const exercise = activeDay.exercises[index];
+            if (!exercise.linkToNext) {
+                segments.push({
+                    exercises: [exercise],
+                    startIndex: index,
+                });
+                index += 1;
+                continue;
+            }
+
+            const linkType = exercise.linkToNext;
+            let endIndex = index + 1;
+
+            while (
+                endIndex < activeDay.exercises.length &&
+                activeDay.exercises[endIndex - 1]?.linkToNext === linkType
+            ) {
+                endIndex += 1;
+            }
+
+            segments.push({
+                exercises: activeDay.exercises.slice(index, endIndex),
+                linkType,
+                startIndex: index,
+            });
+            index = endIndex;
+        }
+
+        return segments;
+    }, [activeDay.exercises]);
 
     const { handleTouchStart, handleTouchEnd } = useSwipeNavigation({
         enabled: true,
@@ -74,30 +113,115 @@ export default function WorkoutTab({
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
         >
-            {activeDay.exercises.map((exercise, exIdx) => (
-                <ExerciseCard
-                    key={exercise.id}
-                    exercise={exercise}
-                    exIdx={exIdx}
-                    dayId={activeDay.id}
-                    exerciseProgress={progress[activeDay.id]?.[exercise.id]}
-                    exerciseNote={exerciseNotes[exercise.id] || ""}
-                    isNoteOpen={expandedNoteId === exercise.id}
-                    lastSessionVals={lastSessionValues[activeDay.id]?.[exercise.id]}
-                    prBestWeight={allTimePRs[exercise.id] ?? 0}
-                    weightUnit={weightUnit}
-                    onToggleNote={() =>
-                        setExpandedNoteId(expandedNoteId === exercise.id ? null : exercise.id)
-                    }
-                    onNoteChange={onNoteChange}
-                    onToggleSet={onToggleSet}
-                    onUpdateSetData={onUpdateSetData}
-                    onAdjustWeight={onAdjustWeight}
-                    onBwFill={onBwFill}
-                    onLoadLastSession={onLoadLastSession}
-                    onOpenExerciseInfo={onOpenExerciseInfo}
-                />
-            ))}
+            {exerciseSegments.map((segment) => {
+                if (!segment.linkType || segment.exercises.length === 1) {
+                    const exercise = segment.exercises[0];
+                    return (
+                        <ExerciseCard
+                            key={exercise.id}
+                            exercise={exercise}
+                            exIdx={segment.startIndex}
+                            dayId={activeDay.id}
+                            exerciseProgress={progress[activeDay.id]?.[exercise.id]}
+                            exerciseNote={exerciseNotes[exercise.id] || ""}
+                            isNoteOpen={expandedNoteId === exercise.id}
+                            lastSessionVals={lastSessionValues[activeDay.id]?.[exercise.id]}
+                            prBestWeight={allTimePRs[exercise.id] ?? 0}
+                            weightUnit={weightUnit}
+                            onToggleNote={() =>
+                                setExpandedNoteId(expandedNoteId === exercise.id ? null : exercise.id)
+                            }
+                            onNoteChange={onNoteChange}
+                            onToggleSet={onToggleSet}
+                            onUpdateSetData={onUpdateSetData}
+                            onAdjustWeight={onAdjustWeight}
+                            onBwFill={onBwFill}
+                            onLoadLastSession={onLoadLastSession}
+                            onOpenExerciseInfo={onOpenExerciseInfo}
+                        />
+                    );
+                }
+
+                return (
+                    <div
+                        key={`${segment.exercises[0]?.id}-${segment.linkType}`}
+                        className={cn(
+                            "rounded-[28px] border p-3 shadow-lg",
+                            segment.linkType === "superset"
+                                ? "bg-lime-400/5 border-lime-400/20"
+                                : "bg-sky-400/5 border-sky-400/20"
+                        )}
+                    >
+                        <div className="flex flex-wrap items-center justify-between gap-2 px-1 pb-3">
+                            <div className="flex items-center gap-2">
+                                <span
+                                    className={cn(
+                                        "px-2.5 py-1 rounded-full border text-[9px] font-black uppercase tracking-[0.18em]",
+                                        segment.linkType === "superset"
+                                            ? "bg-lime-400/12 border-lime-400/25 text-lime-400"
+                                            : "bg-sky-400/12 border-sky-400/25 text-sky-400"
+                                    )}
+                                >
+                                    {segment.linkType}
+                                </span>
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-500">
+                                    {segment.exercises.length} linked exercises
+                                </span>
+                            </div>
+                            <p className="text-[10px] text-neutral-500 font-medium">
+                                {segment.linkType === "superset"
+                                    ? "Alternate between these blocks before moving on."
+                                    : "Run these in sequence as one circuit flow."}
+                            </p>
+                        </div>
+
+                        <div className="flex flex-col gap-3">
+                            {segment.exercises.map((exercise, localIndex) => (
+                                <div key={exercise.id}>
+                                    <div className="flex items-center gap-2 px-1.5 pb-2">
+                                        <span
+                                            className={cn(
+                                                "w-6 h-6 rounded-lg border flex items-center justify-center text-[10px] font-black",
+                                                segment.linkType === "superset"
+                                                    ? "border-lime-400/25 bg-lime-400/10 text-lime-400"
+                                                    : "border-sky-400/25 bg-sky-400/10 text-sky-400"
+                                            )}
+                                        >
+                                            {localIndex + 1}
+                                        </span>
+                                        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-neutral-500">
+                                            {segment.linkType === "superset"
+                                                ? "Superset Slot"
+                                                : "Circuit Slot"}
+                                        </p>
+                                    </div>
+                                    <ExerciseCard
+                                        exercise={exercise}
+                                        exIdx={segment.startIndex + localIndex}
+                                        dayId={activeDay.id}
+                                        exerciseProgress={progress[activeDay.id]?.[exercise.id]}
+                                        exerciseNote={exerciseNotes[exercise.id] || ""}
+                                        isNoteOpen={expandedNoteId === exercise.id}
+                                        lastSessionVals={lastSessionValues[activeDay.id]?.[exercise.id]}
+                                        prBestWeight={allTimePRs[exercise.id] ?? 0}
+                                        weightUnit={weightUnit}
+                                        onToggleNote={() =>
+                                            setExpandedNoteId(expandedNoteId === exercise.id ? null : exercise.id)
+                                        }
+                                        onNoteChange={onNoteChange}
+                                        onToggleSet={onToggleSet}
+                                        onUpdateSetData={onUpdateSetData}
+                                        onAdjustWeight={onAdjustWeight}
+                                        onBwFill={onBwFill}
+                                        onLoadLastSession={onLoadLastSession}
+                                        onOpenExerciseInfo={onOpenExerciseInfo}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                );
+            })}
 
             {/* Finish Workout */}
             <div className="mt-6 mb-4 space-y-3">

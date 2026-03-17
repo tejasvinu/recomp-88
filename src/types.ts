@@ -36,6 +36,7 @@ export interface ExerciseWiki {
 }
 
 export type ExerciseType = "strength" | "hypertrophy" | "other";
+export type ExerciseLinkType = "superset" | "circuit";
 export type WeightUnit = "kg" | "lbs";
 
 export interface SetData {
@@ -52,6 +53,7 @@ export interface Exercise {
     type: ExerciseType; // determines rest timer (strength: 120s, hyper: 90s, other: no timer)
     sets: SetData[];
     details?: string; // e.g. "45 mins" for cardio
+    linkToNext?: ExerciseLinkType;
 }
 
 export interface Stretch {

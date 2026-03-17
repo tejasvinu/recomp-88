@@ -1,28 +1,36 @@
 import { useState, useEffect, useRef } from "react";
 
+const readStoredValue = <T,>(key: string, fallbackValue: T): T => {
+    if (typeof window === "undefined") {
+        return fallbackValue;
+    }
+
+    try {
+        const item = window.localStorage.getItem(key);
+        return item ? (JSON.parse(item) as T) : fallbackValue;
+    } catch (error) {
+        console.error(`Error reading localStorage key "${key}":`, error);
+        return fallbackValue;
+    }
+};
+
 export function useLocalStorage<T>(key: string, initialValue: T) {
     const initialValueRef = useRef(initialValue);
     const shouldSkipPersistRef = useRef(true);
-
-    const [storedValue, setStoredValue] = useState<T>(() => {
-        if (typeof window === "undefined") {
-            return initialValue;
-        }
-
-        try {
-            const item = window.localStorage.getItem(key);
-            return item ? JSON.parse(item) : initialValue;
-        } catch (error) {
-            console.error(`Error reading localStorage key "${key}":`, error);
-            return initialValue;
-        }
-    });
+    const [storedValue, setStoredValue] = useState<T>(initialValue);
 
     useEffect(() => {
         initialValueRef.current = initialValue;
     }, [initialValue]);
 
     useEffect(() => {
+        shouldSkipPersistRef.current = true;
+        setStoredValue(readStoredValue(key, initialValueRef.current));
+    }, [key]);
+
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+
         const handleStorageChange = (e: StorageEvent) => {
             if (e.key !== key) return;
 
@@ -43,6 +51,8 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
 
     // Persist to localStorage
     useEffect(() => {
+        if (typeof window === "undefined") return;
+
         if (shouldSkipPersistRef.current) {
             shouldSkipPersistRef.current = false;
             return;

@@ -111,6 +111,19 @@ const stableStringify = (value: unknown) =>
     );
   });
 
+const downloadFile = (parts: BlobPart[], type: string, filename: string) => {
+  const blob = new Blob(parts, { type });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
+};
+
+const escapeCsvValue = (value: string | number | null | undefined) =>
+  `"${String(value ?? "").replace(/"/g, "\"\"")}"`;
+
 export default function App() {
   const defaultWorkoutTemplate = useMemo(() => createDefaultWorkoutTemplate(), []);
   const [activeTab, setActiveTab] = useState<TabId>("workout");
@@ -912,18 +925,11 @@ export default function App() {
       schemaVersion: 1,
     };
 
-    const blob = new Blob(
-      [
-        JSON.stringify(snapshot, null, 2),
-      ],
-      { type: "application/json" }
+    downloadFile(
+      [JSON.stringify(snapshot, null, 2)],
+      "application/json",
+      `recomp88-backup-${new Date().toISOString().slice(0, 10)}.json`
     );
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `recomp88-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
     showToast("Backup exported");
   }, [
     bodyWeightEntries,
@@ -938,6 +944,39 @@ export default function App() {
     strengthRestDuration,
     weightUnit,
   ]);
+
+  const handleExportCsv = useCallback(() => {
+    const rows = sessions.flatMap((session) =>
+      session.exercises.flatMap((exercise) =>
+        exercise.sets.map((set, index) => [
+          session.date,
+          exercise.name,
+          index + 1,
+          set.loggedWeight,
+          set.loggedReps,
+        ])
+      )
+    );
+
+    if (rows.length === 0) {
+      showToast("No session history to export yet", "error");
+      return;
+    }
+
+    const csv = [
+      ["Date", "Exercise", "Set", "Weight", "Reps"],
+      ...rows,
+    ]
+      .map((row) => row.map((value) => escapeCsvValue(value)).join(","))
+      .join("\r\n");
+
+    downloadFile(
+      [csv],
+      "text/csv;charset=utf-8",
+      `recomp88-analytics-${new Date().toISOString().slice(0, 10)}.csv`
+    );
+    showToast("CSV exported");
+  }, [sessions, showToast]);
 
   const handleImport = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1258,6 +1297,7 @@ export default function App() {
                   workoutTemplate={safeWorkoutTemplate}
                   progress={progress}
                   sessions={sessions}
+                  customExercises={customExercises}
                   onOpenExercise={openExerciseInfo}
                   onDeleteSession={deleteSession}
                   bodyWeightEntries={bodyWeightEntries}
@@ -1391,6 +1431,7 @@ export default function App() {
           sessionCount={sessions.length}
           workoutDayCount={safeWorkoutTemplate.length}
           onExport={handleExport}
+          onExportCsv={handleExportCsv}
           onImport={handleImport}
           onOpenWorkoutEditor={() => {
             setShowSettings(false);
