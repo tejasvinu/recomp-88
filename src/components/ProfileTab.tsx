@@ -70,6 +70,7 @@ export default function ProfileTab({
   const [editName, setEditName] = useState(false);
   const [newName, setNewName] = useState("");
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const stats = getStats(sessions);
   const latestBW = bodyWeightEntries.length
@@ -79,15 +80,25 @@ export default function ProfileTab({
   const saveName = async () => {
     if (!newName.trim()) return;
     setSaving(true);
+    setSaveError(null);
     try {
-      await fetch("/api/user/profile", {
+      const res = await fetch("/api/user/profile", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newName.trim() }),
       });
+
+      const responseBody = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(
+          typeof responseBody?.error === "string" ? responseBody.error : "Could not update profile"
+        );
+      }
+
       // Trigger session refresh
       window.location.reload();
-    } catch {
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : "Could not update profile");
       setSaving(false);
     }
   };
@@ -121,24 +132,34 @@ export default function ProfileTab({
             {/* Info */}
             <div className="flex-1 min-w-0">
               {editName ? (
-                <div className="flex items-center gap-2 mb-1">
-                  <input
-                    value={newName}
-                    onChange={(e) => setNewName(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === "Enter") saveName(); if (e.key === "Escape") setEditName(false); }}
-                    autoFocus
-                    className="flex-1 bg-white/5 border border-lime-400/30 rounded-lg px-2 py-1 text-sm text-neutral-100 focus:outline-none"
-                  />
-                  <button onClick={saveName} disabled={saving} className="text-lime-400 hover:text-lime-300">
-                    {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
-                  </button>
-                </div>
+                <>
+                  <div className="flex items-center gap-2 mb-1">
+                    <input
+                      value={newName}
+                      onChange={(e) => setNewName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") saveName();
+                        if (e.key === "Escape") {
+                          setEditName(false);
+                          setSaveError(null);
+                        }
+                      }}
+                      autoFocus
+                      className="flex-1 bg-white/5 border border-lime-400/30 rounded-lg px-2 py-1 text-sm text-neutral-100 focus:outline-none"
+                    />
+                    <button onClick={saveName} disabled={saving} className="text-lime-400 hover:text-lime-300">
+                      {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+                    </button>
+                  </div>
+                  {saveError && <p className="text-[10px] text-red-400 mb-1">{saveError}</p>}
+                </>
               ) : (
                 <div className="flex items-center gap-1.5 mb-0.5">
                   <p className="font-bold text-white truncate">{session.user?.name}</p>
                   <button
                     onClick={() => {
                       setNewName(session.user?.name ?? "");
+                      setSaveError(null);
                       setEditName(true);
                     }}
                     className="text-neutral-600 hover:text-neutral-400 transition-colors"

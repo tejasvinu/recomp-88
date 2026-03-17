@@ -37,15 +37,32 @@ export function useRestTimer({
     const [restTimer, setRestTimer] = useState<number | null>(null);
     const audioCtxRef = useRef<AudioContext | null>(null);
 
-    const playSound = useCallback(() => {
+    const ensureAudioContext = useCallback(() => {
+        if (!soundEnabled) return null;
+
         try {
             if (!audioCtxRef.current) {
                 const AudioCtx =
                     window.AudioContext ||
-                    (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+                    (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+                if (!AudioCtx) return null;
                 audioCtxRef.current = new AudioCtx();
             }
-            const ctx = audioCtxRef.current;
+
+            if (audioCtxRef.current.state === "suspended") {
+                void audioCtxRef.current.resume().catch(() => {});
+            }
+
+            return audioCtxRef.current;
+        } catch {
+            return null;
+        }
+    }, [soundEnabled]);
+
+    const playSound = useCallback(() => {
+        try {
+            const ctx = ensureAudioContext();
+            if (!ctx || ctx.state !== "running") return;
             const beepAt = (delay: number, freq: number) => {
                 const osc = ctx.createOscillator();
                 const gain = ctx.createGain();
@@ -63,7 +80,7 @@ export function useRestTimer({
         } catch {
             // AudioContext not available — silent fail
         }
-    }, []);
+    }, [ensureAudioContext]);
 
     // Write to localStorage
     useEffect(() => {
@@ -110,6 +127,7 @@ export function useRestTimer({
 
     const startTimer = useCallback(
         (type: "strength" | "hypertrophy") => {
+            ensureAudioContext();
             const duration = type === "strength" ? strengthDuration : hypertrophyDuration;
             setState({
                 endTime: Date.now() + duration * 1000,
@@ -118,7 +136,7 @@ export function useRestTimer({
                 pausedRemaining: null
             });
         },
-        [strengthDuration, hypertrophyDuration]
+        [ensureAudioContext, strengthDuration, hypertrophyDuration]
     );
 
     const dismissTimer = useCallback(() => {

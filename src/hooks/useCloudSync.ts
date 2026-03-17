@@ -22,6 +22,13 @@ export function useCloudSync() {
     lastSyncedAtRef.current = lastSyncedAt;
   }, [lastSyncedAt]);
 
+  const clearScheduledPush = useCallback(() => {
+    if (debounceTimer.current) {
+      clearTimeout(debounceTimer.current);
+      debounceTimer.current = null;
+    }
+  }, []);
+
   const fetchCloudData = useCallback(async (): Promise<CloudSyncSnapshot | null> => {
     if (!isLoggedIn) return null;
     if (typeof navigator !== "undefined" && !navigator.onLine) {
@@ -38,7 +45,9 @@ export function useCloudSync() {
 
       const json = await res.json();
       if (json.data?.lastSyncedAt) {
-        setLastSyncedAt(new Date(json.data.lastSyncedAt));
+        const syncedAt = new Date(json.data.lastSyncedAt);
+        lastSyncedAtRef.current = syncedAt;
+        setLastSyncedAt(syncedAt);
       }
 
       setSyncStatus("synced");
@@ -53,12 +62,13 @@ export function useCloudSync() {
 
   const pushToCloud = useCallback(
     async (payload: SyncPayload) => {
-      if (!isLoggedIn) return;
+      if (!isLoggedIn) return false;
       if (typeof navigator !== "undefined" && !navigator.onLine) {
         setSyncStatus("offline");
-        return;
+        return false;
       }
 
+      clearScheduledPush();
       setSyncStatus("syncing");
       try {
         const payloadWithSyncBase: SyncPushPayload = {
@@ -72,25 +82,29 @@ export function useCloudSync() {
         });
         if (!res.ok) throw new Error("Sync failed");
         const { lastSyncedAt: syncedAt } = await res.json();
-        setLastSyncedAt(new Date(syncedAt));
+        const syncedAtDate = new Date(syncedAt);
+        lastSyncedAtRef.current = syncedAtDate;
+        setLastSyncedAt(syncedAtDate);
         setSyncStatus("synced");
+        return true;
       } catch {
         setSyncStatus(
           typeof navigator !== "undefined" && !navigator.onLine ? "offline" : "error"
         );
+        return false;
       }
     },
-    [isLoggedIn]
+    [clearScheduledPush, isLoggedIn]
   );
 
   // Debounced push — call this whenever local data changes
   const schedulePush = useCallback(
     (payload: SyncPayload) => {
       if (!isLoggedIn) return;
-      if (debounceTimer.current) clearTimeout(debounceTimer.current);
+      clearScheduledPush();
       debounceTimer.current = setTimeout(() => pushToCloud(payload), 3000);
     },
-    [isLoggedIn, pushToCloud]
+    [clearScheduledPush, isLoggedIn, pushToCloud]
   );
 
   useEffect(() => {
@@ -119,11 +133,9 @@ export function useCloudSync() {
 
   useEffect(() => {
     return () => {
-      if (debounceTimer.current) {
-        clearTimeout(debounceTimer.current);
-      }
+      clearScheduledPush();
     };
-  }, []);
+  }, [clearScheduledPush]);
 
   return { isLoggedIn, fetchCloudData, pushToCloud, schedulePush, syncStatus, lastSyncedAt };
 }

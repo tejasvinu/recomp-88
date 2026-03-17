@@ -37,17 +37,33 @@ export default function GuidedStretchingSession({ program, onClose, soundEnabled
     const audioCtxRef = useRef<AudioContext | null>(null);
     const wakeLockRef = useRef<WakeLockSentinelLike | null>(null);
 
-    const playSound = useCallback((type: 'tick' | 'complete' | 'break') => {
-        if (!soundEnabled) return;
+    const ensureAudioContext = useCallback(() => {
+        if (!soundEnabled) return null;
+
         try {
             if (!audioCtxRef.current) {
                 const AudioCtx =
                     window.AudioContext ||
                     (window as WindowWithWebkitAudioContext).webkitAudioContext;
-                if (!AudioCtx) return;
+                if (!AudioCtx) return null;
                 audioCtxRef.current = new AudioCtx();
             }
-            const ctx = audioCtxRef.current;
+
+            if (audioCtxRef.current.state === 'suspended') {
+                void audioCtxRef.current.resume().catch(() => {});
+            }
+
+            return audioCtxRef.current;
+        } catch {
+            return null;
+        }
+    }, [soundEnabled]);
+
+    const playSound = useCallback((type: 'tick' | 'complete' | 'break') => {
+        if (!soundEnabled) return;
+        try {
+            const ctx = ensureAudioContext();
+            if (!ctx || ctx.state !== 'running') return;
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
             osc.connect(gain);
@@ -75,51 +91,63 @@ export default function GuidedStretchingSession({ program, onClose, soundEnabled
         } catch (e) {
             console.error("Audio error", e);
         }
-    }, [soundEnabled]);
+    }, [ensureAudioContext, soundEnabled]);
+
+    const advanceSession = useCallback(() => {
+        if (timeLeft > 1) {
+            if (timeLeft <= 4) playSound('tick');
+            setTimeLeft((prev) => prev - 1);
+            return;
+        }
+
+        if (isBreak) {
+            setIsBreak(false);
+            setSideIndex(0);
+            playSound('complete');
+            setTimeLeft(program.stretches[currentIndex].duration);
+            return;
+        }
+
+        const currentStretch = program.stretches[currentIndex];
+        const sides = currentStretch.sides ?? 1;
+
+        if (sides > 1 && sideIndex < sides - 1) {
+            setSideIndex((prevSide) => prevSide + 1);
+            playSound('break');
+            setTimeLeft(currentStretch.duration);
+            return;
+        }
+
+        if (currentIndex < program.stretches.length - 1) {
+            setIsBreak(true);
+            setCurrentIndex((prevIndex) => prevIndex + 1);
+            setSideIndex(0);
+            playSound('break');
+            setTimeLeft(BREAK_DURATION);
+            return;
+        }
+
+        setIsActive(false);
+        setIsComplete(true);
+        playSound('complete');
+        setTimeLeft(0);
+    }, [BREAK_DURATION, currentIndex, isBreak, playSound, program.stretches, sideIndex, timeLeft]);
 
     useEffect(() => {
-        if (!isActive) return;
+        if (!isActive || isComplete) return;
 
-        const interval = setInterval(() => {
-            setTimeLeft((prev) => {
-                if (prev > 1) {
-                    if (prev <= 4) playSound('tick');
-                    return prev - 1;
-                }
+        const timer = setTimeout(advanceSession, 1000);
 
-                if (isBreak) {
-                    setIsBreak(false);
-                    setSideIndex(0);
-                    playSound('complete');
-                    return program.stretches[currentIndex].duration;
-                }
+        return () => clearTimeout(timer);
+    }, [advanceSession, isActive, isComplete]);
 
-                const currentStretch = program.stretches[currentIndex];
-                const sides = currentStretch.sides ?? 1;
+    const togglePlayback = useCallback(() => {
+        if (!isActive) {
+            ensureAudioContext();
+        }
 
-                if (sides > 1 && sideIndex < sides - 1) {
-                    setSideIndex((prevSide) => prevSide + 1);
-                    playSound('break');
-                    return currentStretch.duration;
-                }
-
-                if (currentIndex < program.stretches.length - 1) {
-                    setIsBreak(true);
-                    setCurrentIndex((prevIndex) => prevIndex + 1);
-                    setSideIndex(0);
-                    playSound('break');
-                    return BREAK_DURATION;
-                }
-
-                setIsActive(false);
-                setIsComplete(true);
-                playSound('complete');
-                return 0;
-            });
-        }, 1000);
-
-        return () => clearInterval(interval);
-    }, [BREAK_DURATION, currentIndex, isActive, isBreak, playSound, program.stretches, sideIndex]);
+        setIsActive((prev) => !prev);
+    }, [ensureAudioContext, isActive]);
 
     // Keep the screen awake while the timer is actively running (where supported).
     useEffect(() => {
@@ -292,7 +320,7 @@ export default function GuidedStretchingSession({ program, onClose, soundEnabled
                 </button>
 
                 <button 
-                    onClick={() => setIsActive(!isActive)}
+                    onClick={togglePlayback}
                     className={cn(
                         "w-20 h-20 flex items-center justify-center rounded-3xl transition-all active:scale-95 shadow-2xl",
                         isActive ? "bg-white text-neutral-950" : "bg-lime-400 text-neutral-950"

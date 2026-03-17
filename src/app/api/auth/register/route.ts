@@ -5,7 +5,10 @@ import User from "@/models/User";
 
 export async function POST(req: NextRequest) {
   try {
-    const { name, email, password } = await req.json();
+    const body = await req.json();
+    const name = typeof body?.name === "string" ? body.name.trim() : "";
+    const email = typeof body?.email === "string" ? body.email.trim().toLowerCase() : "";
+    const password = typeof body?.password === "string" ? body.password : null;
 
     if (!name || !email || !password)
       return NextResponse.json({ error: "All fields are required" }, { status: 400 });
@@ -15,14 +18,14 @@ export async function POST(req: NextRequest) {
 
     await connectDB();
 
-    const existing = await User.findOne({ email: email.toLowerCase() });
+    const existing = await User.findOne({ email });
     if (existing)
       return NextResponse.json({ error: "Email already registered" }, { status: 409 });
 
     const hashed = await bcrypt.hash(password, 12);
     const user = await User.create({
       name,
-      email: email.toLowerCase(),
+      email,
       password: hashed,
     });
 

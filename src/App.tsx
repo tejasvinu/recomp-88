@@ -98,6 +98,19 @@ const createWorkoutExerciseId = (dayId: string, exerciseName: string) => {
   return `${dayId}-${slugifyName(exerciseName) || "exercise"}-${suffix}`;
 };
 
+const stableStringify = (value: unknown) =>
+  JSON.stringify(value, (_key, currentValue) => {
+    if (Array.isArray(currentValue) || currentValue === null || typeof currentValue !== "object") {
+      return currentValue;
+    }
+
+    return Object.fromEntries(
+      Object.entries(currentValue as Record<string, unknown>).sort(([left], [right]) =>
+        left.localeCompare(right)
+      )
+    );
+  });
+
 export default function App() {
   const defaultWorkoutTemplate = useMemo(() => createDefaultWorkoutTemplate(), []);
   const [activeTab, setActiveTab] = useState<TabId>("workout");
@@ -134,6 +147,7 @@ export default function App() {
   // ─── Cloud sync ──────────────────────────────────────────────────────────
   const { isLoggedIn, fetchCloudData, schedulePush, pushToCloud, syncStatus, lastSyncedAt } = useCloudSync();
   const cloudBootstrapped = useRef(false);
+  const skipNextCloudPushRef = useRef(false);
   const [canPushCloud, setCanPushCloud] = useState(false);
 
   // ─── Hooks ─────────────────────────────────────────────────────────────────
@@ -158,8 +172,42 @@ export default function App() {
     () => normalizeWorkoutTemplate(workoutTemplate) ?? defaultWorkoutTemplate,
     [defaultWorkoutTemplate, workoutTemplate]
   );
+  const currentSettings = useMemo(
+    () => ({
+      strengthRestDuration,
+      hypertrophyRestDuration,
+      soundEnabled,
+      weightUnit,
+    }),
+    [hypertrophyRestDuration, soundEnabled, strengthRestDuration, weightUnit]
+  );
+  const currentSnapshot = useMemo<AppDataSnapshot>(
+    () => ({
+      workoutTemplate: safeWorkoutTemplate,
+      progress,
+      sessions,
+      bodyWeightEntries,
+      exerciseNotes,
+      settings: currentSettings,
+      customExercises,
+    }),
+    [
+      bodyWeightEntries,
+      currentSettings,
+      customExercises,
+      exerciseNotes,
+      progress,
+      safeWorkoutTemplate,
+      sessions,
+    ]
+  );
+  const currentSnapshotRef = useRef(currentSnapshot);
   const clampedActiveDayIndex = Math.min(activeDayIndex, Math.max(safeWorkoutTemplate.length - 1, 0));
   const activeDay = safeWorkoutTemplate[clampedActiveDayIndex];
+
+  useEffect(() => {
+    currentSnapshotRef.current = currentSnapshot;
+  }, [currentSnapshot]);
 
   useEffect(() => {
     const serializedCurrent = JSON.stringify(workoutTemplate);
@@ -203,100 +251,163 @@ export default function App() {
     [setExerciseNotes, setProgress, setWorkoutTemplate, showToast]
   );
 
+  const resolveSnapshotSettings = useCallback(
+    (
+      settings: Partial<AppDataSnapshot["settings"]>,
+      fallback: AppDataSnapshot["settings"]
+    ): AppDataSnapshot["settings"] => ({
+      strengthRestDuration:
+        typeof settings.strengthRestDuration === "number"
+          ? settings.strengthRestDuration
+          : fallback.strengthRestDuration,
+      hypertrophyRestDuration:
+        typeof settings.hypertrophyRestDuration === "number"
+          ? settings.hypertrophyRestDuration
+          : fallback.hypertrophyRestDuration,
+      soundEnabled:
+        typeof settings.soundEnabled === "boolean"
+          ? settings.soundEnabled
+          : fallback.soundEnabled,
+      weightUnit:
+        settings.weightUnit === "kg" || settings.weightUnit === "lbs"
+          ? settings.weightUnit
+          : fallback.weightUnit,
+    }),
+    []
+  );
+
+  const applyCloudSnapshot = useCallback(
+    (snapshot: AppDataSnapshot) => {
+      if (stableStringify(currentSnapshotRef.current) === stableStringify(snapshot)) {
+        return false;
+      }
+
+      skipNextCloudPushRef.current = true;
+      setWorkoutTemplate(snapshot.workoutTemplate);
+      setProgress(snapshot.progress);
+      setSessions(snapshot.sessions);
+      setBodyWeightEntries(snapshot.bodyWeightEntries);
+      setCustomExercises(snapshot.customExercises);
+      setExerciseNotes(snapshot.exerciseNotes);
+      setStrengthRestDuration(snapshot.settings.strengthRestDuration);
+      setHypertrophyRestDuration(snapshot.settings.hypertrophyRestDuration);
+      setSoundEnabled(snapshot.settings.soundEnabled);
+      setWeightUnit(snapshot.settings.weightUnit);
+
+      return true;
+    },
+    [
+      setBodyWeightEntries,
+      setCustomExercises,
+      setExerciseNotes,
+      setHypertrophyRestDuration,
+      setProgress,
+      setSessions,
+      setSoundEnabled,
+      setStrengthRestDuration,
+      setWeightUnit,
+      setWorkoutTemplate,
+    ]
+  );
+
   // ─── Shared pull and merge logic ──────────────────────────────────────────
   const pullAndMergeCloudData = useCallback(async (silent = true) => {
-    if (!isLoggedIn) return false;
-    
+    if (!isLoggedIn) return null;
+
+    const syncBase = lastSyncedAt;
+
     try {
       const data = await fetchCloudData();
-      if (!data) return false;
-      const preferCloudOnConflict = hasRemoteChangesSinceBase(lastSyncedAt, data.lastSyncedAt);
+      if (!data) return null;
 
+      const localSnapshot = currentSnapshotRef.current;
+      const preferCloudOnConflict = hasRemoteChangesSinceBase(syncBase, data.lastSyncedAt);
+      const remoteWorkoutTemplate = normalizeWorkoutTemplate(data.workoutTemplate);
       const nextWorkoutTemplate =
-        data.workoutTemplate && (preferCloudOnConflict || !lastSyncedAt)
-          ? data.workoutTemplate
-          : safeWorkoutTemplate;
+        remoteWorkoutTemplate && (preferCloudOnConflict || !syncBase)
+          ? remoteWorkoutTemplate
+          : localSnapshot.workoutTemplate;
 
-      setWorkoutTemplate(nextWorkoutTemplate);
-      setProgress((previousProgress) =>
-        pruneProgressForWorkoutTemplate(
+      const mergedSnapshot: AppDataSnapshot = {
+        workoutTemplate: nextWorkoutTemplate,
+        progress: pruneProgressForWorkoutTemplate(
           mergeWorkoutProgressWithPreference(
-            previousProgress,
+            localSnapshot.progress,
             data.progress ?? {},
             preferCloudOnConflict
           ),
           nextWorkoutTemplate
-        )
-      );
-      setSessions((previousSessions) =>
-        mergeSessionHistory(previousSessions, data.sessions ?? [], preferCloudOnConflict)
-      );
-      setBodyWeightEntries((previousEntries) =>
-        mergeBodyWeightEntries(
-          previousEntries,
+        ),
+        sessions: mergeSessionHistory(
+          localSnapshot.sessions,
+          data.sessions ?? [],
+          preferCloudOnConflict
+        ),
+        bodyWeightEntries: mergeBodyWeightEntries(
+          localSnapshot.bodyWeightEntries,
           data.bodyWeightEntries ?? [],
           preferCloudOnConflict
-        )
-      );
-      setCustomExercises((previousCustom) =>
-        mergeById(previousCustom, data.customExercises ?? [], preferCloudOnConflict)
-      );
-      setExerciseNotes((previousNotes) =>
-        pruneExerciseNotesForWorkoutTemplate(
-          mergeExerciseNotes(previousNotes, data.exerciseNotes ?? {}, preferCloudOnConflict),
+        ),
+        exerciseNotes: pruneExerciseNotesForWorkoutTemplate(
+          mergeExerciseNotes(
+            localSnapshot.exerciseNotes,
+            data.exerciseNotes ?? {},
+            preferCloudOnConflict
+          ),
           nextWorkoutTemplate
-        )
-      );
+        ),
+        settings: resolveSnapshotSettings(
+          mergeSettings(localSnapshot.settings, data.settings ?? {}, preferCloudOnConflict),
+          localSnapshot.settings
+        ),
+        customExercises: mergeById(
+          localSnapshot.customExercises,
+          data.customExercises ?? [],
+          preferCloudOnConflict
+        ),
+      };
 
-      const mergedSettings = mergeSettings(
-        {
-          strengthRestDuration,
-          hypertrophyRestDuration,
-          soundEnabled,
-          weightUnit,
-        },
-        data.settings ?? {},
-        preferCloudOnConflict
-      );
+      const cloudWorkoutTemplate = remoteWorkoutTemplate ?? localSnapshot.workoutTemplate;
+      const cloudSnapshot: AppDataSnapshot = {
+        workoutTemplate: cloudWorkoutTemplate,
+        progress: pruneProgressForWorkoutTemplate(data.progress ?? {}, cloudWorkoutTemplate),
+        sessions: data.sessions ?? [],
+        bodyWeightEntries: data.bodyWeightEntries ?? [],
+        exerciseNotes: pruneExerciseNotesForWorkoutTemplate(
+          data.exerciseNotes ?? {},
+          cloudWorkoutTemplate
+        ),
+        settings: resolveSnapshotSettings(data.settings ?? {}, localSnapshot.settings),
+        customExercises: data.customExercises ?? [],
+      };
 
-      if (typeof mergedSettings.strengthRestDuration === "number") {
-        setStrengthRestDuration(mergedSettings.strengthRestDuration);
-      }
-      if (typeof mergedSettings.hypertrophyRestDuration === "number") {
-        setHypertrophyRestDuration(mergedSettings.hypertrophyRestDuration);
-      }
-      if (typeof mergedSettings.soundEnabled === "boolean") {
-        setSoundEnabled(mergedSettings.soundEnabled);
-      }
-      if (mergedSettings.weightUnit === "kg" || mergedSettings.weightUnit === "lbs") {
-        setWeightUnit(mergedSettings.weightUnit);
+      applyCloudSnapshot(mergedSnapshot);
+
+      const needsUpload = stableStringify(mergedSnapshot) !== stableStringify(cloudSnapshot);
+      if (needsUpload) {
+        const pushed = await pushToCloud(mergedSnapshot);
+        if (!silent) {
+          showToast(pushed ? "Cloud sync complete" : "Cloud sync failed", pushed ? undefined : "error");
+        }
+      } else if (!silent) {
+        showToast("Cloud merge complete");
       }
 
-      if (!silent) showToast("Cloud merge complete");
-      return true;
+      return mergedSnapshot;
     } catch {
-      return false;
+      if (!silent) {
+        showToast("Cloud sync failed", "error");
+      }
+      return null;
     }
   }, [
+    applyCloudSnapshot,
     fetchCloudData,
     isLoggedIn,
     lastSyncedAt,
-    safeWorkoutTemplate,
-    soundEnabled,
-    setBodyWeightEntries,
-    setCustomExercises,
-    setExerciseNotes,
-    setHypertrophyRestDuration,
-    setProgress,
-    setSessions,
-    setSoundEnabled,
-    setStrengthRestDuration,
-    setWeightUnit,
-    strengthRestDuration,
-    setWorkoutTemplate,
+    pushToCloud,
+    resolveSnapshotSettings,
     showToast,
-    weightUnit,
-    hypertrophyRestDuration,
   ]);
 
   // ─── Bootstrap cloud data on login ────────────────────────────────────────
@@ -322,48 +433,25 @@ export default function App() {
       cancelled = true;
     };
   }, [
-    fetchCloudData,
     isLoggedIn,
-    safeWorkoutTemplate,
-    setBodyWeightEntries,
-    setExerciseNotes,
-    setHypertrophyRestDuration,
-    setProgress,
-    setSessions,
-    setSoundEnabled,
-    setStrengthRestDuration,
-    setWeightUnit,
-    setWorkoutTemplate,
-    showToast,
     pullAndMergeCloudData,
   ]);
 
   // ─── Auto-push on data change ─────────────────────────────────────────────
   useEffect(() => {
     if (!isLoggedIn || !canPushCloud) return;
-    schedulePush({
-      workoutTemplate: safeWorkoutTemplate,
-      progress,
-      sessions,
-      bodyWeightEntries,
-      exerciseNotes,
-      settings: { strengthRestDuration, hypertrophyRestDuration, soundEnabled, weightUnit },
-      customExercises,
-    });
+
+    if (skipNextCloudPushRef.current) {
+      skipNextCloudPushRef.current = false;
+      return;
+    }
+
+    schedulePush(currentSnapshot);
   }, [
-    bodyWeightEntries,
     canPushCloud,
-    customExercises,
-    exerciseNotes,
-    hypertrophyRestDuration,
+    currentSnapshot,
     isLoggedIn,
-    progress,
-    safeWorkoutTemplate,
     schedulePush,
-    sessions,
-    soundEnabled,
-    strengthRestDuration,
-    weightUnit,
   ]);
 
   // ─── Auto-pull on app focus ────────────────────────────────────────────────
@@ -388,35 +476,17 @@ export default function App() {
   }, [isLoggedIn, canPushCloud, pullAndMergeCloudData]);
 
   const handleManualSync = useCallback(async () => {
-    // To prevent overwriting unseen cloud data, pull and merge first
-    const success = await pullAndMergeCloudData(false);
-    if (success) {
+    const mergedSnapshot = await pullAndMergeCloudData(false);
+    if (mergedSnapshot) {
       return;
     }
 
     showToast("Could not fetch cloud data, pushing local state...");
-    pushToCloud({
-      workoutTemplate: safeWorkoutTemplate,
-      progress,
-      sessions,
-      bodyWeightEntries,
-      exerciseNotes,
-      settings: { strengthRestDuration, hypertrophyRestDuration, soundEnabled, weightUnit },
-      customExercises,
-    });
+    const pushed = await pushToCloud(currentSnapshotRef.current);
+    showToast(pushed ? "Cloud sync complete" : "Cloud sync failed", pushed ? undefined : "error");
   }, [
-    pullAndMergeCloudData,
     pushToCloud,
-    safeWorkoutTemplate,
-    progress,
-    sessions,
-    bodyWeightEntries,
-    exerciseNotes,
-    strengthRestDuration,
-    hypertrophyRestDuration,
-    soundEnabled,
-    weightUnit,
-    customExercises,
+    pullAndMergeCloudData,
     showToast,
   ]);
 
