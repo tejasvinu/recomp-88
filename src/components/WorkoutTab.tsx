@@ -26,6 +26,7 @@ interface WorkoutTabProps {
     onOpenExerciseInfo: (name: string) => void;
     onNoteChange: (exerciseId: string, note: string) => void;
     onShowFinishConfirm: () => void;
+    onClearCheckmarks: () => void;
     onStartStretching?: () => void;
 }
 
@@ -48,6 +49,7 @@ export default function WorkoutTab({
     onOpenExerciseInfo,
     onNoteChange,
     onShowFinishConfirm,
+    onClearCheckmarks,
     onStartStretching,
 }: WorkoutTabProps) {
     const [expandedNoteId, setExpandedNoteId] = useState<string | null>(null);
@@ -225,6 +227,13 @@ export default function WorkoutTab({
 
             {/* Finish Workout */}
             <div className="mt-6 mb-4 space-y-3">
+                <button
+                    onClick={onClearCheckmarks}
+                    className="w-full active:scale-[0.98] flex items-center justify-center gap-2.5 py-4 rounded-2xl font-bold text-[12px] tracking-[0.18em] uppercase transition-all border bg-white/4 hover:bg-white/7 border-white/9 text-neutral-400"
+                >
+                    <RotateCcw size={15} />
+                    Clear Progress
+                </button>
                 {activeDay.stretchingProgramId && (
                     <button
                         onClick={onStartStretching}

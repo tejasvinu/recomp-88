@@ -733,6 +733,25 @@ export default function App() {
     [activeDay, lastSessionValues, setProgress, showToast]
   );
 
+  // ─── Clear checkmarks ──────────────────────────────────────────────────────
+  const clearCheckmarks = useCallback(() => {
+    setProgress((prev) => {
+      const dayProgress = prev[activeDay.id];
+      if (!dayProgress) return prev;
+
+      const newDayProgress = { ...dayProgress };
+      Object.keys(newDayProgress).forEach((exId) => {
+        newDayProgress[exId] = { ...newDayProgress[exId] };
+        Object.keys(newDayProgress[exId]).forEach((setId) => {
+          newDayProgress[exId][setId] = { ...newDayProgress[exId][setId], completed: false };
+        });
+      });
+      return { ...prev, [activeDay.id]: newDayProgress };
+    });
+    
+    showToast("Checkmarks cleared");
+  }, [activeDay.id, setProgress, showToast]);
+
   // ─── Finish workout with undo ─────────────────────────────────────────────
   const finishWorkout = useCallback(() => {
     const previousProgress = structuredClone(progress);
@@ -1260,6 +1279,7 @@ export default function App() {
                 onOpenExerciseInfo={openExerciseInfo}
                 onNoteChange={handleNoteChange}
                 onShowFinishConfirm={() => setShowFinishConfirm(true)}
+                onClearCheckmarks={clearCheckmarks}
                 onStartStretching={handleStartStretching}
               />
             </div>
