@@ -82,9 +82,11 @@ export function useCloudSync() {
         });
         if (!res.ok) throw new Error("Sync failed");
         const { lastSyncedAt: syncedAt } = await res.json();
-        const syncedAtDate = new Date(syncedAt);
-        lastSyncedAtRef.current = syncedAtDate;
-        setLastSyncedAt(syncedAtDate);
+        if (syncedAt != null) {
+          const syncedAtDate = new Date(syncedAt);
+          lastSyncedAtRef.current = syncedAtDate;
+          setLastSyncedAt(syncedAtDate);
+        }
         setSyncStatus("synced");
         return true;
       } catch {
@@ -132,10 +134,29 @@ export function useCloudSync() {
   }, []);
 
   useEffect(() => {
+    if (isLoggedIn) return;
+
+    clearScheduledPush();
+    lastSyncedAtRef.current = null;
+    setLastSyncedAt(null);
+    setSyncStatus(
+      typeof navigator !== "undefined" && !navigator.onLine ? "offline" : "idle"
+    );
+  }, [clearScheduledPush, isLoggedIn]);
+
+  useEffect(() => {
     return () => {
       clearScheduledPush();
     };
   }, [clearScheduledPush]);
 
-  return { isLoggedIn, fetchCloudData, pushToCloud, schedulePush, syncStatus, lastSyncedAt };
+  return {
+    isLoggedIn,
+    fetchCloudData,
+    pushToCloud,
+    schedulePush,
+    cancelScheduledPush: clearScheduledPush,
+    syncStatus,
+    lastSyncedAt,
+  };
 }

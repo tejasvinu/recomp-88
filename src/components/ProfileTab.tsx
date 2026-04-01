@@ -2,10 +2,10 @@
 
 import { useSession, signIn, signOut } from "next-auth/react";
 import { useState } from "react";
-import { User, LogOut, LogIn, CloudUpload, CloudOff, Check, Loader2, Edit3, Scale, Trophy, CalendarDays, Activity, ChevronRight, Lock } from "lucide-react";
+import { User, LogOut, LogIn, CloudUpload, CloudOff, Check, Loader2, Edit3, Scale, Trophy, CalendarDays, Activity, ChevronRight, Lock, Info, X } from "lucide-react";
 import type { SessionHistory, BodyWeightEntry } from "../types";
 import type { SyncStatus } from "../hooks/useCloudSync";
-import { cn } from "../utils";
+import { cn, shiftLocalDateKey, toLocalDateKey } from "../utils";
 
 interface ProfileTabProps {
   sessions: SessionHistory;
@@ -13,6 +13,9 @@ interface ProfileTabProps {
   weightUnit: "kg" | "lbs";
   syncStatus: SyncStatus;
   lastSyncedAt: Date | null;
+  /** How overlapping fields were merged on last pull (null if none / first cloud). */
+  mergeSummary: string | null;
+  onDismissMergeSummary: () => void;
   onManualSync: () => void;
 }
 
@@ -26,18 +29,28 @@ function getStats(sessions: SessionHistory) {
   const hours = Math.floor(totalTime / 3600);
   const mins = Math.floor((totalTime % 3600) / 60);
 
-  // Streak calculation
-  const sortedDates = [...new Set(sessions.map((s) => s.date.slice(0, 10)))].sort().reverse();
+  // Streak calculation — also counts from yesterday if no workout today
+  const sortedDates = [
+    ...new Set(
+      sessions
+        .map((s) => toLocalDateKey(s.date))
+        .filter((dateKey): dateKey is string => Boolean(dateKey))
+    ),
+  ].sort().reverse();
   let streak = 0;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = toLocalDateKey();
+  // Start from today, and if no workout today, try from yesterday
   let checkDate = today;
+  if (sortedDates.length > 0 && sortedDates[0] !== today) {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    checkDate = toLocalDateKey(yesterday);
+  }
   for (const d of sortedDates) {
     if (d === checkDate) {
       streak++;
-      const prev = new Date(checkDate);
-      prev.setDate(prev.getDate() - 1);
-      checkDate = prev.toISOString().slice(0, 10);
-    } else {
+      checkDate = shiftLocalDateKey(checkDate, -1);
+    } else if (d < checkDate) {
       break;
     }
   }
@@ -64,9 +77,11 @@ export default function ProfileTab({
   weightUnit,
   syncStatus,
   lastSyncedAt,
+  mergeSummary,
+  onDismissMergeSummary,
   onManualSync,
 }: ProfileTabProps) {
-  const { data: session } = useSession();
+  const { data: session, update } = useSession();
   const [editName, setEditName] = useState(false);
   const [newName, setNewName] = useState("");
   const [saving, setSaving] = useState(false);
@@ -95,8 +110,10 @@ export default function ProfileTab({
         );
       }
 
-      // Trigger session refresh
-      window.location.reload();
+      // Refresh the session without destroying page state
+      await update({ name: newName.trim() });
+      setEditName(false);
+      setSaving(false);
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : "Could not update profile");
       setSaving(false);
@@ -234,6 +251,22 @@ export default function ProfileTab({
               Sync Now
             </button>
           </div>
+          {mergeSummary && (
+            <div className="px-4 pb-3 pt-0 border-t border-white/4">
+              <div className="flex gap-2 rounded-xl bg-sky-400/8 border border-sky-400/15 px-3 py-2.5">
+                <Info size={14} className="text-sky-400 shrink-0 mt-0.5" aria-hidden />
+                <p className="text-[11px] text-sky-200/90 leading-snug flex-1">{mergeSummary}</p>
+                <button
+                  type="button"
+                  onClick={onDismissMergeSummary}
+                  className="shrink-0 text-sky-500/80 hover:text-sky-300 p-0.5 rounded"
+                  aria-label="Dismiss merge note"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

@@ -31,7 +31,7 @@ import type {
   WorkoutSession,
   WorkoutProgress,
 } from "./types";
-import { cn, formatTime, getClosestBodyWeight, resolveWeight } from "./utils";
+import { cn, formatTime, getClosestBodyWeight, resolveWeight, toLocalDateKey } from "./utils";
 import {
   findWikiEntry,
   isFreeWeightFriendly,
@@ -122,7 +122,7 @@ const downloadFile = (parts: BlobPart[], type: string, filename: string) => {
 };
 
 const escapeCsvValue = (value: string | number | null | undefined) =>
-  `"${String(value ?? "").replace(/"/g, "\"\"")}"`;
+  `"${String(value ?? "").replace(/"/g, "\"\"").replace(/[\r\n]+/g, " ")}"`;
 
 export default function App() {
   const defaultWorkoutTemplate = useMemo(() => createDefaultWorkoutTemplate(), []);
@@ -158,10 +158,20 @@ export default function App() {
 
 
   // ─── Cloud sync ──────────────────────────────────────────────────────────
-  const { isLoggedIn, fetchCloudData, schedulePush, pushToCloud, syncStatus, lastSyncedAt } = useCloudSync();
+  const {
+    isLoggedIn,
+    fetchCloudData,
+    schedulePush,
+    cancelScheduledPush,
+    pushToCloud,
+    syncStatus,
+    lastSyncedAt,
+  } = useCloudSync();
   const cloudBootstrapped = useRef(false);
-  const skipNextCloudPushRef = useRef(false);
+  const skipNextCloudPushRef = useRef(0);
   const [canPushCloud, setCanPushCloud] = useState(false);
+  /** Explains how overlapping local vs cloud fields were merged (see Profile). */
+  const [lastMergeSummary, setLastMergeSummary] = useState<string | null>(null);
 
   // ─── Hooks ─────────────────────────────────────────────────────────────────
   const { toasts, showToast, dismissToast } = useToast();
@@ -295,7 +305,7 @@ export default function App() {
         return false;
       }
 
-      skipNextCloudPushRef.current = true;
+      skipNextCloudPushRef.current += 1;
       setWorkoutTemplate(snapshot.workoutTemplate);
       setProgress(snapshot.progress);
       setSessions(snapshot.sessions);
@@ -323,6 +333,23 @@ export default function App() {
     ]
   );
 
+  const handleSetWeightUnit = useCallback(
+    (fn: (v: "kg" | "lbs") => "kg" | "lbs") => {
+      setWeightUnit((prev) => {
+        const next = fn(prev);
+        if (isLoggedIn && next !== prev) {
+          void fetch("/api/user/profile", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ weightUnit: next }),
+          }).catch(() => {});
+        }
+        return next;
+      });
+    },
+    [isLoggedIn, setWeightUnit]
+  );
+
   // ─── Shared pull and merge logic ──────────────────────────────────────────
   const pullAndMergeCloudData = useCallback(async (silent = true) => {
     if (!isLoggedIn) return null;
@@ -335,6 +362,12 @@ export default function App() {
 
       const localSnapshot = currentSnapshotRef.current;
       const preferCloudOnConflict = hasRemoteChangesSinceBase(syncBase, data.lastSyncedAt);
+      const mergeSummary =
+        data.lastSyncedAt != null
+          ? preferCloudOnConflict
+            ? "Overlapping data was merged using the server copy (the cloud had newer changes than your last sync on this device)."
+            : "Overlapping data was merged using this device’s copy (your changes were newer than the last cloud update)."
+          : null;
       const remoteWorkoutTemplate = normalizeWorkoutTemplate(data.workoutTemplate);
       const nextWorkoutTemplate =
         remoteWorkoutTemplate && (preferCloudOnConflict || !syncBase)
@@ -394,6 +427,7 @@ export default function App() {
         customExercises: data.customExercises ?? [],
       };
 
+      cancelScheduledPush();
       applyCloudSnapshot(mergedSnapshot);
 
       const needsUpload = stableStringify(mergedSnapshot) !== stableStringify(cloudSnapshot);
@@ -406,7 +440,11 @@ export default function App() {
         showToast("Cloud merge complete");
       }
 
-      return mergedSnapshot;
+      if (mergeSummary) {
+        setLastMergeSummary(mergeSummary);
+      }
+
+      return { mergedSnapshot, mergeSummary };
     } catch {
       if (!silent) {
         showToast("Cloud sync failed", "error");
@@ -415,11 +453,13 @@ export default function App() {
     }
   }, [
     applyCloudSnapshot,
+    cancelScheduledPush,
     fetchCloudData,
     isLoggedIn,
     lastSyncedAt,
     pushToCloud,
     resolveSnapshotSettings,
+    setLastMergeSummary,
     showToast,
   ]);
 
@@ -450,12 +490,16 @@ export default function App() {
     pullAndMergeCloudData,
   ]);
 
+  useEffect(() => {
+    if (!isLoggedIn) setLastMergeSummary(null);
+  }, [isLoggedIn]);
+
   // ─── Auto-push on data change ─────────────────────────────────────────────
   useEffect(() => {
     if (!isLoggedIn || !canPushCloud) return;
 
-    if (skipNextCloudPushRef.current) {
-      skipNextCloudPushRef.current = false;
+    if (skipNextCloudPushRef.current > 0) {
+      skipNextCloudPushRef.current -= 1;
       return;
     }
 
@@ -489,14 +533,12 @@ export default function App() {
   }, [isLoggedIn, canPushCloud, pullAndMergeCloudData]);
 
   const handleManualSync = useCallback(async () => {
-    const mergedSnapshot = await pullAndMergeCloudData(false);
-    if (mergedSnapshot) {
-      return;
+    const result = await pullAndMergeCloudData(false);
+    if (!result) {
+      showToast("Could not fetch cloud data, pushing local state...");
+      const pushed = await pushToCloud(currentSnapshotRef.current);
+      showToast(pushed ? "Cloud sync complete" : "Cloud sync failed", pushed ? undefined : "error");
     }
-
-    showToast("Could not fetch cloud data, pushing local state...");
-    const pushed = await pushToCloud(currentSnapshotRef.current);
-    showToast(pushed ? "Cloud sync complete" : "Cloud sync failed", pushed ? undefined : "error");
   }, [
     pushToCloud,
     pullAndMergeCloudData,
@@ -608,23 +650,25 @@ export default function App() {
   // ─── Set actions ─────────────────────────────────────────────────────────
   const toggleSet = useCallback(
     (dayId: string, exerciseId: string, setId: string, restType: "strength" | "hypertrophy" | "other") => {
-      const isCompleted = progress[dayId]?.[exerciseId]?.[setId]?.completed || false;
+      let wasCompleted = false;
       setProgress((prev) => {
         const dayProgress = prev[dayId] || {};
         const exProgress = dayProgress[exerciseId] || {};
-        const setProgress = exProgress[setId] || { completed: false, loggedWeight: "", loggedReps: "" };
+        const currentSetProgress = exProgress[setId] || { completed: false, loggedWeight: "", loggedReps: "" };
+        wasCompleted = currentSetProgress.completed;
         return {
           ...prev,
           [dayId]: {
             ...dayProgress,
             [exerciseId]: {
               ...exProgress,
-              [setId]: { ...setProgress, completed: !isCompleted }
+              [setId]: { ...currentSetProgress, completed: !wasCompleted }
             }
           }
         };
       });
-      if (!isCompleted) {
+      // After the updater runs, wasCompleted reflects the state *before* toggle
+      if (!wasCompleted) {
         if ("vibrate" in navigator) navigator.vibrate(50);
         workoutTimer.start();
         if (restType !== "other") {
@@ -632,22 +676,22 @@ export default function App() {
         }
       }
     },
-    [progress, setProgress, workoutTimer, restTimer]
+    [setProgress, workoutTimer, restTimer]
   );
 
   const updateSetData = useCallback(
-    (dayId: string, exerciseId: string, setId: string, field: "loggedWeight" | "loggedReps", value: string) => {
+    (dayId: string, exerciseId: string, setId: string, field: "loggedWeight" | "loggedReps" | "rpe" | "setType", value: string | number | undefined) => {
       setProgress((prev) => {
         const dayProgress = prev[dayId] || {};
         const exProgress = dayProgress[exerciseId] || {};
-        const setProgress = exProgress[setId] || { completed: false, loggedWeight: "", loggedReps: "" };
+        const currentSetProgress = exProgress[setId] || { completed: false, loggedWeight: "", loggedReps: "" };
         return {
           ...prev,
           [dayId]: {
             ...dayProgress,
             [exerciseId]: {
               ...exProgress,
-              [setId]: { ...setProgress, [field]: value }
+              [setId]: { ...currentSetProgress, [field]: value }
             }
           }
         };
@@ -786,6 +830,8 @@ export default function App() {
                     loggedWeight: s?.loggedWeight || "",
                     loggedReps: s?.loggedReps || "",
                     completed: s?.completed || false,
+                    ...(s?.rpe != null ? { rpe: s.rpe } : {}),
+                    ...(s?.setType ? { setType: s.setType } : {}),
                   };
                 })
                 .filter((s) => s.loggedWeight || s.loggedReps || s.completed),
@@ -850,7 +896,7 @@ export default function App() {
   // ─── Body weight ──────────────────────────────────────────────────────────
   const logBodyWeight = useCallback(
     (weight: number) => {
-      const today = new Date().toISOString().slice(0, 10);
+      const today = toLocalDateKey();
       setBodyWeightEntries((prev) => {
         const filtered = prev.filter((e) => e.date !== today);
         return [...filtered, { date: today, weight }].sort((a, b) => a.date.localeCompare(b.date));
@@ -1096,6 +1142,7 @@ export default function App() {
     setProgress({});
     setSessions([]);
     setBodyWeightEntries([]);
+    setCustomExercises([]);
     setExerciseNotes({});
     setStrengthRestDuration(() => DEFAULT_SETTINGS.strengthRestDuration);
     setHypertrophyRestDuration(() => DEFAULT_SETTINGS.hypertrophyRestDuration);
@@ -1116,6 +1163,7 @@ export default function App() {
     pushToCloud,
     restTimer,
     setBodyWeightEntries,
+    setCustomExercises,
     setExerciseNotes,
     setHypertrophyRestDuration,
     setProgress,
@@ -1341,6 +1389,8 @@ export default function App() {
                   weightUnit={weightUnit}
                   syncStatus={syncStatus}
                   lastSyncedAt={lastSyncedAt}
+                  mergeSummary={lastMergeSummary}
+                  onDismissMergeSummary={() => setLastMergeSummary(null)}
                   onManualSync={handleManualSync}
                 />
               </Suspense>
@@ -1447,7 +1497,7 @@ export default function App() {
           soundEnabled={soundEnabled}
           setSoundEnabled={setSoundEnabled}
           weightUnit={weightUnit}
-          setWeightUnit={setWeightUnit}
+          setWeightUnit={handleSetWeightUnit}
           sessionCount={sessions.length}
           workoutDayCount={safeWorkoutTemplate.length}
           onExport={handleExport}

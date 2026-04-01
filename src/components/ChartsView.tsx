@@ -9,7 +9,7 @@ import type {
   WorkoutTemplate,
 } from "../types";
 import { isTrainingDay } from "../data";
-import { cn, getClosestBodyWeight, resolveWeight } from "../utils";
+import { cn, getClosestBodyWeight, resolveWeight, toLocalDateKey } from "../utils";
 import { findWikiEntry } from "../wikiData";
 import {
   XAxis,
@@ -117,7 +117,7 @@ const buildSessionTimeline = (orderedSessions: SessionHistory) => {
   const dayCounts = new Map<string, number>();
 
   return orderedSessions.map((session) => {
-    const dayKey = session.date.slice(0, 10);
+    const dayKey = toLocalDateKey(session.date) || session.date.slice(0, 10);
     const nextCount = (dayCounts.get(dayKey) ?? 0) + 1;
     dayCounts.set(dayKey, nextCount);
 
@@ -602,8 +602,11 @@ export default function ChartsView({
         (eAcc, ex) =>
           eAcc +
           ex.sets.reduce(
-            (sAcc, set) =>
-              sAcc + resolveWeight(set.loggedWeight, bw) * (parseFloat(set.loggedReps) || 0),
+            (sAcc, set) => {
+              // Skip warmup sets from volume calculations
+              if ((set as { setType?: string }).setType === "warmup") return sAcc;
+              return sAcc + resolveWeight(set.loggedWeight, bw) * (parseFloat(set.loggedReps) || 0);
+            },
             0
           ),
         0
@@ -748,12 +751,42 @@ export default function ChartsView({
     }).sort((left, right) => right.score - left.score);
   }, [sessions, bodyWeightEntries, customExerciseMap, weightUnit]);
 
-  const todayBw = bodyWeightEntries.find(
-    (e) => e.date === new Date().toISOString().slice(0, 10)
-  );
+  const todayBw = bodyWeightEntries.find((e) => e.date === toLocalDateKey());
 
   const totalWeeklyVolume = dayVolumeSummary.reduce((acc, d) => acc + d.volume, 0);
   const hasAnyData = exerciseStats.some((e) => e.totalVolume > 0) || totalWeeklyVolume > 0;
+
+  // ─── Session Tonnage Trend (last 20 sessions) ──────────────────────────
+  const sessionTonnageTrend = useMemo(() => {
+    if (sessions.length < 2) return null;
+
+    const defaultBw = weightUnit === "lbs" ? 175 : 80;
+    const orderedSessions = [...sessions]
+      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+      .slice(-20);
+
+    const data = orderedSessions.map((session) => {
+      const bw = getClosestBodyWeight(session.date, bodyWeightEntries, defaultBw);
+      const tonnage = session.exercises.reduce((total, exercise) => {
+        return total + exercise.sets.reduce((setTotal, set) => {
+          // Skip warmup sets from tonnage if setType is available
+          if ((set as { setType?: string }).setType === "warmup") return setTotal;
+          const weight = resolveWeight(set.loggedWeight, bw);
+          const reps = parseFloat(set.loggedReps) || 0;
+          return setTotal + weight * reps;
+        }, 0);
+      }, 0);
+
+      return {
+        date: formatSessionDateLabel(session.date),
+        fullDate: session.date,
+        tonnage: Math.round(tonnage),
+        dayName: session.dayName,
+      };
+    }).filter((d) => d.tonnage > 0);
+
+    return data.length >= 2 ? data : null;
+  }, [sessions, bodyWeightEntries, weightUnit]);
 
   const LINE_COLORS = ["#a3e635", "#38bdf8", "#f97316", "#a78bfa", "#fb923c"];
 
@@ -903,12 +936,12 @@ export default function ChartsView({
         )}
       </div>
 
-      {/* Weekly Tonnage Chart */}
+      {/* Latest-session tonnage by training day */}
       <div className="bg-neutral-900/50 border border-white/6 rounded-2xl p-4 shadow-lg">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Flame size={16} className="text-lime-400" />
-            <h3 className="text-[12px] font-black text-white uppercase tracking-widest">Weekly Tonnage</h3>
+            <h3 className="text-[12px] font-black text-white uppercase tracking-widest">Latest Session Tonnage</h3>
           </div>
           <div className="flex items-baseline gap-1">
             <span className="text-xl font-mono font-bold text-lime-400 tabular-nums">
@@ -965,7 +998,7 @@ export default function ChartsView({
             </ResponsiveContainer>
           </div>
         ) : (
-          <EmptyState message="Log weights & reps to see your weekly tonnage" />
+          <EmptyState message="Save a session for each training day to compare your latest tonnage split" />
         )}
       </div>
 
@@ -1040,6 +1073,73 @@ export default function ChartsView({
               Complete sessions across two weeks to see comparison
             </p>
           )}
+        </div>
+      )}
+
+      {/* ── Session Tonnage Trend ── */}
+      {sessionTonnageTrend && (
+        <div className="bg-neutral-900/50 border border-white/6 rounded-2xl p-4 shadow-lg">
+          <div className="flex items-center gap-2 mb-4">
+            <TrendingUp size={15} className="text-sky-400" />
+            <h3 className="text-[12px] font-black text-white uppercase tracking-widest">
+              Session Tonnage Trend
+            </h3>
+            <span className="text-[9px] text-neutral-600 font-bold uppercase tracking-widest ml-auto">
+              Last {sessionTonnageTrend.length} sessions
+            </span>
+          </div>
+
+          <div className="h-40">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={sessionTonnageTrend} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fill: "#525252", fontSize: 9, fontWeight: 700 }}
+                  axisLine={false}
+                  tickLine={false}
+                  interval="preserveStartEnd"
+                />
+                <YAxis
+                  tick={{ fill: "#525252", fontSize: 9 }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={40}
+                  tickFormatter={(v) => `${(Number(v) / 1000).toFixed(1)}k`}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "#111",
+                    border: "1px solid #2a2a2a",
+                    borderRadius: 10,
+                    fontSize: 12,
+                    fontFamily: "DM Mono, monospace",
+                  }}
+                  labelStyle={{
+                    color: "#38bdf8",
+                    fontWeight: 800,
+                    fontSize: 10,
+                    letterSpacing: "0.1em",
+                  }}
+                  formatter={(value: unknown) => [`${Number(value).toLocaleString()} ${weightUnit}`, "Tonnage"]}
+                  labelFormatter={(_: unknown, payload: readonly { payload?: { dayName?: string; fullDate?: string } }[]) => {
+                    const item = payload?.[0]?.payload;
+                    if (!item) return "";
+                    return `${item.dayName} · ${formatSessionTooltipLabel(item.fullDate ?? "")}`;
+                  }}
+                  cursor={{ stroke: "rgba(255,255,255,0.06)" }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="tonnage"
+                  stroke="#38bdf8"
+                  strokeWidth={2}
+                  dot={{ r: 3, fill: "#38bdf8", strokeWidth: 0 }}
+                  activeDot={{ r: 5, strokeWidth: 0 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       )}
 

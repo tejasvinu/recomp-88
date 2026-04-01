@@ -16,7 +16,8 @@ export async function POST(req: NextRequest) {
     if (password.length < 6)
       return NextResponse.json({ error: "Password must be at least 6 characters" }, { status: 400 });
 
-    await connectDB();
+    const db = await connectDB();
+    if (!db) return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
 
     const existing = await User.findOne({ email });
     if (existing)

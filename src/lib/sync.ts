@@ -7,6 +7,7 @@ import type {
   SessionExercise,
   SessionHistory,
   SessionSet,
+  SetType,
   WeightUnit,
   WorkoutProgress,
   WorkoutSession,
@@ -100,16 +101,42 @@ const normalizeDifficulty = (
   }
 };
 
+const normalizeSetType = (value: unknown): SetType | undefined => {
+  switch (value) {
+    case "warmup":
+    case "working":
+    case "drop":
+    case "failure":
+      return value;
+    default:
+      return undefined;
+  }
+};
+
+const normalizeRpe = (value: unknown): number | undefined => {
+  if (typeof value !== "number" || !Number.isFinite(value)) return undefined;
+  if (value < 1 || value > 10) return undefined;
+  return Math.round(value);
+};
+
 const normalizeSavedSetState = (
   value: unknown
 ): WorkoutProgress[string][string][string] | null => {
   if (!isRecord(value)) return null;
 
-  return {
+  const result: WorkoutProgress[string][string][string] = {
     completed: !!value.completed,
     loggedWeight: typeof value.loggedWeight === "string" ? value.loggedWeight : "",
     loggedReps: typeof value.loggedReps === "string" ? value.loggedReps : "",
   };
+
+  const rpe = normalizeRpe(value.rpe);
+  if (rpe !== undefined) result.rpe = rpe;
+
+  const setType = normalizeSetType(value.setType);
+  if (setType !== undefined) result.setType = setType;
+
+  return result;
 };
 
 export const sanitizeWorkoutProgress = (value: unknown): WorkoutProgress => {
@@ -152,12 +179,20 @@ const sanitizeSessionSet = (value: unknown): SessionSet | null => {
   const setId = toTrimmedString(value.setId);
   if (!setId) return null;
 
-  return {
+  const result: SessionSet = {
     setId,
     loggedWeight: typeof value.loggedWeight === "string" ? value.loggedWeight : "",
     loggedReps: typeof value.loggedReps === "string" ? value.loggedReps : "",
     completed: typeof value.completed === "boolean" ? value.completed : undefined,
   };
+
+  const rpe = normalizeRpe(value.rpe);
+  if (rpe !== undefined) result.rpe = rpe;
+
+  const setType = normalizeSetType(value.setType);
+  if (setType !== undefined) result.setType = setType;
+
+  return result;
 };
 
 const sanitizeSessionExercise = (value: unknown): SessionExercise | null => {

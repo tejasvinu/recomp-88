@@ -36,6 +36,7 @@ export interface ExerciseWiki {
 }
 
 export type ExerciseType = "strength" | "hypertrophy" | "other";
+export type SetType = "warmup" | "working" | "drop" | "failure";
 export type ExerciseLinkType = "superset" | "circuit";
 export type WeightUnit = "kg" | "lbs";
 
@@ -102,6 +103,8 @@ export interface SavedSetState {
     completed: boolean;
     loggedWeight: string;
     loggedReps: string;
+    rpe?: number;          // Rate of Perceived Exertion (1-10)
+    setType?: SetType;     // Intent of the set
 }
 
 // Flat structure per day: dayId -> exerciseId -> setId -> SavedSetState
@@ -113,6 +116,8 @@ export interface SessionSet {
     loggedWeight: string;
     loggedReps: string;
     completed?: boolean;
+    rpe?: number;
+    setType?: SetType;
 }
 
 export interface SessionExercise {

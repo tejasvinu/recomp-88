@@ -198,11 +198,25 @@ export const sanitizeExerciseLinks = (exercises: Exercise[]): Exercise[] => {
 
 const normalizeSavedSetState = (value: unknown): SavedSetState | null => {
     if (!isRecord(value)) return null;
-    return {
+    const result: SavedSetState = {
         completed: !!value.completed,
         loggedWeight: typeof value.loggedWeight === "string" ? value.loggedWeight : "",
         loggedReps: typeof value.loggedReps === "string" ? value.loggedReps : "",
     };
+    if (typeof value.rpe === "number" && Number.isFinite(value.rpe)) {
+        const r = Math.round(value.rpe);
+        if (r >= 1 && r <= 10) result.rpe = r;
+    }
+    const st = value.setType;
+    if (
+        st === "warmup" ||
+        st === "working" ||
+        st === "drop" ||
+        st === "failure"
+    ) {
+        result.setType = st;
+    }
+    return result;
 };
 
 export const normalizeWorkoutTemplate = (value: unknown): WorkoutTemplate | null => {
@@ -305,36 +319,6 @@ export const normalizeWorkoutTemplate = (value: unknown): WorkoutTemplate | null
 
 export const isTrainingDay = (day: DayRoutine): boolean =>
     day.exercises.some((exercise) => exercise.type !== "other");
-
-export const mergeWorkoutProgress = (
-    remoteProgress: WorkoutProgress,
-    localProgress: WorkoutProgress
-): WorkoutProgress => {
-    const merged: WorkoutProgress = {};
-
-    const apply = (source: WorkoutProgress) => {
-        Object.entries(source).forEach(([dayId, exerciseMap]) => {
-            if (!isRecord(exerciseMap)) return;
-
-            merged[dayId] = merged[dayId] ?? {};
-            Object.entries(exerciseMap).forEach(([exerciseId, setMap]) => {
-                if (!isRecord(setMap)) return;
-
-                merged[dayId][exerciseId] = merged[dayId][exerciseId] ?? {};
-                Object.entries(setMap).forEach(([setId, savedState]) => {
-                    const normalizedState = normalizeSavedSetState(savedState);
-                    if (!normalizedState) return;
-                    merged[dayId][exerciseId][setId] = normalizedState;
-                });
-            });
-        });
-    };
-
-    apply(remoteProgress);
-    apply(localProgress);
-
-    return merged;
-};
 
 export const pruneProgressForWorkoutTemplate = (
     progress: WorkoutProgress,

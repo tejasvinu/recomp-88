@@ -17,8 +17,23 @@ import {
   sanitizeSyncPayload,
   sanitizeWorkoutProgress,
 } from "@/lib/sync";
+import User from "@/models/User";
 import UserData from "@/models/UserData";
 import { normalizeWorkoutTemplate } from "@/data";
+
+function payloadHasSyncFields(
+  payload: Record<string, unknown>
+): boolean {
+  return (
+    payload.workoutTemplate !== undefined ||
+    payload.progress !== undefined ||
+    payload.sessions !== undefined ||
+    payload.bodyWeightEntries !== undefined ||
+    payload.exerciseNotes !== undefined ||
+    payload.settings !== undefined ||
+    payload.customExercises !== undefined
+  );
+}
 
 // GET /api/sync - fetch user cloud data
 export async function GET() {
@@ -29,7 +44,8 @@ export async function GET() {
   if (!userId) return NextResponse.json({ error: "No user id" }, { status: 400 });
 
   try {
-    await connectDB();
+    const db = await connectDB();
+    if (!db) return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
     const data = await UserData.findOne({ userId }).lean();
     if (!data) {
       return NextResponse.json({ data: null });
@@ -75,7 +91,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
     }
 
-    await connectDB();
+    const db = await connectDB();
+    if (!db) return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
+
+    if (!payloadHasSyncFields(payload as Record<string, unknown>)) {
+      const existingOnly = await UserData.findOne({ userId }).lean();
+      return NextResponse.json({
+        ok: true,
+        lastSyncedAt: existingOnly?.lastSyncedAt ?? null,
+        noOp: true,
+      });
+    }
 
     const existing = await UserData.findOne({ userId });
     const remoteHasChanged = hasRemoteChangesSinceBase(
@@ -144,6 +170,13 @@ export async function POST(req: NextRequest) {
       },
       { upsert: true, new: true, runValidators: true }
     );
+
+    const wu = settings.weightUnit;
+    if (wu === "kg" || wu === "lbs") {
+      await User.findByIdAndUpdate(userId, { weightUnit: wu }).catch(() => {
+        /* profile mirror is best-effort */
+      });
+    }
 
     return NextResponse.json({ ok: true, lastSyncedAt: updated.lastSyncedAt });
   } catch (err) {
