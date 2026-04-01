@@ -228,9 +228,9 @@ export default function App() {
   const clampedActiveDayIndex = Math.min(activeDayIndex, Math.max(safeWorkoutTemplate.length - 1, 0));
   const activeDay = safeWorkoutTemplate[clampedActiveDayIndex];
 
-  useEffect(() => {
+  if (typeof document !== "undefined") {
     currentSnapshotRef.current = currentSnapshot;
-  }, [currentSnapshot]);
+  }
 
   useEffect(() => {
     const serializedCurrent = JSON.stringify(workoutTemplate);
@@ -558,7 +558,6 @@ export default function App() {
         let bestWeight = 0;
 
         sessions
-          .filter((session) => session.dayId === day.id)
           .forEach((session) => {
             const bw = getClosestBodyWeight(session.date, bodyWeightEntries, defaultBw);
             session.exercises
@@ -656,13 +655,19 @@ export default function App() {
         const exProgress = dayProgress[exerciseId] || {};
         const currentSetProgress = exProgress[setId] || { completed: false, loggedWeight: "", loggedReps: "" };
         wasCompleted = currentSetProgress.completed;
+        const nowCompleted = !wasCompleted;
         return {
           ...prev,
           [dayId]: {
             ...dayProgress,
             [exerciseId]: {
               ...exProgress,
-              [setId]: { ...currentSetProgress, completed: !wasCompleted }
+              [setId]: {
+                ...currentSetProgress,
+                completed: nowCompleted,
+                // Stamp completedAt when marking complete, clear when unmarking
+                completedAt: nowCompleted ? Date.now() : undefined,
+              }
             }
           }
         };
@@ -680,7 +685,7 @@ export default function App() {
   );
 
   const updateSetData = useCallback(
-    (dayId: string, exerciseId: string, setId: string, field: "loggedWeight" | "loggedReps" | "rpe" | "setType", value: string | number | undefined) => {
+    (dayId: string, exerciseId: string, setId: string, field: "loggedWeight" | "loggedReps" | "rpe" | "setType" | "completedAt", value: string | number | undefined) => {
       setProgress((prev) => {
         const dayProgress = prev[dayId] || {};
         const exProgress = dayProgress[exerciseId] || {};
@@ -811,11 +816,33 @@ export default function App() {
       );
       if (hasData) {
         const duration = workoutTimer.getDuration();
+        const defaultBw = weightUnit === "lbs" ? 175 : 80;
+        const currentBodyWeight = getClosestBodyWeight(
+          new Date().toISOString(),
+          bodyWeightEntries,
+          defaultBw
+        );
+
+        // Calculate total tonnage (excluding warmup sets)
+        const totalTonnage = activeDay.exercises.reduce((total, ex) => {
+          return total + ex.sets.reduce((setTotal, set) => {
+            const state = dayProgress[ex.id]?.[set.id];
+            if (state?.completed && state.setType !== "warmup") {
+              const weight = resolveWeight(state.loggedWeight, currentBodyWeight);
+              const reps = parseInt(state.loggedReps) || 0;
+              return setTotal + (weight * reps);
+            }
+            return setTotal;
+          }, 0);
+        }, 0);
+
         const session: WorkoutSession = {
           id: `${activeDay.id}-${Date.now()}`,
           date: new Date().toISOString(),
           dayId: activeDay.id,
           dayName: activeDay.name,
+          bodyWeightSnapshot: currentBodyWeight,
+          totalTonnage: Math.round(totalTonnage * 100) / 100,
           duration,
           exercises: activeDay.exercises
             .map((ex) => ({
@@ -827,9 +854,11 @@ export default function App() {
                   const s = dayProgress[ex.id]?.[set.id];
                   return {
                     setId: set.id,
+                    targetReps: set.targetReps,
                     loggedWeight: s?.loggedWeight || "",
                     loggedReps: s?.loggedReps || "",
                     completed: s?.completed || false,
+                    ...(s?.completedAt != null ? { completedAt: s.completedAt } : {}),
                     ...(s?.rpe != null ? { rpe: s.rpe } : {}),
                     ...(s?.setType ? { setType: s.setType } : {}),
                   };
@@ -852,7 +881,12 @@ export default function App() {
       Object.keys(newDayProgress).forEach((exId) => {
         newDayProgress[exId] = { ...newDayProgress[exId] };
         Object.keys(newDayProgress[exId]).forEach((setId) => {
-          newDayProgress[exId][setId] = { ...newDayProgress[exId][setId], completed: false };
+          newDayProgress[exId][setId] = { 
+            ...newDayProgress[exId][setId], 
+            completed: false,
+            rpe: undefined,
+            completedAt: undefined 
+          };
         });
       });
       return { ...prev, [activeDay.id]: newDayProgress };
@@ -876,7 +910,7 @@ export default function App() {
         : undefined
     );
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [progress, activeDay, workoutTimer, restTimer, setProgress, setSessions, showToast]);
+  }, [progress, activeDay, workoutTimer, restTimer, setProgress, setSessions, showToast, bodyWeightEntries, weightUnit]);
 
   // ─── Reset workout timer (without finishing) ──────────────────────────────
   const handleResetTimer = useCallback(() => {

@@ -105,6 +105,7 @@ export interface SavedSetState {
     loggedReps: string;
     rpe?: number;          // Rate of Perceived Exertion (1-10)
     setType?: SetType;     // Intent of the set
+    completedAt?: number;  // UNIX timestamp when the checkmark was hit
 }
 
 // Flat structure per day: dayId -> exerciseId -> setId -> SavedSetState
@@ -113,9 +114,11 @@ export type WorkoutProgress = Record<string, Record<string, Record<string, Saved
 // ─── Session History ───────────────────────────────────────────────────────
 export interface SessionSet {
     setId: string;
+    targetReps: string;    // Snapshotted target (e.g., "8-12")
     loggedWeight: string;
     loggedReps: string;
     completed?: boolean;
+    completedAt?: number;  // UNIX timestamp when completed
     rpe?: number;
     setType?: SetType;
 }
@@ -132,6 +135,8 @@ export interface WorkoutSession {
     date: string; // ISO 8601 date string
     dayId: string;
     dayName: string;
+    bodyWeightSnapshot?: number; // Freezes BW for historical pull-up/dip math
+    totalTonnage?: number;       // Pre-calculated for fast charts
     exercises: SessionExercise[];
     duration?: number; // seconds
 }

@@ -34,6 +34,10 @@ export default function GuidedStretchingSession({ program, onClose, soundEnabled
     const [sideIndex, setSideIndex] = useState(0); // 0-based index for multi-side stretches
     const BREAK_DURATION = 10;
 
+    // Absolute-time tracking: immune to mobile screen sleep
+    const [targetEndTime, setTargetEndTime] = useState<number | null>(null);
+    const [pausedRemaining, setPausedRemaining] = useState<number | null>(null);
+
     const audioCtxRef = useRef<AudioContext | null>(null);
     const wakeLockRef = useRef<WakeLockSentinelLike | null>(null);
 
@@ -93,18 +97,19 @@ export default function GuidedStretchingSession({ program, onClose, soundEnabled
         }
     }, [ensureAudioContext, soundEnabled]);
 
-    const advanceSession = useCallback(() => {
-        if (timeLeft > 1) {
-            if (timeLeft <= 4) playSound('tick');
-            setTimeLeft((prev) => prev - 1);
-            return;
-        }
+    // Start an absolute-time countdown for a given duration in seconds
+    const startCountdown = useCallback((durationSeconds: number) => {
+        setTargetEndTime(Date.now() + durationSeconds * 1000);
+        setPausedRemaining(null);
+        setTimeLeft(durationSeconds);
+    }, []);
 
+    const advanceToNext = useCallback(() => {
         if (isBreak) {
             setIsBreak(false);
             setSideIndex(0);
             playSound('complete');
-            setTimeLeft(program.stretches[currentIndex].duration);
+            startCountdown(program.stretches[currentIndex].duration);
             return;
         }
 
@@ -114,7 +119,7 @@ export default function GuidedStretchingSession({ program, onClose, soundEnabled
         if (sides > 1 && sideIndex < sides - 1) {
             setSideIndex((prevSide) => prevSide + 1);
             playSound('break');
-            setTimeLeft(currentStretch.duration);
+            startCountdown(currentStretch.duration);
             return;
         }
 
@@ -123,31 +128,64 @@ export default function GuidedStretchingSession({ program, onClose, soundEnabled
             setCurrentIndex((prevIndex) => prevIndex + 1);
             setSideIndex(0);
             playSound('break');
-            setTimeLeft(BREAK_DURATION);
+            startCountdown(BREAK_DURATION);
             return;
         }
 
         setIsActive(false);
         setIsComplete(true);
+        setTargetEndTime(null);
         playSound('complete');
         setTimeLeft(0);
-    }, [BREAK_DURATION, currentIndex, isBreak, playSound, program.stretches, sideIndex, timeLeft]);
+    }, [BREAK_DURATION, currentIndex, isBreak, playSound, program.stretches, sideIndex, startCountdown]);
 
+    // Absolute-time interval: survives screen sleep on mobile
     useEffect(() => {
-        if (!isActive || isComplete) return;
+        if (!isActive || isComplete || !targetEndTime) return;
 
-        const timer = setTimeout(advanceSession, 1000);
+        const interval = setInterval(() => {
+            const now = Date.now();
+            const remaining = Math.max(0, Math.ceil((targetEndTime - now) / 1000));
 
-        return () => clearTimeout(timer);
-    }, [advanceSession, isActive, isComplete]);
+            // Play tick sounds for last 3 seconds
+            if (remaining > 0 && remaining <= 3) {
+                playSound('tick');
+            }
+
+            setTimeLeft(remaining);
+
+            if (remaining === 0) {
+                clearInterval(interval);
+                advanceToNext();
+            }
+        }, 200); // 200ms for instant catch-up on screen wake
+
+        return () => clearInterval(interval);
+    }, [isActive, isComplete, targetEndTime, advanceToNext, playSound]);
 
     const togglePlayback = useCallback(() => {
         if (!isActive) {
             ensureAudioContext();
+            // Resuming from pause or starting fresh
+            if (pausedRemaining != null) {
+                // Resume: set a new absolute end time from the paused remaining
+                setTargetEndTime(Date.now() + pausedRemaining * 1000);
+                setPausedRemaining(null);
+            } else if (!targetEndTime) {
+                // First play: start countdown from current timeLeft
+                setTargetEndTime(Date.now() + timeLeft * 1000);
+            }
+        } else {
+            // Pausing: capture remaining time
+            if (targetEndTime) {
+                const remaining = Math.max(0, Math.ceil((targetEndTime - Date.now()) / 1000));
+                setPausedRemaining(remaining);
+                setTargetEndTime(null);
+            }
         }
 
         setIsActive((prev) => !prev);
-    }, [ensureAudioContext, isActive]);
+    }, [ensureAudioContext, isActive, pausedRemaining, targetEndTime, timeLeft]);
 
     // Keep the screen awake while the timer is actively running (where supported).
     useEffect(() => {
@@ -308,7 +346,10 @@ export default function GuidedStretchingSession({ program, onClose, soundEnabled
             <div className="p-8 pb-12 flex items-center justify-center gap-8">
                 <button 
                     onClick={() => {
-                        setTimeLeft(isBreak ? BREAK_DURATION : currentStretch.duration);
+                        const resetDuration = isBreak ? BREAK_DURATION : currentStretch.duration;
+                        setTimeLeft(resetDuration);
+                        setTargetEndTime(null);
+                        setPausedRemaining(null);
                         if (!isBreak) {
                             setSideIndex(0);
                         }
@@ -330,7 +371,12 @@ export default function GuidedStretchingSession({ program, onClose, soundEnabled
                 </button>
 
                 <button 
-                    onClick={() => setTimeLeft(0)}
+                    onClick={() => {
+                        // Force skip: set targetEndTime to now so interval catches 0
+                        setTargetEndTime(Date.now());
+                        setPausedRemaining(null);
+                        if (!isActive) setIsActive(true);
+                    }}
                     className="w-14 h-14 flex items-center justify-center rounded-2xl bg-white/5 border border-white/10 text-neutral-400 active:scale-90 transition-all"
                 >
                     <SkipForward size={24} />

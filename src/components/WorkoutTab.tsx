@@ -19,7 +19,7 @@ interface WorkoutTabProps {
     weightUnit: "kg" | "lbs";
     onSetActiveDayIndex: (fn: (i: number) => number) => void;
     onToggleSet: (dayId: string, exerciseId: string, setId: string, restType: "strength" | "hypertrophy" | "other") => void;
-    onUpdateSetData: (dayId: string, exerciseId: string, setId: string, field: "loggedWeight" | "loggedReps" | "rpe" | "setType", value: string | number | undefined) => void;
+    onUpdateSetData: (dayId: string, exerciseId: string, setId: string, field: "loggedWeight" | "loggedReps" | "rpe" | "setType" | "completedAt", value: string | number | undefined) => void;
     onAdjustWeight: (exerciseId: string, setId: string, delta: number) => void;
     onBwFill: (exerciseId: string) => void;
     onLoadLastSession: (exerciseId: string) => void;

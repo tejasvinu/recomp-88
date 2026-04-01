@@ -33,7 +33,7 @@ interface SetRowProps {
     isBwSet: boolean;
     weightUnit: "kg" | "lbs";
     onToggleSet: (dayId: string, exerciseId: string, setId: string, restType: "strength" | "hypertrophy" | "other") => void;
-    onUpdateSetData: (dayId: string, exerciseId: string, setId: string, field: "loggedWeight" | "loggedReps" | "rpe" | "setType", value: string | number | undefined) => void;
+    onUpdateSetData: (dayId: string, exerciseId: string, setId: string, field: "loggedWeight" | "loggedReps" | "rpe" | "setType" | "completedAt", value: string | number | undefined) => void;
     onAdjustWeight: (exerciseId: string, setId: string, delta: number) => void;
 }
 

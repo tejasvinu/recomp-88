@@ -136,6 +136,10 @@ const normalizeSavedSetState = (
   const setType = normalizeSetType(value.setType);
   if (setType !== undefined) result.setType = setType;
 
+  if (typeof value.completedAt === "number" && Number.isFinite(value.completedAt)) {
+    result.completedAt = value.completedAt;
+  }
+
   return result;
 };
 
@@ -181,10 +185,15 @@ const sanitizeSessionSet = (value: unknown): SessionSet | null => {
 
   const result: SessionSet = {
     setId,
+    targetReps: typeof value.targetReps === "string" ? value.targetReps : "",
     loggedWeight: typeof value.loggedWeight === "string" ? value.loggedWeight : "",
     loggedReps: typeof value.loggedReps === "string" ? value.loggedReps : "",
     completed: typeof value.completed === "boolean" ? value.completed : undefined,
   };
+
+  if (typeof value.completedAt === "number" && Number.isFinite(value.completedAt)) {
+    result.completedAt = value.completedAt;
+  }
 
   const rpe = normalizeRpe(value.rpe);
   if (rpe !== undefined) result.rpe = rpe;
@@ -253,16 +262,29 @@ export const sanitizeSessionHistory = (value: unknown): SessionHistory =>
             ? sessionValue.duration
             : undefined;
 
-        return [
-          {
-            id,
-            date,
-            dayId,
-            dayName,
-            exercises,
-            duration,
-          } satisfies WorkoutSession,
-        ];
+        const bodyWeightSnapshot =
+          typeof sessionValue.bodyWeightSnapshot === "number" && Number.isFinite(sessionValue.bodyWeightSnapshot)
+            ? sessionValue.bodyWeightSnapshot
+            : undefined;
+
+        const totalTonnage =
+          typeof sessionValue.totalTonnage === "number" && Number.isFinite(sessionValue.totalTonnage)
+            ? sessionValue.totalTonnage
+            : undefined;
+
+        const session: WorkoutSession = {
+          id,
+          date,
+          dayId,
+          dayName,
+          exercises,
+          duration,
+        };
+
+        if (bodyWeightSnapshot !== undefined) session.bodyWeightSnapshot = bodyWeightSnapshot;
+        if (totalTonnage !== undefined) session.totalTonnage = totalTonnage;
+
+        return [session];
       })
     : [];
 

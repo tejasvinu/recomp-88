@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from "react";
 import { RotateCcw } from "lucide-react";
 import { formatTime } from "../utils";
 import { useModalEscape } from "../hooks/useModalEscape";
@@ -17,7 +18,15 @@ export default function FinishConfirmModal({
     onConfirm,
     onCancel,
 }: FinishConfirmModalProps) {
+    const [isSaving, setIsSaving] = useState(false);
     useModalEscape(onCancel);
+
+    const handleConfirm = () => {
+        if (isSaving) return;
+        setIsSaving(true);
+        onConfirm();
+        // Component will unmount when the modal closes, so no need to reset isSaving
+    };
 
     return (
         <div
@@ -57,15 +66,17 @@ export default function FinishConfirmModal({
                     <div className="flex gap-3 w-full">
                         <button
                             onClick={onCancel}
-                            className="flex-1 py-3 rounded-xl border border-white/8 bg-white/4 text-neutral-400 font-bold text-[13px] hover:bg-white/8 hover:text-white transition-all"
+                            disabled={isSaving}
+                            className="flex-1 py-3 rounded-xl border border-white/8 bg-white/4 text-neutral-400 font-bold text-[13px] hover:bg-white/8 hover:text-white transition-all disabled:opacity-50"
                         >
                             Cancel
                         </button>
                         <button
-                            onClick={onConfirm}
-                            className="flex-1 py-3 rounded-xl border border-lime-400/30 bg-lime-400/15 text-lime-400 font-black text-[13px] hover:bg-lime-400/25 transition-all"
+                            onClick={handleConfirm}
+                            disabled={isSaving}
+                            className="flex-1 py-3 rounded-xl border border-lime-400/30 bg-lime-400/15 text-lime-400 font-black text-[13px] hover:bg-lime-400/25 transition-all disabled:opacity-50"
                         >
-                            Save &amp; Reset
+                            {isSaving ? "Saving..." : "Save & Reset"}
                         </button>
                     </div>
                 </div>
