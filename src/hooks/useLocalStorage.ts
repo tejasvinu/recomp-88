@@ -1,4 +1,8 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useRef } from "react";
+
+/** Hydrate from localStorage before useEffect (cloud sync, etc.) runs — avoids races where async sync merges stale default state over real disk data. */
+const useIsomorphicLayoutEffect =
+    typeof document !== "undefined" ? useLayoutEffect : useEffect;
 
 const readStoredValue = <T,>(key: string, fallbackValue: T): T => {
     if (typeof window === "undefined") {
@@ -23,7 +27,7 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
         initialValueRef.current = initialValue;
     }, [initialValue]);
 
-    useEffect(() => {
+    useIsomorphicLayoutEffect(() => {
         shouldSkipPersistRef.current = true;
         setStoredValue(readStoredValue(key, initialValueRef.current));
     }, [key]);

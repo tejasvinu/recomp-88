@@ -61,7 +61,7 @@ export function useCloudSync() {
   }, [isLoggedIn]);
 
   const pushToCloud = useCallback(
-    async (payload: SyncPayload) => {
+    async (payload: SyncPayload, options?: { keepalive?: boolean }) => {
       if (!isLoggedIn) return false;
       if (typeof navigator !== "undefined" && !navigator.onLine) {
         setSyncStatus("offline");
@@ -79,6 +79,7 @@ export function useCloudSync() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payloadWithSyncBase),
+          keepalive: options?.keepalive,
         });
         if (!res.ok) throw new Error("Sync failed");
         const { lastSyncedAt: syncedAt } = await res.json();

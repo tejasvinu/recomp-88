@@ -169,6 +169,8 @@ export default function App() {
   } = useCloudSync();
   const cloudBootstrapped = useRef(false);
   const skipNextCloudPushRef = useRef(0);
+  const suppressOverlayRef = useRef(false);
+  const lastSyncedAtRef = useRef(lastSyncedAt);
   const [canPushCloud, setCanPushCloud] = useState(false);
   /** Explains how overlapping local vs cloud fields were merged (see Profile). */
   const [lastMergeSummary, setLastMergeSummary] = useState<string | null>(null);
@@ -306,6 +308,7 @@ export default function App() {
       }
 
       skipNextCloudPushRef.current += 1;
+      suppressOverlayRef.current = true;
       setWorkoutTemplate(snapshot.workoutTemplate);
       setProgress(snapshot.progress);
       setSessions(snapshot.sessions);
@@ -354,7 +357,7 @@ export default function App() {
   const pullAndMergeCloudData = useCallback(async (silent = true) => {
     if (!isLoggedIn) return null;
 
-    const syncBase = lastSyncedAt;
+    const syncBase = lastSyncedAtRef.current;
 
     try {
       const data = await fetchCloudData();
@@ -456,7 +459,6 @@ export default function App() {
     cancelScheduledPush,
     fetchCloudData,
     isLoggedIn,
-    lastSyncedAt,
     pushToCloud,
     resolveSnapshotSettings,
     setLastMergeSummary,
@@ -491,6 +493,10 @@ export default function App() {
   ]);
 
   useEffect(() => {
+    lastSyncedAtRef.current = lastSyncedAt;
+  }, [lastSyncedAt]);
+
+  useEffect(() => {
     if (!isLoggedIn) setLastMergeSummary(null);
   }, [isLoggedIn]);
 
@@ -511,16 +517,21 @@ export default function App() {
     schedulePush,
   ]);
 
-  // ─── Auto-pull on app focus ────────────────────────────────────────────────
+  // ─── Auto-pull on focus / flush on background ─────────────────────────────
   useEffect(() => {
     if (!isLoggedIn || !canPushCloud) return;
 
     const onFocus = () => {
       pullAndMergeCloudData(true);
     };
-    
+
     const onVisibilityChange = () => {
-      if (document.visibilityState === "visible") onFocus();
+      if (document.visibilityState === "visible") {
+        onFocus();
+      } else if (document.visibilityState === "hidden") {
+        cancelScheduledPush();
+        void pushToCloud(currentSnapshotRef.current, { keepalive: true });
+      }
     };
 
     window.addEventListener("focus", onFocus);
@@ -530,7 +541,7 @@ export default function App() {
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [isLoggedIn, canPushCloud, pullAndMergeCloudData]);
+  }, [isLoggedIn, canPushCloud, pullAndMergeCloudData, cancelScheduledPush, pushToCloud]);
 
   const handleManualSync = useCallback(async () => {
     const result = await pullAndMergeCloudData(false);
@@ -635,8 +646,13 @@ export default function App() {
     return totalSets === 0 ? 0 : Math.round((completedSets / totalSets) * 100);
   }, [progress, activeDay]);
 
-  // Day complete overlay trigger
+  // Day complete overlay trigger (suppressed when progress changes via cloud sync)
   useEffect(() => {
+    if (suppressOverlayRef.current) {
+      suppressOverlayRef.current = false;
+      prevProgressPercent.current = progressPercent;
+      return;
+    }
     if (progressPercent === 100 && prevProgressPercent.current < 100) {
       setShowDayComplete(true);
       if ("vibrate" in navigator) navigator.vibrate([50, 30, 80]);
@@ -649,13 +665,14 @@ export default function App() {
   // ─── Set actions ─────────────────────────────────────────────────────────
   const toggleSet = useCallback(
     (dayId: string, exerciseId: string, setId: string, restType: "strength" | "hypertrophy" | "other") => {
-      let wasCompleted = false;
+      const wasCompleted =
+        currentSnapshotRef.current.progress[dayId]?.[exerciseId]?.[setId]?.completed ?? false;
+
       setProgress((prev) => {
         const dayProgress = prev[dayId] || {};
         const exProgress = dayProgress[exerciseId] || {};
         const currentSetProgress = exProgress[setId] || { completed: false, loggedWeight: "", loggedReps: "" };
-        wasCompleted = currentSetProgress.completed;
-        const nowCompleted = !wasCompleted;
+        const nowCompleted = !currentSetProgress.completed;
         return {
           ...prev,
           [dayId]: {
@@ -665,14 +682,13 @@ export default function App() {
               [setId]: {
                 ...currentSetProgress,
                 completed: nowCompleted,
-                // Stamp completedAt when marking complete, clear when unmarking
                 completedAt: nowCompleted ? Date.now() : undefined,
               }
             }
           }
         };
       });
-      // After the updater runs, wasCompleted reflects the state *before* toggle
+
       if (!wasCompleted) {
         if ("vibrate" in navigator) navigator.vibrate(50);
         workoutTimer.start();
@@ -792,7 +808,12 @@ export default function App() {
       Object.keys(newDayProgress).forEach((exId) => {
         newDayProgress[exId] = { ...newDayProgress[exId] };
         Object.keys(newDayProgress[exId]).forEach((setId) => {
-          newDayProgress[exId][setId] = { ...newDayProgress[exId][setId], completed: false };
+          newDayProgress[exId][setId] = {
+            ...newDayProgress[exId][setId],
+            completed: false,
+            rpe: undefined,
+            completedAt: undefined,
+          };
         });
       });
       return { ...prev, [activeDay.id]: newDayProgress };

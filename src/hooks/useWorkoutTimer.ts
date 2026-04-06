@@ -1,40 +1,45 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useLayoutEffect, useCallback, useRef } from "react";
+
+const useIsomorphicLayoutEffect =
+    typeof document !== "undefined" ? useLayoutEffect : useEffect;
 
 export function useWorkoutTimer() {
-    const [workoutStartTime, setWorkoutStartTime] = useState<number | null>(() => {
-        try {
-            const val = localStorage.getItem("recomp88-timer-start");
-            return val ? parseInt(val, 10) : null;
-        } catch {
-            return null;
-        }
-    });
-
-    const [pausedAt, setPausedAt] = useState<number | null>(() => {
-        try {
-            const val = localStorage.getItem("recomp88-timer-paused");
-            return val ? parseInt(val, 10) : null;
-        } catch {
-            return null;
-        }
-    });
-
+    const [workoutStartTime, setWorkoutStartTime] = useState<number | null>(null);
+    const [pausedAt, setPausedAt] = useState<number | null>(null);
     const [elapsedSeconds, setElapsedSeconds] = useState(0);
+    const shouldSkipPersist = useRef(true);
+
+    useIsomorphicLayoutEffect(() => {
+        try {
+            const startVal = localStorage.getItem("recomp88-timer-start");
+            const pausedVal = localStorage.getItem("recomp88-timer-paused");
+            const start = startVal ? parseInt(startVal, 10) : null;
+            const paused = pausedVal ? parseInt(pausedVal, 10) : null;
+
+            if (start !== null) {
+                setWorkoutStartTime(start);
+                const now = paused !== null ? paused : Date.now();
+                setElapsedSeconds(Math.floor((now - start) / 1000));
+            }
+            if (paused !== null) {
+                setPausedAt(paused);
+            }
+        } catch {
+            // ignore
+        }
+    }, []);
 
     useEffect(() => {
+        if (shouldSkipPersist.current) {
+            shouldSkipPersist.current = false;
+            return;
+        }
         try {
             if (workoutStartTime === null) {
                 localStorage.removeItem("recomp88-timer-start");
             } else {
                 localStorage.setItem("recomp88-timer-start", workoutStartTime.toString());
             }
-        } catch {
-            // ignore
-        }
-    }, [workoutStartTime]);
-
-    useEffect(() => {
-        try {
             if (pausedAt === null) {
                 localStorage.removeItem("recomp88-timer-paused");
             } else {
@@ -43,7 +48,7 @@ export function useWorkoutTimer() {
         } catch {
             // ignore
         }
-    }, [pausedAt]);
+    }, [workoutStartTime, pausedAt]);
 
     useEffect(() => {
         if (workoutStartTime === null) return;

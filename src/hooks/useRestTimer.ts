@@ -1,4 +1,7 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
+
+const useIsomorphicLayoutEffect =
+    typeof document !== "undefined" ? useLayoutEffect : useEffect;
 
 interface UseRestTimerOptions {
     soundEnabled: boolean;
@@ -13,26 +16,30 @@ interface RestState {
     pausedRemaining: number | null;
 }
 
+const DEFAULT_REST_STATE: RestState = { endTime: null, duration: 90, type: null, pausedRemaining: null };
+
 export function useRestTimer({
     soundEnabled,
     strengthDuration,
     hypertrophyDuration,
 }: UseRestTimerOptions) {
-    const [state, setState] = useState<RestState>(() => {
+    const [state, setState] = useState<RestState>(DEFAULT_REST_STATE);
+    const shouldSkipPersist = useRef(true);
+
+    useIsomorphicLayoutEffect(() => {
         try {
             const val = localStorage.getItem("recomp88-rest-state");
             if (val) {
                 const parsed = JSON.parse(val);
-                return {
+                setState({
                     endTime: typeof parsed.endTime === "number" ? parsed.endTime : null,
                     duration: typeof parsed.duration === "number" ? parsed.duration : 90,
                     type: (parsed.type === "strength" || parsed.type === "hypertrophy") ? parsed.type : null,
                     pausedRemaining: typeof parsed.pausedRemaining === "number" ? parsed.pausedRemaining : null
-                };
+                });
             }
         } catch { /* empty */ }
-        return { endTime: null, duration: 90, type: null, pausedRemaining: null };
-    });
+    }, []);
 
     const [restTimer, setRestTimer] = useState<number | null>(null);
     const audioCtxRef = useRef<AudioContext | null>(null);
@@ -82,8 +89,11 @@ export function useRestTimer({
         }
     }, [ensureAudioContext]);
 
-    // Write to localStorage
     useEffect(() => {
+        if (shouldSkipPersist.current) {
+            shouldSkipPersist.current = false;
+            return;
+        }
         try {
             if (state.endTime === null && state.pausedRemaining === null) {
                 localStorage.removeItem("recomp88-rest-state");
