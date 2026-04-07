@@ -1,4 +1,4 @@
-import { useState, useEffect, useLayoutEffect, useRef } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
 
 /** Hydrate from localStorage before useEffect (cloud sync, etc.) runs — avoids races where async sync merges stale default state over real disk data. */
 const useIsomorphicLayoutEffect =
@@ -20,7 +20,7 @@ const readStoredValue = <T,>(key: string, fallbackValue: T): T => {
 
 export function useLocalStorage<T>(key: string, initialValue: T) {
     const initialValueRef = useRef(initialValue);
-    const shouldSkipPersistRef = useRef(true);
+    const stateRef = useRef(initialValue);
     const [storedValue, setStoredValue] = useState<T>(initialValue);
 
     useEffect(() => {
@@ -28,8 +28,9 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
     }, [initialValue]);
 
     useIsomorphicLayoutEffect(() => {
-        shouldSkipPersistRef.current = true;
-        setStoredValue(readStoredValue(key, initialValueRef.current));
+        const val = readStoredValue(key, initialValueRef.current);
+        stateRef.current = val;
+        setStoredValue(val);
     }, [key]);
 
     useEffect(() => {
@@ -39,12 +40,15 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
             if (e.key !== key) return;
 
             if (e.newValue === null) {
+                stateRef.current = initialValueRef.current;
                 setStoredValue(initialValueRef.current);
                 return;
             }
 
             try {
-                setStoredValue(JSON.parse(e.newValue));
+                const parsed = JSON.parse(e.newValue);
+                stateRef.current = parsed;
+                setStoredValue(parsed);
             } catch {
                 // Ignore parse errors from other tabs
             }
@@ -53,27 +57,23 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
         return () => window.removeEventListener("storage", handleStorageChange);
     }, [key]);
 
-    // Persist to localStorage
-    useEffect(() => {
-        if (typeof window === "undefined") return;
+    const setValue = useCallback((value: T | ((val: T) => T)) => {
+        const next = value instanceof Function ? (value as any)(stateRef.current) : value;
+        stateRef.current = next;
+        setStoredValue(next);
 
-        if (shouldSkipPersistRef.current) {
-            shouldSkipPersistRef.current = false;
-            return;
-        }
-
-        try {
-            window.localStorage.setItem(key, JSON.stringify(storedValue));
-        } catch (error) {
-            if (error instanceof DOMException && error.name === "QuotaExceededError") {
-                console.error(
-                    `localStorage quota exceeded for key "${key}". Consider clearing old data.`
-                );
-            } else {
-                console.error(`Error writing localStorage key "${key}":`, error);
+        if (typeof window !== "undefined") {
+            try {
+                window.localStorage.setItem(key, JSON.stringify(next));
+            } catch (error) {
+                if (error instanceof DOMException && error.name === "QuotaExceededError") {
+                    console.error(`localStorage quota exceeded for key "${key}". Consider clearing old data.`);
+                } else {
+                    console.error(`Error writing localStorage key "${key}":`, error);
+                }
             }
         }
-    }, [key, storedValue]);
+    }, [key]);
 
-    return [storedValue, setStoredValue] as const;
+    return [storedValue, setValue, stateRef] as const;
 }

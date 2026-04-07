@@ -130,31 +130,31 @@ export default function App() {
   const [activeDayIndex, setActiveDayIndex] = useState(0);
 
   // ─── Persisted state ─────────────────────────────────────────────────────
-  const [workoutTemplate, setWorkoutTemplate] = useLocalStorage<WorkoutTemplateData>(
+  const [workoutTemplate, setWorkoutTemplate, workoutTemplateRef] = useLocalStorage<WorkoutTemplateData>(
     "recomp88-workout-template",
     defaultWorkoutTemplate
   );
-  const [progress, setProgress] = useLocalStorage<WorkoutProgress>("recomp88-progress", {});
-  const [sessions, setSessions] = useLocalStorage<SessionHistory>("recomp88-sessions", []);
-  const [strengthRestDuration, setStrengthRestDuration] = useLocalStorage<number>(
+  const [progress, setProgress, progressRef] = useLocalStorage<WorkoutProgress>("recomp88-progress", {});
+  const [sessions, setSessions, sessionsRef] = useLocalStorage<SessionHistory>("recomp88-sessions", []);
+  const [strengthRestDuration, setStrengthRestDuration, strengthRestDurationRef] = useLocalStorage<number>(
     "recomp88-strength-rest",
     DEFAULT_SETTINGS.strengthRestDuration
   );
-  const [hypertrophyRestDuration, setHypertrophyRestDuration] = useLocalStorage<number>(
+  const [hypertrophyRestDuration, setHypertrophyRestDuration, hypertrophyRestDurationRef] = useLocalStorage<number>(
     "recomp88-hypertrophy-rest",
     DEFAULT_SETTINGS.hypertrophyRestDuration
   );
-  const [exerciseNotes, setExerciseNotes] = useLocalStorage<Record<string, string>>("recomp88-notes", {});
-  const [soundEnabled, setSoundEnabled] = useLocalStorage<boolean>(
+  const [exerciseNotes, setExerciseNotes, exerciseNotesRef] = useLocalStorage<Record<string, string>>("recomp88-notes", {});
+  const [soundEnabled, setSoundEnabled, soundEnabledRef] = useLocalStorage<boolean>(
     "recomp88-sound",
     DEFAULT_SETTINGS.soundEnabled
   );
-  const [bodyWeightEntries, setBodyWeightEntries] = useLocalStorage<BodyWeightEntry[]>("recomp88-bodyweight", []);
-  const [weightUnit, setWeightUnit] = useLocalStorage<"kg" | "lbs">(
+  const [bodyWeightEntries, setBodyWeightEntries, bodyWeightEntriesRef] = useLocalStorage<BodyWeightEntry[]>("recomp88-bodyweight", []);
+  const [weightUnit, setWeightUnit, weightUnitRef] = useLocalStorage<"kg" | "lbs">(
     "recomp88-weight-unit",
     DEFAULT_SETTINGS.weightUnit
   );
-  const [customExercises, setCustomExercises] = useLocalStorage<ExerciseWiki[]>("recomp88-custom-exercises", []);
+  const [customExercises, setCustomExercises, customExercisesRef] = useLocalStorage<ExerciseWiki[]>("recomp88-custom-exercises", []);
 
 
   // ─── Cloud sync ──────────────────────────────────────────────────────────
@@ -233,6 +233,26 @@ export default function App() {
   if (typeof document !== "undefined") {
     currentSnapshotRef.current = currentSnapshot;
   }
+
+  const getFreshSnapshot = useCallback((): AppDataSnapshot => {
+    return {
+      workoutTemplate: normalizeWorkoutTemplate(workoutTemplateRef.current) ?? defaultWorkoutTemplate,
+      progress: progressRef.current,
+      sessions: sessionsRef.current,
+      bodyWeightEntries: bodyWeightEntriesRef.current,
+      exerciseNotes: exerciseNotesRef.current,
+      settings: {
+        strengthRestDuration: strengthRestDurationRef.current,
+        hypertrophyRestDuration: hypertrophyRestDurationRef.current,
+        soundEnabled: soundEnabledRef.current,
+        weightUnit: weightUnitRef.current,
+      },
+      customExercises: customExercisesRef.current,
+    };
+  }, [
+    bodyWeightEntriesRef, customExercisesRef, defaultWorkoutTemplate, exerciseNotesRef, hypertrophyRestDurationRef,
+    progressRef, sessionsRef, soundEnabledRef, strengthRestDurationRef, weightUnitRef, workoutTemplateRef
+  ]);
 
   useEffect(() => {
     const serializedCurrent = JSON.stringify(workoutTemplate);
@@ -530,7 +550,7 @@ export default function App() {
         onFocus();
       } else if (document.visibilityState === "hidden") {
         cancelScheduledPush();
-        void pushToCloud(currentSnapshotRef.current, { keepalive: true });
+        void pushToCloud(getFreshSnapshot(), { keepalive: true });
       }
     };
 
@@ -541,19 +561,20 @@ export default function App() {
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [isLoggedIn, canPushCloud, pullAndMergeCloudData, cancelScheduledPush, pushToCloud]);
+  }, [isLoggedIn, canPushCloud, pullAndMergeCloudData, cancelScheduledPush, pushToCloud, getFreshSnapshot]);
 
   const handleManualSync = useCallback(async () => {
     const result = await pullAndMergeCloudData(false);
     if (!result) {
       showToast("Could not fetch cloud data, pushing local state...");
-      const pushed = await pushToCloud(currentSnapshotRef.current);
+      const pushed = await pushToCloud(getFreshSnapshot());
       showToast(pushed ? "Cloud sync complete" : "Cloud sync failed", pushed ? undefined : "error");
     }
   }, [
     pushToCloud,
     pullAndMergeCloudData,
     showToast,
+    getFreshSnapshot,
   ]);
 
   // For undo support - stores refs for the undo callback in toast
