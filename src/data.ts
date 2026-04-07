@@ -42,7 +42,9 @@ const DEFAULT_WORKOUT_TEMPLATE: WorkoutTemplate = [
         dayNumber: 1,
         title: "Day 1",
         name: "Heavy Push",
-        stretchingProgramId: "upper-body-stretch",
+        stretchingProgramId: "post-workout-push",
+        preWorkoutStretchId: "pre-workout-push",
+        postWorkoutStretchId: "post-workout-push",
         exercises: [
             makeExercise("d1-e1", "Bench Press", 4, "6-8", "strength"),
             makeExercise("d1-e2", "Seated DB Press", 3, "8-10", "hypertrophy"),
@@ -56,7 +58,9 @@ const DEFAULT_WORKOUT_TEMPLATE: WorkoutTemplate = [
         dayNumber: 2,
         title: "Day 2",
         name: "Heavy Pull",
-        stretchingProgramId: "upper-body-stretch",
+        stretchingProgramId: "post-workout-pull",
+        preWorkoutStretchId: "pre-workout-pull",
+        postWorkoutStretchId: "post-workout-pull",
         exercises: [
             makeExercise("d2-e1", "Barbell Rows", 4, "6-8", "strength"),
             makeExercise("d2-e2", "Pull-ups", 3, "8-10", "hypertrophy"),
@@ -71,7 +75,9 @@ const DEFAULT_WORKOUT_TEMPLATE: WorkoutTemplate = [
         dayNumber: 3,
         title: "Day 3",
         name: "Heavy Legs",
-        stretchingProgramId: "lower-body-stretch",
+        stretchingProgramId: "post-workout-legs",
+        preWorkoutStretchId: "pre-workout-legs",
+        postWorkoutStretchId: "post-workout-legs",
         exercises: [
             makeExercise("d3-e1", "Barbell Squats", 4, "6-8", "strength"),
             makeExercise("d3-e2", "RDLs", 3, "8-10", "hypertrophy"),
@@ -85,7 +91,9 @@ const DEFAULT_WORKOUT_TEMPLATE: WorkoutTemplate = [
         dayNumber: 4,
         title: "Day 4",
         name: "Hyper Push",
-        stretchingProgramId: "upper-body-stretch",
+        stretchingProgramId: "post-workout-push",
+        preWorkoutStretchId: "pre-workout-push",
+        postWorkoutStretchId: "post-workout-push",
         exercises: [
             makeExercise("d4-e1", "Incline Barbell Press", 3, "8-10", "hypertrophy"),
             makeExercise("d4-e2", "Pec Deck", 3, "12-15", "hypertrophy"),
@@ -99,7 +107,9 @@ const DEFAULT_WORKOUT_TEMPLATE: WorkoutTemplate = [
         dayNumber: 5,
         title: "Day 5",
         name: "Hyper Pull",
-        stretchingProgramId: "upper-body-stretch",
+        stretchingProgramId: "post-workout-pull",
+        preWorkoutStretchId: "pre-workout-pull",
+        postWorkoutStretchId: "post-workout-pull",
         exercises: [
             makeExercise("d5-e1", "Single-Arm Rows", 3, "10-12", "hypertrophy"),
             makeExercise("d5-e2", "Close-Grip Pulldowns", 3, "10-12", "hypertrophy"),
@@ -113,7 +123,9 @@ const DEFAULT_WORKOUT_TEMPLATE: WorkoutTemplate = [
         dayNumber: 6,
         title: "Day 6",
         name: "Hyper Legs",
-        stretchingProgramId: "lower-body-stretch",
+        stretchingProgramId: "post-workout-legs",
+        preWorkoutStretchId: "pre-workout-legs",
+        postWorkoutStretchId: "post-workout-legs",
         exercises: [
             makeExercise("d6-e1", "Hack Squats", 3, "8-12", "hypertrophy"),
             makeExercise("d6-e2", "Leg Extensions", 3, "12-15", "hypertrophy"),
@@ -308,6 +320,14 @@ export const normalizeWorkoutTemplate = (value: unknown): WorkoutTemplate | null
                 stretchingProgramId:
                     typeof dayValue.stretchingProgramId === "string" && dayValue.stretchingProgramId.trim()
                         ? dayValue.stretchingProgramId.trim()
+                        : undefined,
+                preWorkoutStretchId:
+                    typeof dayValue.preWorkoutStretchId === "string" && dayValue.preWorkoutStretchId.trim()
+                        ? dayValue.preWorkoutStretchId.trim()
+                        : undefined,
+                postWorkoutStretchId:
+                    typeof dayValue.postWorkoutStretchId === "string" && dayValue.postWorkoutStretchId.trim()
+                        ? dayValue.postWorkoutStretchId.trim()
                         : undefined,
                 exercises,
             } satisfies DayRoutine,

@@ -1042,8 +1042,8 @@ export default function App() {
     setShowSettings(false);
   }, [applyWorkoutTemplate, safeWorkoutTemplate, showToast]);
 
-  const handleStartStretching = useCallback(() => {
-    setSelectedStretchingProgramId(activeDay.stretchingProgramId ?? null);
+  const handleStartStretching = useCallback((programId?: string) => {
+    setSelectedStretchingProgramId(programId || activeDay.stretchingProgramId || null);
     setActiveTab("stretching");
   }, [activeDay.stretchingProgramId]);
 
@@ -1605,3 +1605,7 @@ export default function App() {
     </div>
   );
 }
+
+// triggered rebuild
+
+// triggered rebuild

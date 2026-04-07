@@ -369,17 +369,42 @@ export default function WorkoutEditorModal({
                                 />
                             </label>
 
-                            <label className="flex flex-col gap-1.5 md:col-span-2">
+                            <label className="flex flex-col gap-1.5 md:col-span-1">
                                 <span className="text-[10px] text-neutral-500 font-black uppercase tracking-widest">
-                                    Stretching Protocol
+                                    Pre-Workout Protocol
                                 </span>
                                 <select
-                                    value={activeDay.stretchingProgramId ?? ""}
+                                    value={activeDay.preWorkoutStretchId ?? ""}
                                     onChange={(event) =>
                                         updateDay((day) => ({
                                             ...day,
-                                            stretchingProgramId:
+                                            preWorkoutStretchId:
                                                 event.target.value || undefined,
+                                        }))
+                                    }
+                                    className="bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm font-semibold text-white outline-none focus:ring-1 focus:ring-lime-400/30 focus:border-lime-400/20 transition-all"
+                                >
+                                    <option value="">None</option>
+                                    {StretchingPrograms.map((program) => (
+                                        <option key={program.id} value={program.id}>
+                                            {program.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
+
+                            <label className="flex flex-col gap-1.5 md:col-span-1">
+                                <span className="text-[10px] text-neutral-500 font-black uppercase tracking-widest">
+                                    Post-Workout Protocol
+                                </span>
+                                <select
+                                    value={activeDay.postWorkoutStretchId ?? activeDay.stretchingProgramId ?? ""}
+                                    onChange={(event) =>
+                                        updateDay((day) => ({
+                                            ...day,
+                                            postWorkoutStretchId:
+                                                event.target.value || undefined,
+                                            stretchingProgramId: undefined, // Clear legacy prop on change
                                         }))
                                     }
                                     className="bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm font-semibold text-white outline-none focus:ring-1 focus:ring-lime-400/30 focus:border-lime-400/20 transition-all"

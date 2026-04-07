@@ -76,4 +76,9 @@
   .animate-slide-down {
     animation: slide-down 0.25s cubic-bezier(0.16, 1, 0.3, 1);
   }
+
+  .mask-image-bottom-fade {
+    mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+  }
 }

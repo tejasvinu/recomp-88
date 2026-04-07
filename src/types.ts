@@ -67,6 +67,7 @@ export interface Stretch {
      */
     sides?: number;
     description?: string;
+    instructions?: string[];
     image?: string; // URL or path
     targetAreas?: string[];
     cues?: string[];
@@ -93,7 +94,9 @@ export interface DayRoutine {
     title: string;
     name: string; // e.g., "Heavy Push"
     exercises: Exercise[];
-    stretchingProgramId?: string;
+    stretchingProgramId?: string; // Legacy / Fallback
+    preWorkoutStretchId?: string;
+    postWorkoutStretchId?: string;
 }
 
 export type WorkoutTemplate = DayRoutine[];

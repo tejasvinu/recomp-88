@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Timer,
@@ -29,7 +29,13 @@ export default function StretchingTab({
     onCloseProgram,
 }: StretchingTabProps) {
     const [expandedId, setExpandedId] = useState<string | null>(null);
+    const [isMounted, setIsMounted] = useState(false);
+
     const [search, setSearch] = useState("");
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
     const selectedProgram =
         StretchingPrograms.find((entry) => entry.id === selectedProgramId) ?? null;
@@ -100,8 +106,8 @@ export default function StretchingTab({
                         <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter text-zinc-100 flex items-center gap-3">
                             Recovery<span className="text-lime-400">.</span>
                         </h2>
-                        <p className="text-[10px] md:text-xs font-mono text-zinc-500 uppercase tracking-[0.25em]">
-                            {StretchingPrograms.length} programs // {totalStretchCount} stretches
+                        <p className="text-[10px] md:text-xs font-mono text-zinc-500 uppercase tracking-[0.25em]" suppressHydrationWarning>
+                            {isMounted ? `${StretchingPrograms.length} programs // ${totalStretchCount} stretches` : '\u00a0'}
                         </p>
                     </div>
                     <div className="hidden sm:flex w-12 h-12 rounded-none bg-zinc-900 border border-zinc-800 items-center justify-center">
@@ -150,10 +156,10 @@ export default function StretchingTab({
                                 variants={itemVariants}
                                 key={program.id}
                                 className={cn(
-                                    "group relative bg-[#0a0a0a] border transition-colors duration-300 overflow-hidden rounded-xl shadow-2xl",
+                                    "group relative bg-[#0a0a0a] border transition-all duration-500 overflow-hidden rounded-xl shadow-2xl",
                                     isExpanded
-                                        ? "border-lime-400/30"
-                                        : "border-zinc-800/80 hover:border-zinc-600"
+                                        ? "border-lime-400/40 shadow-[0_0_40px_-15px_rgba(163,230,53,0.15)] bg-gradient-to-b from-[#0a0a0a] to-[#0f110c]"
+                                        : "border-zinc-800/80 hover:border-zinc-700 hover:shadow-[0_0_30px_-10px_rgba(255,255,255,0.05)]"
                                 )}
                             >
                                 <div className="p-6 md:p-8 flex flex-col h-full">
@@ -311,16 +317,17 @@ export default function StretchingTab({
                                                                     <div className="flex items-center gap-2 mb-2">
                                                                         <Target size={12} className="text-lime-400" />
                                                                         <p className="text-[9px] uppercase font-black tracking-[0.18em] text-lime-400">
-                                                                            Key Cues
+                                                                            Instructions
                                                                         </p>
                                                                     </div>
-                                                                    <ul className="space-y-1.5">
-                                                                        {(stretch.cues ?? []).slice(0, 2).map((cue) => (
+                                                                    <ul className="space-y-2">
+                                                                        {(stretch.instructions ?? stretch.cues ?? []).map((step, i) => (
                                                                             <li
-                                                                                key={cue}
-                                                                                className="text-[11px] text-zinc-300 leading-relaxed"
+                                                                                key={i}
+                                                                                className="text-[11px] text-zinc-300 leading-relaxed flex items-start gap-2"
                                                                             >
-                                                                                {cue}
+                                                                                <span className="text-zinc-500 font-mono shrink-0">{i + 1}.</span>
+                                                                                <span>{step}</span>
                                                                             </li>
                                                                         ))}
                                                                     </ul>
@@ -377,7 +384,7 @@ export default function StretchingTab({
                                     <div className="mt-auto pt-2">
                                         <button
                                             onClick={() => onSelectProgram(program.id)}
-                                            className="group/btn relative w-full h-14 bg-zinc-50 border-2 border-zinc-50 text-zinc-950 flex items-center justify-between px-6 text-xs font-black uppercase tracking-[0.2em] transition-all duration-300 active:scale-[0.98] rounded-lg overflow-hidden"
+                                            className="group/btn relative w-full h-14 bg-zinc-50 border-2 border-zinc-50 text-zinc-950 flex items-center justify-between px-6 text-xs font-black uppercase tracking-[0.2em] transition-all duration-300 active:scale-[0.98] rounded-lg overflow-hidden shadow-lg hover:shadow-[0_0_25px_rgba(163,230,53,0.3)] hover:border-lime-400"
                                         >
                                             <div className="absolute inset-0 bg-lime-400 translate-y-full group-hover/btn:translate-y-0 transition-transform duration-300 ease-in-out" />
 

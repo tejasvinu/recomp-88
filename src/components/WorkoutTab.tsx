@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import type { DayRoutine, ExerciseLinkType, WorkoutProgress } from "../types";
 import { cn } from "../utils";
 import { RotateCcw, Timer } from "lucide-react";
@@ -27,7 +27,7 @@ interface WorkoutTabProps {
     onNoteChange: (exerciseId: string, note: string) => void;
     onShowFinishConfirm: () => void;
     onClearCheckmarks: () => void;
-    onStartStretching?: () => void;
+    onStartStretching?: (programId: string) => void;
 }
 
 export default function WorkoutTab({
@@ -53,6 +53,13 @@ export default function WorkoutTab({
     onStartStretching,
 }: WorkoutTabProps) {
     const [expandedNoteId, setExpandedNoteId] = useState<string | null>(null);
+    const [isMounted, setIsMounted] = useState(false);
+
+    // Hydration fix: only render dynamic data-dependent buttons on client
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
     const exerciseSegments = useMemo(() => {
         const segments: Array<{
             exercises: DayRoutine["exercises"];
@@ -234,13 +241,22 @@ export default function WorkoutTab({
                     <RotateCcw size={15} />
                     Clear Progress
                 </button>
-                {activeDay.stretchingProgramId && (
+                {isMounted && activeDay.preWorkoutStretchId && (
                     <button
-                        onClick={onStartStretching}
+                        onClick={() => onStartStretching?.(activeDay.preWorkoutStretchId!)}
+                        className="w-full active:scale-[0.98] flex items-center justify-center gap-2.5 py-4 rounded-2xl font-bold text-[12px] tracking-[0.18em] uppercase transition-all border bg-amber-400/5 hover:bg-amber-400/10 border-amber-400/15 text-white"
+                    >
+                        <Timer size={15} className="text-amber-400" />
+                        Start Pre-Workout Warmup
+                    </button>
+                )}
+                {isMounted && (activeDay.postWorkoutStretchId || activeDay.stretchingProgramId) && (
+                    <button
+                        onClick={() => onStartStretching?.((activeDay.postWorkoutStretchId || activeDay.stretchingProgramId)!)}
                         className="w-full active:scale-[0.98] flex items-center justify-center gap-2.5 py-4 rounded-2xl font-bold text-[12px] tracking-[0.18em] uppercase transition-all border bg-white/5 hover:bg-white/8 border-white/10 text-white"
                     >
                         <Timer size={15} className="text-lime-400" />
-                        Start Stretching Session
+                        Start Post-Workout Recovery
                     </button>
                 )}
                 <button

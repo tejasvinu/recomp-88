@@ -7,6 +7,12 @@ const STRETCH_LIBRARY: Record<string, Stretch> = {
         duration: 35,
         sides: 2,
         description: "Pull one arm across the chest to open the rear shoulder and upper back.",
+        instructions: [
+            "Stand or sit tall with a neutral spine.",
+            "Bring one arm directly across the front of your chest.",
+            "Use your opposite hand or forearm to gently press the elbow closer to your body.",
+            "Hold the gentle stretch in the back of the shoulder."
+        ],
         targetAreas: ["rear delts", "posterior shoulder", "upper back"],
         cues: [
             "Keep the shoulder down while you gently pull the arm across.",
@@ -27,6 +33,11 @@ const STRETCH_LIBRARY: Record<string, Stretch> = {
         duration: 35,
         sides: 2,
         description: "Reach one hand down the back and guide the elbow overhead for tricep and lat length.",
+        instructions: [
+            "Reach one arm straight up to the ceiling, then bend the elbow so your hand touches your upper back.",
+            "Use your free hand to gently pull the raised elbow backward and inward.",
+            "Keep your chest tall and ribs pulled down."
+        ],
         targetAreas: ["triceps", "lats", "long head shoulder tissues"],
         cues: [
             "Keep ribs down instead of leaning backward.",
@@ -47,6 +58,12 @@ const STRETCH_LIBRARY: Record<string, Stretch> = {
         duration: 40,
         sides: 2,
         description: "Use a wall or door frame to open the pecs and front delts after pressing.",
+        instructions: [
+            "Stand inside a doorway or next to a wall.",
+            "Place your forearm vertically flat against the frame at about shoulder height.",
+            "Step forward slightly with one foot and rotate your chest gently away from the elevated arm.",
+            "Hold when you feel a stretch across the chest and front shoulder."
+        ],
         targetAreas: ["chest", "front delts", "biceps tendon"],
         cues: [
             "Keep the shoulder blade tucked gently down the back.",
@@ -66,6 +83,12 @@ const STRETCH_LIBRARY: Record<string, Stretch> = {
         name: "Thread the Needle",
         duration: 40,
         description: "A thoracic rotation stretch that opens the upper back and rear shoulder.",
+        instructions: [
+            "Start on hands and knees in a tabletop position.",
+            "Slide one arm underneath your body, sliding the back of the hand along the floor.",
+            "Gently rest your shoulder and side of your head on the floor.",
+            "Use your other hand to press against the floor, deepening the stretch."
+        ],
         targetAreas: ["thoracic spine", "rear shoulder", "mid-back"],
         cues: [
             "Reach long with the threaded arm and let the ribs rotate.",
@@ -85,6 +108,12 @@ const STRETCH_LIBRARY: Record<string, Stretch> = {
         name: "Lat Prayer Stretch",
         duration: 35,
         description: "Sink the chest down with hands supported to lengthen the lats and long head triceps.",
+        instructions: [
+            "Kneel a few feet away from a bench, chair, or box.",
+            "Place your elbows or hands flat on the elevated surface.",
+            "Slowly sink your hips backward toward your heels.",
+            "Drop your chest toward the floor, keeping your back straight."
+        ],
         targetAreas: ["lats", "triceps", "mid-back"],
         cues: [
             "Keep the ribs tucked instead of collapsing through the low back.",
@@ -104,6 +133,12 @@ const STRETCH_LIBRARY: Record<string, Stretch> = {
         name: "Wall Slides",
         duration: 30,
         description: "Glide the forearms up a wall to train upward rotation and serratus control.",
+        instructions: [
+            "Stand with your back flat against a wall, heels a few inches away.",
+            "Place your elbows, forearms, and the back of your hands against the wall.",
+            "Slowly slide your arms upward toward the ceiling in a 'Y' shape.",
+            "Keep contact with the wall as much as possible, then lower slowly."
+        ],
         targetAreas: ["serratus", "upper back", "shoulders"],
         cues: [
             "Keep ribs stacked and forearms heavy on the wall.",
@@ -123,6 +158,12 @@ const STRETCH_LIBRARY: Record<string, Stretch> = {
         name: "Hamstring Stretch",
         duration: 40,
         description: "A long hamstring hold that targets the back of the thighs without rounding aggressively.",
+        instructions: [
+            "Stand tall or sit down with your legs extended in front of you.",
+            "Keeping your chest tall, hinge forward at the hips.",
+            "Reach your hands down toward your toes or ankles.",
+            "Hold the position when you feel tension in the back of your legs."
+        ],
         targetAreas: ["hamstrings", "calves"],
         cues: [
             "Lead with a hip hinge instead of rounding the spine first.",
@@ -142,6 +183,12 @@ const STRETCH_LIBRARY: Record<string, Stretch> = {
         name: "Couch Stretch",
         duration: 40,
         description: "A deep quad and hip-flexor opener that is excellent after squats, lunges, and long desk days.",
+        instructions: [
+            "Face away from a wall or bench and kneel down.",
+            "Slide your back leg up the wall so your shin is vertical.",
+            "Step your other foot forward into a lunge position.",
+            "Slowly raise your torso upright until you feel a deep stretch in the front of your rear leg."
+        ],
         targetAreas: ["quads", "hip flexors", "front hip"],
         cues: [
             "Squeeze the glute on the back leg before leaning upright.",
@@ -161,6 +208,12 @@ const STRETCH_LIBRARY: Record<string, Stretch> = {
         name: "Pigeon Pose",
         duration: 45,
         description: "A glute-focused stretch for the back hip that also helps external rotation tolerance.",
+        instructions: [
+            "Start in a downward dog or tabletop position.",
+            "Bring one knee forward and place it behind your wrist, rotating your lower leg inward.",
+            "Extend your other leg straight back behind you, lowering your hips to the floor.",
+            "Keep your torso upright, or gently fold forward over your front leg."
+        ],
         targetAreas: ["glutes", "deep hip rotators"],
         cues: [
             "Square the hips as much as possible before folding forward.",
@@ -180,6 +233,12 @@ const STRETCH_LIBRARY: Record<string, Stretch> = {
         name: "Adductor Rock Backs",
         duration: 35,
         description: "A dynamic groin and inner-thigh drill that opens hips without requiring extreme range.",
+        instructions: [
+            "Start on hands and knees.",
+            "Extend one leg completely out to the side, foot flat on the floor.",
+            "Keep your spine neutral and slowly sit your hips backward toward your heel.",
+            "Return to the starting position with control. Repeat."
+        ],
         targetAreas: ["adductors", "hips", "groin"],
         cues: [
             "Keep the spine long while sitting the hips back.",
@@ -199,6 +258,12 @@ const STRETCH_LIBRARY: Record<string, Stretch> = {
         name: "Ankle Dorsiflexion Rocks",
         duration: 30,
         description: "Drive the knee over the toes in a controlled way to improve ankle mobility for squats and lunges.",
+        instructions: [
+            "Kneel in a half-kneeling position, near a wall for balance if needed.",
+            "Keeping your front heel flat on the ground, drive your knee fully forward over your toes.",
+            "Hold for a brief moment at the end range.",
+            "Push back to the start and repeat rhythmically."
+        ],
         targetAreas: ["ankles", "calves", "achilles"],
         cues: [
             "Keep the heel heavy while the knee travels forward.",
@@ -218,6 +283,12 @@ const STRETCH_LIBRARY: Record<string, Stretch> = {
         name: "Calf Wall Stretch",
         duration: 35,
         description: "A straight-leg calf stretch to open the gastroc and improve ankle comfort.",
+        instructions: [
+            "Stand facing a wall with your hands resting on it.",
+            "Step one foot back, keeping that leg fully straight.",
+            "Keep the back heel pressed firmly into the ground.",
+            "Lean your hips forward gently to intensify the stretch out of the back calf."
+        ],
         targetAreas: ["calves", "achilles"],
         cues: [
             "Press the heel down while keeping toes pointed forward.",
@@ -237,6 +308,12 @@ const STRETCH_LIBRARY: Record<string, Stretch> = {
         name: "Cat-Cow",
         duration: 45,
         description: "A simple spinal wave that restores movement through the thoracic and lumbar segments.",
+        instructions: [
+            "Begin on your hands and knees in a tabletop position.",
+            "Inhale as you drop your belly toward the floor, lifting your chest and tailbone (Cow).",
+            "Exhale as you press the floor away, rounding your spine up and tucking your chin (Cat).",
+            "Move smoothly between the two positions."
+        ],
         targetAreas: ["thoracic spine", "lumbar spine", "neck"],
         cues: [
             "Move one vertebra at a time instead of rushing between end positions.",
@@ -256,6 +333,12 @@ const STRETCH_LIBRARY: Record<string, Stretch> = {
         name: "Child's Pose",
         duration: 45,
         description: "A gentle reset for the hips, back, and shoulders that also encourages slower breathing.",
+        instructions: [
+            "Start on hands and knees. Widen your knees to about mat-width apart.",
+            "Pish your hips all the way back to rest on your heels.",
+            "Extend your arms straight forward and rest your forehead gently on the ground.",
+            "Breathe deeply into your lower back."
+        ],
         targetAreas: ["lats", "low back", "hips"],
         cues: [
             "Reach long through the fingertips while sitting the hips back.",
@@ -275,6 +358,12 @@ const STRETCH_LIBRARY: Record<string, Stretch> = {
         name: "Downward Dog",
         duration: 40,
         description: "A full posterior-chain stretch that also loads the shoulders and upper back.",
+        instructions: [
+            "Start in a plank position or on hands and knees.",
+            "Tuck your toes and lift your hips high, extending your legs.",
+            "Press firmly through your hands and aim to create an inverted 'V' shape.",
+            "Pedal your heels toward the ground if needed to ease into the stretch."
+        ],
         targetAreas: ["calves", "hamstrings", "lats", "shoulders"],
         cues: [
             "Push the floor away first, then gently drive the hips up and back.",
@@ -294,6 +383,12 @@ const STRETCH_LIBRARY: Record<string, Stretch> = {
         name: "Cobra Stretch",
         duration: 35,
         description: "A front-body opener for abs, hip flexors, and chest with gentle spinal extension.",
+        instructions: [
+            "Lie completely flat on your stomach with legs extended.",
+            "Place your hands flat on the floor directly beneath your shoulders.",
+            "Gently press up through your hands to lift your chest off the floor.",
+            "Keep your hips grounded and avoid cranking your neck backward."
+        ],
         targetAreas: ["abdominals", "front hip", "chest"],
         cues: [
             "Press through the hands while keeping the shoulders away from the ears.",
@@ -313,6 +408,12 @@ const STRETCH_LIBRARY: Record<string, Stretch> = {
         name: "World's Greatest Stretch",
         duration: 45,
         description: "A full-body mobility drill combining lunge, thoracic rotation, and hamstring work.",
+        instructions: [
+            "Step forward into a deep lunge, placing both hands flat on the floor inside your front foot.",
+            "Drop the elbow of your inside arm down toward the floor, getting a deep hip stretch.",
+            "Rotate that same arm open toward the ceiling, twisting your upper spine.",
+            "Place the hand back down, rock your hips backward to stretch the front hamstring before standing up."
+        ],
         targetAreas: ["hip flexors", "hamstrings", "thoracic spine", "adductors"],
         cues: [
             "Sink into the lunge first before reaching and rotating.",
@@ -332,6 +433,12 @@ const STRETCH_LIBRARY: Record<string, Stretch> = {
         name: "90/90 Hip Switches",
         duration: 40,
         description: "A seated hip-rotation drill that trains internal and external rotation without heavy load.",
+        instructions: [
+            "Sit on the floor with your knees bent and feet flat, somewhat wide apart.",
+            "Drop both knees down to one side, forming roughly 90-degree angles in both legs.",
+            "Without fully sliding your feet, flip both knees up and entirely over to the other side.",
+            "Keep your torso as upright as comfortably possible."
+        ],
         targetAreas: ["hips", "glutes", "deep rotators"],
         cues: [
             "Sit tall before switching side to side.",
@@ -352,6 +459,12 @@ const STRETCH_LIBRARY: Record<string, Stretch> = {
         duration: 25,
         sides: 2,
         description: "A simple forearm and wrist opener for lifters who spend a lot of time gripping bars, handles, and keyboards.",
+        instructions: [
+            "Extend one arm straight out in front of you.",
+            "Flex the wrist so your fingers point downward.",
+            "Use your opposite hand to gently push on the back of your hand to intensify the stretch.",
+            "Hold steady, feeling tension over the top of the forearm."
+        ],
         targetAreas: ["forearms", "wrists"],
         cues: [
             "Straighten the elbow and gently flex the wrist until the forearm lights up.",
@@ -371,6 +484,12 @@ const STRETCH_LIBRARY: Record<string, Stretch> = {
         name: "Deep Squat Pry",
         duration: 35,
         description: "Sit into a supported deep squat and gently pry the hips and ankles open.",
+        instructions: [
+            "Stand with your feet slightly wider than shoulder-width, toes turned out slightly.",
+            "Squat down as deeply as you can while keeping your heels flat.",
+            "Press your elbows against your inner knees or upper thighs to open the hips.",
+            "Shift your weight slightly side-to-side to loosen up the ankles and hips."
+        ],
         targetAreas: ["ankles", "hips", "adductors"],
         cues: [
             "Use a counterbalance or support if needed so you can stay tall.",
@@ -390,6 +509,12 @@ const STRETCH_LIBRARY: Record<string, Stretch> = {
         name: "Neck Glides",
         duration: 25,
         description: "Gentle neck mobility to undo screen-time stiffness without cranking the cervical spine.",
+        instructions: [
+            "Sit or stand completely upright in a relaxed posture.",
+            "Slowly drop your left ear toward your left shoulder.",
+            "Carefully glide or slowly roll the head toward the front or to the right side.",
+            "Apply soft, minimal pressure with a hand only if comfortable, otherwise strictly active."
+        ],
         targetAreas: ["neck", "upper traps"],
         cues: [
             "Move slowly and stay below pain or pinching sensations.",
@@ -404,11 +529,117 @@ const STRETCH_LIBRARY: Record<string, Stretch> = {
         progression: "Pair with slow shoulder blade circles.",
         equipment: ["None"],
     },
+
+    // NEW DYNAMIC PRE-WORKOUT STRETCHES
+    "arm-circles": {
+        id: "arm-circles",
+        name: "Arm Circles",
+        duration: 30,
+        description: "Dynamic shoulder warmth and mobility.",
+        instructions: [
+            "Stand tall with arms extended outward at shoulder height.",
+            "Start making small forward circles with your arms.",
+            "Gradually increase the size of the circles until you're making full sweeps.",
+            "Halfway through the duration, reverse direction to backward circles."
+        ],
+        targetAreas: ["shoulders", "rotator cuff"],
+        cues: ["Start small and slow", "Keep the core braced so only the arms move"],
+        benefits: ["Warms up the shoulder joint capsules", "Good for pre-bench press"],
+        commonMistakes: ["Using momentum from the torso", "Rushing the motion"],
+        equipment: ["None"]
+    },
+    "leg-swings-forward": {
+        id: "leg-swings-forward",
+        name: "Forward Leg Swings",
+        duration: 30,
+        sides: 2,
+        description: "Dynamic hamstring and hip flexor stretch, ideal before squats.",
+        instructions: [
+            "Stand beside a wall or rack and hold it with one hand for balance.",
+            "Keeping your working leg reasonably straight, swing it solidly forward and upward.",
+            "Allow gravity to pull it down and swing it forcefully back behind you.",
+            "Maintain a steady, continuous rhythm."
+        ],
+        targetAreas: ["hamstrings", "hip flexors", "glutes"],
+        cues: ["Keep the torso fully upright", "Don't force the range, let momentum assist you"],
+        benefits: ["Opens up tight hamstrings pre-workout", "Warms up the hip joint dynamically"],
+        commonMistakes: ["Rounding the low back heavily as the leg comes up"],
+        equipment: ["Wall"]
+    },
+    "leg-swings-lateral": {
+        id: "leg-swings-lateral",
+        name: "Lateral Leg Swings",
+        duration: 30,
+        sides: 2,
+        description: "Dynamic adductor and abductor stretch for lateral hip opening.",
+        instructions: [
+            "Face a wall or post, holding it lightly with both hands.",
+            "Swing one leg directly out to the side as high as it will comfortably go.",
+            "Allow the leg to swing naturally back across the front of your standing leg.",
+            "Keep the motion fluid rather than jerky."
+        ],
+        targetAreas: ["adductors", "abductors", "hips"],
+        cues: ["Keep toes pointing straight ahead, not externally rotated", "Keep your torso from swaying"],
+        benefits: ["Improves lateral hip mobility", "Enhances clean squat mechanics in the hole"],
+        commonMistakes: ["Excessively rotating the hips or lower back"],
+        equipment: ["Wall"]
+    },
+    "walking-lunges-reach": {
+        id: "walking-lunges-reach",
+        name: "Walking Lunge with Reach",
+        duration: 45,
+        description: "Dynamic lunge to stretch the hip flexors while mobilizing the thoracic spine.",
+        instructions: [
+            "Take an exaggerated lunge step forward and drop your rear knee close to the floor.",
+            "Simultaneously reach both arms straight up and lean the upper back slightly backward.",
+            "Drive out of the lunge into the next step forward on the opposite leg.",
+            "Repeat alternating sides smoothly."
+        ],
+        targetAreas: ["hip flexors", "quads", "lats", "core"],
+        cues: ["Sink confidently into the bottom lunge position", "Extend upward strongly through the shoulders"],
+        benefits: ["Complex full-body warmup", "Engages the core structure while heavily opening hips"],
+        commonMistakes: ["Arching the lower back instead of the upper spine", "Front knee caving inward"],
+        equipment: ["None"]
+    },
+    "inchworms": {
+        id: "inchworms",
+        name: "Inchworms",
+        duration: 40,
+        description: "Dynamic hamstring stretch and powerful core and shoulder activation.",
+        instructions: [
+            "From a standing position, hinge downward and touch your hands to the floor in front of you.",
+            "Slowly walk your hands forward until you reach a straight-arm plank.",
+            "Optional: Perform one pushup.",
+            "Walk your toes forward toward your hands in tiny steps, keeping your legs as straight as possible."
+        ],
+        targetAreas: ["hamstrings", "calves", "shoulders", "core"],
+        cues: ["Keep legs straight to maximize hamstring loading", "Brace your core tight during the plank"],
+        benefits: ["Stretches the entire posterior chain while prepping the anterior line"],
+        commonMistakes: ["Bending the knees sharply to reach the floor", "Letting the lower back sag in plank position"],
+        equipment: ["None"]
+    }
 };
 
 const stretch = (id: keyof typeof STRETCH_LIBRARY) => STRETCH_LIBRARY[id];
 
 export const StretchingPrograms: StretchingProgram[] = [
+    {
+        id: "pre-workout-primer",
+        name: "Pre-Workout Primer",
+        focusAreas: ["dynamic mobility", "hips", "shoulders", "core"],
+        bestFor: ["before heavy lifting", "warming up the nervous system", "increasing blood flow"],
+        difficulty: "Moderate",
+        equipment: ["None"],
+        stretches: [
+            stretch("arm-circles"),
+            stretch("leg-swings-forward"),
+            stretch("leg-swings-lateral"),
+            stretch("inchworms"),
+            stretch("walking-lunges-reach"),
+            stretch("deep-squat-pry"),
+            stretch("worlds-greatest-stretch")
+        ]
+    },
     {
         id: "upper-body-stretch",
         name: "Upper Body Mobility",
@@ -488,5 +719,91 @@ export const StretchingPrograms: StretchingProgram[] = [
             stretch("calf-wall-stretch"),
             stretch("ninety-ninety-switches"),
         ],
+    },
+    {
+        id: "pre-workout-push",
+        name: "Pre-Workout: Push",
+        focusAreas: ["shoulders", "chest", "thoracic spine"],
+        bestFor: ["before heavy pressing", "warming up the shoulder capsule"],
+        difficulty: "Moderate",
+        equipment: ["None"],
+        stretches: [
+            stretch("arm-circles"),
+            stretch("doorway-chest"), // dynamic use is good
+            stretch("worlds-greatest-stretch"),
+            stretch("wall-slides")
+        ]
+    },
+    {
+        id: "post-workout-push",
+        name: "Post-Workout: Push",
+        focusAreas: ["chest", "front delts", "triceps"],
+        bestFor: ["after pressing sessions", "restoring shoulder reach"],
+        difficulty: "Easy",
+        equipment: ["Wall / door frame"],
+        stretches: [
+            stretch("cross-body-shoulder"),
+            stretch("overhead-tricep"),
+            stretch("doorway-chest"),
+            stretch("wall-slides")
+        ]
+    },
+    {
+        id: "pre-workout-pull",
+        name: "Pre-Workout: Pull",
+        focusAreas: ["upper back", "lats", "thoracic spine"],
+        bestFor: ["before heavy rows and pullups", "activating the mid back"],
+        difficulty: "Moderate",
+        equipment: ["None"],
+        stretches: [
+            stretch("arm-circles"),
+            stretch("cat-cow"),
+            stretch("thread-the-needle"),
+            stretch("worlds-greatest-stretch")
+        ]
+    },
+    {
+        id: "post-workout-pull",
+        name: "Post-Workout: Pull",
+        focusAreas: ["lats", "mid back", "biceps", "neck"],
+        bestFor: ["after dragging sessions", "easing lat tightness"],
+        difficulty: "Easy",
+        equipment: ["Bench/Chair"],
+        stretches: [
+            stretch("lat-prayer"),
+            stretch("thread-the-needle"),
+            stretch("childs-pose"),
+            stretch("neck-glides")
+        ]
+    },
+    {
+        id: "pre-workout-legs",
+        name: "Pre-Workout: Legs",
+        focusAreas: ["hips", "ankles", "hamstrings", "groin"],
+        bestFor: ["before squatting", "warming up the hips"],
+        difficulty: "Moderate",
+        equipment: ["Wall"],
+        stretches: [
+            stretch("leg-swings-forward"),
+            stretch("leg-swings-lateral"),
+            stretch("walking-lunges-reach"),
+            stretch("inchworms"),
+            stretch("deep-squat-pry"),
+            stretch("ankle-dorsiflexion-rocks")
+        ]
+    },
+    {
+        id: "post-workout-legs",
+        name: "Post-Workout: Legs",
+        focusAreas: ["quads", "hamstrings", "glutes", "calves"],
+        bestFor: ["after heavy squats and deadlifts", "restoring length in the lower body"],
+        difficulty: "Moderate",
+        equipment: ["Wall", "Bench"],
+        stretches: [
+            stretch("couch-stretch"),
+            stretch("pigeon-pose"),
+            stretch("hamstring-fold"),
+            stretch("calf-wall-stretch")
+        ]
     },
 ];
