@@ -49,6 +49,7 @@ import DayCompleteOverlay from "./components/DayCompleteOverlay";
 import FinishConfirmModal from "./components/FinishConfirmModal";
 import SettingsModal from "./components/SettingsModal";
 import WorkoutEditorModal from "./components/WorkoutEditorModal";
+import AddPastSessionModal from "./components/AddPastSessionModal";
 import ToastContainer from "./components/ui/ToastContainer";
 import InstallPrompt from "./components/InstallPrompt";
 
@@ -189,6 +190,7 @@ export default function App() {
   const [showDayComplete, setShowDayComplete] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showWorkoutEditor, setShowWorkoutEditor] = useState(false);
+  const [showAddPastSession, setShowAddPastSession] = useState(false);
   const [showPlateCalc, setShowPlateCalc] = useState(false);
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
   const [selectedStretchingProgramId, setSelectedStretchingProgramId] = useState<string | null>(null);
@@ -969,6 +971,12 @@ export default function App() {
     [setSessions, showToast]
   );
 
+  const handleAddPastSessions = useCallback((newSessions: WorkoutSession[]) => {
+    setSessions((prev) => [...prev, ...newSessions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
+    showToast(`Added ${newSessions.length} past session${newSessions.length !== 1 ? 's' : ''}`, "success");
+    setShowAddPastSession(false);
+  }, [setSessions, showToast]);
+
   // ─── Body weight ──────────────────────────────────────────────────────────
   const logBodyWeight = useCallback(
     (weight: number) => {
@@ -1583,6 +1591,9 @@ export default function App() {
             setShowSettings(false);
             setShowWorkoutEditor(true);
           }}
+          onOpenAddPastSession={() => {
+            setShowAddPastSession(true);
+          }}
           onApplyFreeWeightWorkout={handleApplyFreeWeightWorkout}
           onResetWorkoutTemplate={handleResetWorkoutTemplate}
           onClearData={handleClearData}
@@ -1600,6 +1611,16 @@ export default function App() {
             showToast(`Saved ${ex.name} to library`);
           }}
           onClose={() => setShowWorkoutEditor(false)}
+        />
+      )}
+
+      {showAddPastSession && (
+        <AddPastSessionModal
+          workoutTemplate={safeWorkoutTemplate}
+          bodyWeightEntries={bodyWeightEntries}
+          weightUnit={weightUnit}
+          onAddSessions={handleAddPastSessions}
+          onClose={() => setShowAddPastSession(false)}
         />
       )}
     </div>

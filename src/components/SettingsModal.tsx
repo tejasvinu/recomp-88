@@ -14,6 +14,7 @@ import {
     Dumbbell,
     RotateCcw,
     ArrowLeftRight,
+    DatabaseBackup,
 } from "lucide-react";
 import { cn } from "../utils";
 import { useModalEscape } from "../hooks/useModalEscape";
@@ -41,6 +42,7 @@ interface SettingsModalProps {
     onResetWorkoutTemplate: () => void;
     onClearData: () => void;
     onClose: () => void;
+    onOpenAddPastSession: () => void;
 }
 
 export default function SettingsModal({
@@ -62,6 +64,7 @@ export default function SettingsModal({
     onResetWorkoutTemplate,
     onClearData,
     onClose,
+    onOpenAddPastSession,
 }: SettingsModalProps) {
     useModalEscape(onClose);
     const importRef = useRef<HTMLInputElement>(null);
@@ -284,9 +287,29 @@ export default function SettingsModal({
                     <div>
                         <p className="text-[10px] text-neutral-500 font-black uppercase tracking-widest mb-3 flex items-center gap-2">
                             <Download size={12} className="text-lime-400" />
-                            Data Backup
+                            Data Management
                         </p>
                         <div className="flex flex-col gap-2">
+                            <button
+                                onClick={() => {
+                                    onClose();
+                                    onOpenAddPastSession();
+                                }}
+                                className="flex items-center gap-3 w-full bg-white/4 hover:bg-white/7 border border-white/8 rounded-xl px-4 py-3.5 transition-all group"
+                            >
+                                <div className="w-9 h-9 bg-purple-400/10 border border-purple-400/20 rounded-xl flex items-center justify-center shrink-0">
+                                    <DatabaseBackup size={16} className="text-purple-400" />
+                                </div>
+                                <div className="text-left">
+                                    <p className="text-[13px] font-bold text-white group-hover:text-purple-400 transition-colors">
+                                        Add Past Session
+                                    </p>
+                                    <p className="text-[10px] text-neutral-500 font-medium mt-0.5">
+                                        Backfill previous workouts manually or via JSON
+                                    </p>
+                                </div>
+                            </button>
+
                             <button
                                 onClick={onExport}
                                 className="flex items-center gap-3 w-full bg-white/4 hover:bg-white/7 border border-white/8 rounded-xl px-4 py-3.5 transition-all group"
