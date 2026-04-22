@@ -704,16 +704,38 @@ export default function App() {
 
   const handleExportCsv = useCallback(() => {
     const escape = (v: string | number | null | undefined) => `"${String(v ?? "").replace(/"/g, '""').replace(/[\r\n]+/g, " ")}"`;
-    const rows = sessions.flatMap((s) => s.exercises.flatMap((ex) => ex.sets.map((set, i) => [s.date, ex.name, i + 1, set.loggedWeight, set.loggedReps])));
+    const rows = sessions.flatMap((s) => s.exercises.flatMap((ex) => ex.sets.map((set, i) => [
+      s.date,
+      s.id,
+      s.dayName,
+      s.duration || "",
+      s.bodyWeightSnapshot || "",
+      s.totalTonnage || "",
+      ex.name,
+      i + 1,
+      set.setType || "",
+      set.targetReps || "",
+      set.loggedWeight,
+      set.loggedReps,
+      set.completed ? "Yes" : "No",
+      set.completedAt ? new Date(set.completedAt).toISOString() : "",
+      set.rpe || "",
+      exerciseNotes[ex.exerciseId] || ""
+    ])));
     if (!rows.length) { showToast("No session history to export yet", "error"); return; }
-    const csv = [["Date", "Exercise", "Set", "Weight", "Reps"], ...rows].map((r) => r.map(escape).join(",")).join("\r\n");
+    const headers = [
+      "Date", "Session ID", "Day Name", "Duration (s)", "Bodyweight", "Total Tonnage",
+      "Exercise", "Set", "Set Type", "Target Reps", "Weight", "Reps",
+      "Completed", "Completed At", "RPE", "Notes"
+    ];
+    const csv = [headers, ...rows].map((r) => r.map(escape).join(",")).join("\r\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url; a.download = `recomp88-analytics-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
     URL.revokeObjectURL(url);
     showToast("CSV exported");
-  }, [sessions, showToast]);
+  }, [sessions, exerciseNotes, showToast]);
 
   const handleExportConfig = useCallback(() => {
     let content = "Workout Configuration:\n\n";
