@@ -1,7 +1,4 @@
-import { useState, useEffect, useLayoutEffect, useCallback, useRef } from "react";
-
-const useIsomorphicLayoutEffect =
-    typeof document !== "undefined" ? useLayoutEffect : useEffect;
+import { useState, useEffect, useCallback, useRef } from "react";
 
 export function useWorkoutTimer() {
     const [workoutStartTime, setWorkoutStartTime] = useState<number | null>(null);
@@ -9,7 +6,7 @@ export function useWorkoutTimer() {
     const [elapsedSeconds, setElapsedSeconds] = useState(0);
     const shouldSkipPersist = useRef(true);
 
-    useIsomorphicLayoutEffect(() => {
+    useEffect(() => {
         try {
             const startVal = localStorage.getItem("recomp88-timer-start");
             const pausedVal = localStorage.getItem("recomp88-timer-paused");

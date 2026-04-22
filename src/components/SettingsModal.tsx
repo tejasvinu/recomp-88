@@ -36,6 +36,7 @@ interface SettingsModalProps {
     workoutDayCount: number;
     onExport: () => void;
     onExportCsv: () => void;
+    onExportConfig: () => void;
     onImport: (e: React.ChangeEvent<HTMLInputElement>) => void;
     onOpenWorkoutEditor: () => void;
     onApplyFreeWeightWorkout: () => void;
@@ -58,6 +59,7 @@ export default function SettingsModal({
     workoutDayCount,
     onExport,
     onExportCsv,
+    onExportConfig,
     onImport,
     onOpenWorkoutEditor,
     onApplyFreeWeightWorkout,
@@ -340,6 +342,23 @@ export default function SettingsModal({
                                     </p>
                                     <p className="text-[10px] text-neutral-500 font-medium mt-0.5">
                                         Download analytics rows for Excel or custom pivot tables
+                                    </p>
+                                </div>
+                            </button>
+
+                            <button
+                                onClick={onExportConfig}
+                                className="flex items-center gap-3 w-full bg-white/4 hover:bg-white/7 border border-white/8 rounded-xl px-4 py-3.5 transition-all group"
+                            >
+                                <div className="w-9 h-9 bg-orange-400/10 border border-orange-400/20 rounded-xl flex items-center justify-center shrink-0">
+                                    <Download size={16} className="text-orange-400" />
+                                </div>
+                                <div className="text-left">
+                                    <p className="text-[13px] font-bold text-white group-hover:text-orange-400 transition-colors">
+                                        Export Workout Plan
+                                    </p>
+                                    <p className="text-[10px] text-neutral-500 font-medium mt-0.5">
+                                        Download a text summary of your daily routines and exercises
                                     </p>
                                 </div>
                             </button>

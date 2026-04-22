@@ -7,7 +7,6 @@ import {
   pruneExerciseNotesForWorkoutTemplate,
   pruneProgressForWorkoutTemplate,
 } from "./data";
-import { useLocalStorage } from "./hooks/useLocalStorage";
 import { useToast } from "./hooks/useToast";
 import { useRestTimer } from "./hooks/useRestTimer";
 import { useWorkoutTimer } from "./hooks/useWorkoutTimer";
@@ -24,32 +23,34 @@ import {
 } from "./lib/sync";
 import type {
   AppDataSnapshot,
-  BodyWeightEntry,
-  WorkoutTemplate as WorkoutTemplateData,
   ExerciseWiki,
-  SessionHistory,
   WorkoutSession,
-  WorkoutProgress,
 } from "./types";
-import { cn, formatTime, getClosestBodyWeight, resolveWeight, toLocalDateKey } from "./utils";
+import { cn, getClosestBodyWeight, resolveWeight, toLocalDateKey } from "./utils";
 import {
   findWikiEntry,
   isFreeWeightFriendly,
   resolvePrimaryFreeWeightAlternative,
 } from "./wikiData";
-import { Dumbbell, BookOpen, BarChart3, Settings, Calculator, Clock, Play, RotateCcw, UserCircle2, Timer } from "lucide-react";
 
+// ─── Zustand store ────────────────────────────────────────────────────────────
+import {
+  useAppStore,
+  selectCurrentSnapshot,
+  selectSafeWorkoutTemplate,
+} from "./store/appStore";
+
+// ─── New sub-components ────────────────────────────────────────────────────
+import AppHeader from "./components/AppHeader";
+import BottomNav from "./components/BottomNav";
+
+// ─── Existing components ──────────────────────────────────────────────────
 import ErrorBoundary from "./components/ErrorBoundary";
-import ExerciseDetailModal from "./components/ExerciseDetailModal";
-import PlateCalculator from "./components/PlateCalculator";
 import WorkoutTab from "./components/WorkoutTab";
 import StretchingTab from "./components/StretchingTab";
 import RestTimerToast from "./components/RestTimerToast";
 import DayCompleteOverlay from "./components/DayCompleteOverlay";
-import FinishConfirmModal from "./components/FinishConfirmModal";
-import SettingsModal from "./components/SettingsModal";
-import WorkoutEditorModal from "./components/WorkoutEditorModal";
-import AddPastSessionModal from "./components/AddPastSessionModal";
+import GlobalModals from "./components/GlobalModals";
 import ToastContainer from "./components/ui/ToastContainer";
 import InstallPrompt from "./components/InstallPrompt";
 
@@ -57,32 +58,7 @@ const WikiView = lazy(() => import("./components/WikiView"));
 const ChartsView = lazy(() => import("./components/ChartsView"));
 const ProfileTab = lazy(() => import("./components/ProfileTab"));
 
-type TabId = "workout" | "stretching" | "wiki" | "charts" | "profile";
-
-const APP_STORAGE_KEYS = [
-  "recomp88-workout-template",
-  "recomp88-progress",
-  "recomp88-sessions",
-  "recomp88-strength-rest",
-  "recomp88-hypertrophy-rest",
-  "recomp88-notes",
-  "recomp88-sound",
-  "recomp88-bodyweight",
-  "recomp88-weight-unit",
-  "recomp88-rest-state",
-  "recomp88-timer-start",
-  "recomp88-timer-paused",
-  "recomp88-pwa-dismissed",
-  "recomp88-custom-exercises",
-] as const;
-
-const DEFAULT_SETTINGS = {
-  strengthRestDuration: 120,
-  hypertrophyRestDuration: 90,
-  soundEnabled: true,
-  weightUnit: "kg" as const,
-};
-
+// ─── Module-level helpers (no state dependency) ───────────────────────────
 const slugifyName = (value: string) =>
   value
     .toLowerCase()
@@ -95,70 +71,90 @@ const createWorkoutExerciseId = (dayId: string, exerciseName: string) => {
     typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
       ? crypto.randomUUID().slice(0, 6)
       : `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-
   return `${dayId}-${slugifyName(exerciseName) || "exercise"}-${suffix}`;
 };
 
 const stableStringify = (value: unknown) =>
-  JSON.stringify(value, (_key, currentValue) => {
-    if (Array.isArray(currentValue) || currentValue === null || typeof currentValue !== "object") {
-      return currentValue;
-    }
-
+  JSON.stringify(value, (_key, v) => {
+    if (Array.isArray(v) || v === null || typeof v !== "object") return v;
     return Object.fromEntries(
-      Object.entries(currentValue as Record<string, unknown>).sort(([left], [right]) =>
-        left.localeCompare(right)
-      )
+      Object.entries(v as Record<string, unknown>).sort(([a], [b]) => a.localeCompare(b))
     );
   });
 
-const downloadFile = (parts: BlobPart[], type: string, filename: string) => {
-  const blob = new Blob(parts, { type });
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = filename;
-  anchor.click();
-  URL.revokeObjectURL(url);
-};
-
-const escapeCsvValue = (value: string | number | null | undefined) =>
-  `"${String(value ?? "").replace(/"/g, "\"\"").replace(/[\r\n]+/g, " ")}"`;
+// ─── Loading spinner ──────────────────────────────────────────────────────
+const Spinner = () => (
+  <div className="flex items-center justify-center py-20">
+    <div className="w-6 h-6 border-2 border-lime-400/30 border-t-lime-400 rounded-full animate-spin" />
+  </div>
+);
 
 export default function App() {
-  const defaultWorkoutTemplate = useMemo(() => createDefaultWorkoutTemplate(), []);
-  const [activeTab, setActiveTab] = useState<TabId>("workout");
-  const [activeDayIndex, setActiveDayIndex] = useState(0);
+  const [isHydrated, setIsHydrated] = useState(false);
+  useEffect(() => { setIsHydrated(true); }, []);
 
-  // ─── Persisted state ─────────────────────────────────────────────────────
-  const [workoutTemplate, setWorkoutTemplate, workoutTemplateRef] = useLocalStorage<WorkoutTemplateData>(
-    "recomp88-workout-template",
-    defaultWorkoutTemplate
-  );
-  const [progress, setProgress, progressRef] = useLocalStorage<WorkoutProgress>("recomp88-progress", {});
-  const [sessions, setSessions, sessionsRef] = useLocalStorage<SessionHistory>("recomp88-sessions", []);
-  const [strengthRestDuration, setStrengthRestDuration, strengthRestDurationRef] = useLocalStorage<number>(
-    "recomp88-strength-rest",
-    DEFAULT_SETTINGS.strengthRestDuration
-  );
-  const [hypertrophyRestDuration, setHypertrophyRestDuration, hypertrophyRestDurationRef] = useLocalStorage<number>(
-    "recomp88-hypertrophy-rest",
-    DEFAULT_SETTINGS.hypertrophyRestDuration
-  );
-  const [exerciseNotes, setExerciseNotes, exerciseNotesRef] = useLocalStorage<Record<string, string>>("recomp88-notes", {});
-  const [soundEnabled, setSoundEnabled, soundEnabledRef] = useLocalStorage<boolean>(
-    "recomp88-sound",
-    DEFAULT_SETTINGS.soundEnabled
-  );
-  const [bodyWeightEntries, setBodyWeightEntries, bodyWeightEntriesRef] = useLocalStorage<BodyWeightEntry[]>("recomp88-bodyweight", []);
-  const [weightUnit, setWeightUnit, weightUnitRef] = useLocalStorage<"kg" | "lbs">(
-    "recomp88-weight-unit",
-    DEFAULT_SETTINGS.weightUnit
-  );
-  const [customExercises, setCustomExercises, customExercisesRef] = useLocalStorage<ExerciseWiki[]>("recomp88-custom-exercises", []);
+  // ─── Global store (individual selectors for stability) ──────────────────
+  const progress = useAppStore((s) => s.progress);
+  const setProgress = useAppStore((s) => s.setProgress);
+  const sessions = useAppStore((s) => s.sessions);
+  const setSessions = useAppStore((s) => s.setSessions);
+  const bodyWeightEntries = useAppStore((s) => s.bodyWeightEntries);
+  const setBodyWeightEntries = useAppStore((s) => s.setBodyWeightEntries);
+  const exerciseNotes = useAppStore((s) => s.exerciseNotes);
+  const setExerciseNotes = useAppStore((s) => s.setExerciseNotes);
+  const weightUnit = useAppStore((s) => s.weightUnit);
+  const setWeightUnit = useAppStore((s) => s.setWeightUnit);
+  const customExercises = useAppStore((s) => s.customExercises);
+  const setCustomExercises = useAppStore((s) => s.setCustomExercises);
+  const strengthRestDuration = useAppStore((s) => s.strengthRestDuration);
+  const hypertrophyRestDuration = useAppStore((s) => s.hypertrophyRestDuration);
+  const soundEnabled = useAppStore((s) => s.soundEnabled);
+  const setSoundEnabled = useAppStore((s) => s.setSoundEnabled);
+  const activeTab = useAppStore((s) => s.activeTab);
+  const setActiveTab = useAppStore((s) => s.setActiveTab);
+  const activeDayIndex = useAppStore((s) => s.activeDayIndex);
+  const setActiveDayIndex = useAppStore((s) => s.setActiveDayIndex);
+  const selectedStretchingProgramId = useAppStore((s) => s.selectedStretchingProgramId);
+  const setSelectedStretchingProgramId = useAppStore((s) => s.setSelectedStretchingProgramId);
+  const applySnapshot = useAppStore((s) => s.applySnapshot);
 
+  // Derived / memoised from the store
+  const safeWorkoutTemplate = useAppStore((s) => s.workoutTemplate);
+  const currentSnapshot = useMemo((): AppDataSnapshot => ({
+    workoutTemplate: safeWorkoutTemplate,
+    progress,
+    sessions,
+    bodyWeightEntries,
+    exerciseNotes,
+    settings: {
+      strengthRestDuration,
+      hypertrophyRestDuration,
+      soundEnabled,
+      weightUnit,
+    },
+    customExercises,
+  }), [safeWorkoutTemplate, progress, sessions, bodyWeightEntries, exerciseNotes, strengthRestDuration, hypertrophyRestDuration, soundEnabled, weightUnit, customExercises]);
 
-  // ─── Cloud sync ──────────────────────────────────────────────────────────
+  // Keep a stable ref of the snapshot for callbacks that need stale-proof reads
+  const currentSnapshotRef = useRef(currentSnapshot);
+  useEffect(() => {
+    currentSnapshotRef.current = currentSnapshot;
+  }, [currentSnapshot]);
+
+  const getFreshSnapshot = useCallback((): AppDataSnapshot => currentSnapshotRef.current, []);
+
+  const clampedActiveDayIndex = Math.min(activeDayIndex, Math.max(safeWorkoutTemplate.length - 1, 0));
+  const activeDay = safeWorkoutTemplate[clampedActiveDayIndex];
+
+  // Clamp activeDayIndex if template shrinks
+  useEffect(() => {
+    if (isHydrated && activeDayIndex !== clampedActiveDayIndex) {
+      setActiveDayIndex(clampedActiveDayIndex);
+    }
+  }, [isHydrated, activeDayIndex, clampedActiveDayIndex, setActiveDayIndex]);
+
+  // Hydration guard moved to bottom
+  // ─── Cloud sync ─────────────────────────────────────────────────────────
   const {
     isLoggedIn,
     fetchCloudData,
@@ -168,24 +164,23 @@ export default function App() {
     syncStatus,
     lastSyncedAt,
   } = useCloudSync();
+
   const cloudBootstrapped = useRef(false);
   const skipNextCloudPushRef = useRef(0);
   const suppressOverlayRef = useRef(false);
   const lastSyncedAtRef = useRef(lastSyncedAt);
   const [canPushCloud, setCanPushCloud] = useState(false);
-  /** Explains how overlapping local vs cloud fields were merged (see Profile). */
   const [lastMergeSummary, setLastMergeSummary] = useState<string | null>(null);
 
-  // ─── Hooks ─────────────────────────────────────────────────────────────────
+  useEffect(() => { lastSyncedAtRef.current = lastSyncedAt; }, [lastSyncedAt]);
+  useEffect(() => { if (!isLoggedIn) setLastMergeSummary(null); }, [isLoggedIn]);
+
+  // ─── Hooks ────────────────────────────────────────────────────────────
   const { toasts, showToast, dismissToast } = useToast();
-  const restTimer = useRestTimer({
-    soundEnabled,
-    strengthDuration: strengthRestDuration,
-    hypertrophyDuration: hypertrophyRestDuration,
-  });
+  const restTimer = useRestTimer({ soundEnabled, strengthDuration: strengthRestDuration, hypertrophyDuration: hypertrophyRestDuration });
   const workoutTimer = useWorkoutTimer();
 
-  // ─── Ephemeral state ──────────────────────────────────────────────────────
+  // ─── Local UI state (not global) ─────────────────────────────────────
   const [modalEntry, setModalEntry] = useState<ExerciseWiki | null>(null);
   const [showDayComplete, setShowDayComplete] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -193,483 +188,68 @@ export default function App() {
   const [showAddPastSession, setShowAddPastSession] = useState(false);
   const [showPlateCalc, setShowPlateCalc] = useState(false);
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
-  const [selectedStretchingProgramId, setSelectedStretchingProgramId] = useState<string | null>(null);
 
-  const safeWorkoutTemplate = useMemo(
-    () => normalizeWorkoutTemplate(workoutTemplate) ?? defaultWorkoutTemplate,
-    [defaultWorkoutTemplate, workoutTemplate]
-  );
-  const currentSettings = useMemo(
-    () => ({
-      strengthRestDuration,
-      hypertrophyRestDuration,
-      soundEnabled,
-      weightUnit,
-    }),
-    [hypertrophyRestDuration, soundEnabled, strengthRestDuration, weightUnit]
-  );
-  const currentSnapshot = useMemo<AppDataSnapshot>(
-    () => ({
-      workoutTemplate: safeWorkoutTemplate,
-      progress,
-      sessions,
-      bodyWeightEntries,
-      exerciseNotes,
-      settings: currentSettings,
-      customExercises,
-    }),
-    [
-      bodyWeightEntries,
-      currentSettings,
-      customExercises,
-      exerciseNotes,
-      progress,
-      safeWorkoutTemplate,
-      sessions,
-    ]
-  );
-  const currentSnapshotRef = useRef(currentSnapshot);
-  const clampedActiveDayIndex = Math.min(activeDayIndex, Math.max(safeWorkoutTemplate.length - 1, 0));
-  const activeDay = safeWorkoutTemplate[clampedActiveDayIndex];
-
-  if (typeof document !== "undefined") {
-    currentSnapshotRef.current = currentSnapshot;
-  }
-
-  const getFreshSnapshot = useCallback((): AppDataSnapshot => {
-    return {
-      workoutTemplate: normalizeWorkoutTemplate(workoutTemplateRef.current) ?? defaultWorkoutTemplate,
-      progress: progressRef.current,
-      sessions: sessionsRef.current,
-      bodyWeightEntries: bodyWeightEntriesRef.current,
-      exerciseNotes: exerciseNotesRef.current,
-      settings: {
-        strengthRestDuration: strengthRestDurationRef.current,
-        hypertrophyRestDuration: hypertrophyRestDurationRef.current,
-        soundEnabled: soundEnabledRef.current,
-        weightUnit: weightUnitRef.current,
-      },
-      customExercises: customExercisesRef.current,
-    };
-  }, [
-    bodyWeightEntriesRef, customExercisesRef, defaultWorkoutTemplate, exerciseNotesRef, hypertrophyRestDurationRef,
-    progressRef, sessionsRef, soundEnabledRef, strengthRestDurationRef, weightUnitRef, workoutTemplateRef
-  ]);
-
-  useEffect(() => {
-    const serializedCurrent = JSON.stringify(workoutTemplate);
-    const serializedSafe = JSON.stringify(safeWorkoutTemplate);
-    if (serializedCurrent !== serializedSafe) {
-      setWorkoutTemplate(safeWorkoutTemplate);
-    }
-  }, [safeWorkoutTemplate, setWorkoutTemplate, workoutTemplate]);
-
-  useEffect(() => {
-    if (activeDayIndex !== clampedActiveDayIndex) {
-      setActiveDayIndex(clampedActiveDayIndex);
-    }
-  }, [activeDayIndex, clampedActiveDayIndex]);
-
-  const applyWorkoutTemplate = useCallback(
-    (nextWorkoutTemplate: WorkoutTemplateData, successMessage?: string) => {
-      const normalizedTemplate = normalizeWorkoutTemplate(nextWorkoutTemplate);
-      if (!normalizedTemplate) {
-        showToast("Invalid workout template", "error");
-        return null;
-      }
-
-      setWorkoutTemplate(normalizedTemplate);
-      setProgress((previousProgress) =>
-        pruneProgressForWorkoutTemplate(previousProgress, normalizedTemplate)
-      );
-      setExerciseNotes((previousNotes) =>
-        pruneExerciseNotesForWorkoutTemplate(previousNotes, normalizedTemplate)
-      );
-      setActiveDayIndex((currentIndex) =>
-        Math.min(currentIndex, Math.max(normalizedTemplate.length - 1, 0))
-      );
-
-      if (successMessage) {
-        showToast(successMessage);
-      }
-
-      return normalizedTemplate;
-    },
-    [setExerciseNotes, setProgress, setWorkoutTemplate, showToast]
-  );
-
-  const resolveSnapshotSettings = useCallback(
-    (
-      settings: Partial<AppDataSnapshot["settings"]>,
-      fallback: AppDataSnapshot["settings"]
-    ): AppDataSnapshot["settings"] => ({
-      strengthRestDuration:
-        typeof settings.strengthRestDuration === "number"
-          ? settings.strengthRestDuration
-          : fallback.strengthRestDuration,
-      hypertrophyRestDuration:
-        typeof settings.hypertrophyRestDuration === "number"
-          ? settings.hypertrophyRestDuration
-          : fallback.hypertrophyRestDuration,
-      soundEnabled:
-        typeof settings.soundEnabled === "boolean"
-          ? settings.soundEnabled
-          : fallback.soundEnabled,
-      weightUnit:
-        settings.weightUnit === "kg" || settings.weightUnit === "lbs"
-          ? settings.weightUnit
-          : fallback.weightUnit,
-    }),
-    []
-  );
-
-  const applyCloudSnapshot = useCallback(
-    (snapshot: AppDataSnapshot) => {
-      if (stableStringify(currentSnapshotRef.current) === stableStringify(snapshot)) {
-        return false;
-      }
-
-      skipNextCloudPushRef.current += 1;
-      suppressOverlayRef.current = true;
-      setWorkoutTemplate(snapshot.workoutTemplate);
-      setProgress(snapshot.progress);
-      setSessions(snapshot.sessions);
-      setBodyWeightEntries(snapshot.bodyWeightEntries);
-      setCustomExercises(snapshot.customExercises);
-      setExerciseNotes(snapshot.exerciseNotes);
-      setStrengthRestDuration(snapshot.settings.strengthRestDuration);
-      setHypertrophyRestDuration(snapshot.settings.hypertrophyRestDuration);
-      setSoundEnabled(snapshot.settings.soundEnabled);
-      setWeightUnit(snapshot.settings.weightUnit);
-
-      return true;
-    },
-    [
-      setBodyWeightEntries,
-      setCustomExercises,
-      setExerciseNotes,
-      setHypertrophyRestDuration,
-      setProgress,
-      setSessions,
-      setSoundEnabled,
-      setStrengthRestDuration,
-      setWeightUnit,
-      setWorkoutTemplate,
-    ]
-  );
-
-  const handleSetWeightUnit = useCallback(
-    (fn: (v: "kg" | "lbs") => "kg" | "lbs") => {
-      setWeightUnit((prev) => {
-        const next = fn(prev);
-        if (isLoggedIn && next !== prev) {
-          void fetch("/api/user/profile", {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ weightUnit: next }),
-          }).catch(() => {});
-        }
-        return next;
+  // ─── Computed ─────────────────────────────────────────────────────────
+  const progressPercent = useMemo(() => {
+    let total = 0, completed = 0;
+    activeDay.exercises.forEach((ex) => {
+      total += ex.sets.length;
+      ex.sets.forEach((set) => {
+        if (progress[activeDay.id]?.[ex.id]?.[set.id]?.completed) completed++;
       });
-    },
-    [isLoggedIn, setWeightUnit]
-  );
-
-  // ─── Shared pull and merge logic ──────────────────────────────────────────
-  const pullAndMergeCloudData = useCallback(async (silent = true) => {
-    if (!isLoggedIn) return null;
-
-    const syncBase = lastSyncedAtRef.current;
-
-    try {
-      const data = await fetchCloudData();
-      if (!data) return null;
-
-      const localSnapshot = currentSnapshotRef.current;
-      const preferCloudOnConflict = hasRemoteChangesSinceBase(syncBase, data.lastSyncedAt);
-      const mergeSummary =
-        data.lastSyncedAt != null
-          ? preferCloudOnConflict
-            ? "Overlapping data was merged using the server copy (the cloud had newer changes than your last sync on this device)."
-            : "Overlapping data was merged using this device’s copy (your changes were newer than the last cloud update)."
-          : null;
-      const remoteWorkoutTemplate = normalizeWorkoutTemplate(data.workoutTemplate);
-      const nextWorkoutTemplate =
-        remoteWorkoutTemplate && (preferCloudOnConflict || !syncBase)
-          ? remoteWorkoutTemplate
-          : localSnapshot.workoutTemplate;
-
-      const mergedSnapshot: AppDataSnapshot = {
-        workoutTemplate: nextWorkoutTemplate,
-        progress: pruneProgressForWorkoutTemplate(
-          mergeWorkoutProgressWithPreference(
-            localSnapshot.progress,
-            data.progress ?? {},
-            preferCloudOnConflict
-          ),
-          nextWorkoutTemplate
-        ),
-        sessions: mergeSessionHistory(
-          localSnapshot.sessions,
-          data.sessions ?? [],
-          preferCloudOnConflict
-        ),
-        bodyWeightEntries: mergeBodyWeightEntries(
-          localSnapshot.bodyWeightEntries,
-          data.bodyWeightEntries ?? [],
-          preferCloudOnConflict
-        ),
-        exerciseNotes: pruneExerciseNotesForWorkoutTemplate(
-          mergeExerciseNotes(
-            localSnapshot.exerciseNotes,
-            data.exerciseNotes ?? {},
-            preferCloudOnConflict
-          ),
-          nextWorkoutTemplate
-        ),
-        settings: resolveSnapshotSettings(
-          mergeSettings(localSnapshot.settings, data.settings ?? {}, preferCloudOnConflict),
-          localSnapshot.settings
-        ),
-        customExercises: mergeById(
-          localSnapshot.customExercises,
-          data.customExercises ?? [],
-          preferCloudOnConflict
-        ),
-      };
-
-      const cloudWorkoutTemplate = remoteWorkoutTemplate ?? localSnapshot.workoutTemplate;
-      const cloudSnapshot: AppDataSnapshot = {
-        workoutTemplate: cloudWorkoutTemplate,
-        progress: pruneProgressForWorkoutTemplate(data.progress ?? {}, cloudWorkoutTemplate),
-        sessions: data.sessions ?? [],
-        bodyWeightEntries: data.bodyWeightEntries ?? [],
-        exerciseNotes: pruneExerciseNotesForWorkoutTemplate(
-          data.exerciseNotes ?? {},
-          cloudWorkoutTemplate
-        ),
-        settings: resolveSnapshotSettings(data.settings ?? {}, localSnapshot.settings),
-        customExercises: data.customExercises ?? [],
-      };
-
-      cancelScheduledPush();
-      applyCloudSnapshot(mergedSnapshot);
-
-      const needsUpload = stableStringify(mergedSnapshot) !== stableStringify(cloudSnapshot);
-      if (needsUpload) {
-        const pushed = await pushToCloud(mergedSnapshot);
-        if (!silent) {
-          showToast(pushed ? "Cloud sync complete" : "Cloud sync failed", pushed ? undefined : "error");
-        }
-      } else if (!silent) {
-        showToast("Cloud merge complete");
-      }
-
-      if (mergeSummary) {
-        setLastMergeSummary(mergeSummary);
-      }
-
-      return { mergedSnapshot, mergeSummary };
-    } catch {
-      if (!silent) {
-        showToast("Cloud sync failed", "error");
-      }
-      return null;
-    }
-  }, [
-    applyCloudSnapshot,
-    cancelScheduledPush,
-    fetchCloudData,
-    isLoggedIn,
-    pushToCloud,
-    resolveSnapshotSettings,
-    setLastMergeSummary,
-    showToast,
-  ]);
-
-  // ─── Bootstrap cloud data on login ────────────────────────────────────────
-  useEffect(() => {
-    if (!isLoggedIn) {
-      cloudBootstrapped.current = false;
-      setCanPushCloud(false);
-      return;
-    }
-
-    if (cloudBootstrapped.current) return;
-
-    cloudBootstrapped.current = true;
-    let cancelled = false;
-
-    pullAndMergeCloudData(true).finally(() => {
-      if (!cancelled) {
-        setCanPushCloud(true);
-      }
     });
+    return total === 0 ? 0 : Math.round((completed / total) * 100);
+  }, [progress, activeDay]);
 
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    isLoggedIn,
-    pullAndMergeCloudData,
-  ]);
-
-  useEffect(() => {
-    lastSyncedAtRef.current = lastSyncedAt;
-  }, [lastSyncedAt]);
-
-  useEffect(() => {
-    if (!isLoggedIn) setLastMergeSummary(null);
-  }, [isLoggedIn]);
-
-  // ─── Auto-push on data change ─────────────────────────────────────────────
-  useEffect(() => {
-    if (!isLoggedIn || !canPushCloud) return;
-
-    if (skipNextCloudPushRef.current > 0) {
-      skipNextCloudPushRef.current -= 1;
-      return;
-    }
-
-    schedulePush(currentSnapshot);
-  }, [
-    canPushCloud,
-    currentSnapshot,
-    isLoggedIn,
-    schedulePush,
-  ]);
-
-  // ─── Auto-pull on focus / flush on background ─────────────────────────────
-  useEffect(() => {
-    if (!isLoggedIn || !canPushCloud) return;
-
-    const onFocus = () => {
-      pullAndMergeCloudData(true);
-    };
-
-    const onVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        onFocus();
-      } else if (document.visibilityState === "hidden") {
-        cancelScheduledPush();
-        void pushToCloud(getFreshSnapshot(), { keepalive: true });
-      }
-    };
-
-    window.addEventListener("focus", onFocus);
-    document.addEventListener("visibilitychange", onVisibilityChange);
-    
-    return () => {
-      window.removeEventListener("focus", onFocus);
-      document.removeEventListener("visibilitychange", onVisibilityChange);
-    };
-  }, [isLoggedIn, canPushCloud, pullAndMergeCloudData, cancelScheduledPush, pushToCloud, getFreshSnapshot]);
-
-  const handleManualSync = useCallback(async () => {
-    const result = await pullAndMergeCloudData(false);
-    if (!result) {
-      showToast("Could not fetch cloud data, pushing local state...");
-      const pushed = await pushToCloud(getFreshSnapshot());
-      showToast(pushed ? "Cloud sync complete" : "Cloud sync failed", pushed ? undefined : "error");
-    }
-  }, [
-    pushToCloud,
-    pullAndMergeCloudData,
-    showToast,
-    getFreshSnapshot,
-  ]);
-
-  // For undo support - stores refs for the undo callback in toast
-  const prevProgressPercent = useRef<number>(0);
-
-  // ─── PR computation ───────────────────────────────────────────────────────
   const allTimePRs = useMemo(() => {
     const prs: Record<string, number> = {};
     const defaultBw = weightUnit === "lbs" ? 175 : 80;
-
     safeWorkoutTemplate.forEach((day) => {
       day.exercises.forEach((exercise) => {
         let bestWeight = 0;
-
-        sessions
-          .forEach((session) => {
-            const bw = getClosestBodyWeight(session.date, bodyWeightEntries, defaultBw);
-            session.exercises
-              .filter(
-                (sessionExercise) =>
-                  sessionExercise.exerciseId === exercise.id ||
-                  sessionExercise.name === exercise.name
-              )
-              .forEach((sessionExercise) => {
-                sessionExercise.sets.forEach((set) => {
-                  const resolvedWeight = resolveWeight(set.loggedWeight, bw);
-                  if (resolvedWeight > bestWeight) {
-                    bestWeight = resolvedWeight;
-                  }
-                });
+        sessions.forEach((session) => {
+          const bw = getClosestBodyWeight(session.date, bodyWeightEntries, defaultBw);
+          session.exercises
+            .filter((se) => se.exerciseId === exercise.id || se.name === exercise.name)
+            .forEach((se) => {
+              se.sets.forEach((set) => {
+                const w = resolveWeight(set.loggedWeight, bw);
+                if (w > bestWeight) bestWeight = w;
               });
-          });
-
+            });
+        });
         prs[exercise.id] = bestWeight;
       });
     });
-
     return prs;
   }, [bodyWeightEntries, safeWorkoutTemplate, sessions, weightUnit]);
 
-  // ─── Last session values per day/exercise/set ─────────────────────────────
   const lastSessionValues = useMemo(() => {
     const values: Record<string, Record<string, Record<string, { weight: string; reps: string }>>> = {};
-
     safeWorkoutTemplate.forEach((day) => {
       const daySessions = sessions
-        .filter((session) => session.dayId === day.id)
-        .sort((left, right) => new Date(right.date).getTime() - new Date(left.date).getTime());
-
-      if (daySessions.length === 0) return;
-
+        .filter((s) => s.dayId === day.id)
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+      if (!daySessions.length) return;
       values[day.id] = {};
       day.exercises.forEach((exercise) => {
-        const matchingSessionExercise = daySessions
-          .flatMap((session) => session.exercises)
-          .find(
-            (sessionExercise) =>
-              sessionExercise.exerciseId === exercise.id ||
-              sessionExercise.name === exercise.name
-          );
-
-        if (!matchingSessionExercise) return;
-
+        const match = daySessions
+          .flatMap((s) => s.exercises)
+          .find((se) => se.exerciseId === exercise.id || se.name === exercise.name);
+        if (!match) return;
         values[day.id][exercise.id] = {};
-        exercise.sets.forEach((set, setIndex) => {
-          const previousSet = matchingSessionExercise.sets[setIndex];
-          if (!previousSet) return;
-
-          values[day.id][exercise.id][set.id] = {
-            weight: previousSet.loggedWeight,
-            reps: previousSet.loggedReps,
-          };
+        exercise.sets.forEach((set, i) => {
+          const prev = match.sets[i];
+          if (!prev) return;
+          values[day.id][exercise.id][set.id] = { weight: prev.loggedWeight, reps: prev.loggedReps };
         });
       });
     });
-
     return values;
   }, [safeWorkoutTemplate, sessions]);
 
-  // ─── Day progress % (now properly memoized) ──────────────────────────────
-  const progressPercent = useMemo(() => {
-    let totalSets = 0;
-    let completedSets = 0;
-    activeDay.exercises.forEach((ex) => {
-      totalSets += ex.sets.length;
-      ex.sets.forEach((set) => {
-        if (progress[activeDay.id]?.[ex.id]?.[set.id]?.completed) completedSets++;
-      });
-    });
-    return totalSets === 0 ? 0 : Math.round((completedSets / totalSets) * 100);
-  }, [progress, activeDay]);
-
-  // Day complete overlay trigger (suppressed when progress changes via cloud sync)
+  // ─── Day complete overlay ─────────────────────────────────────────────
+  const prevProgressPercent = useRef<number>(0);
   useEffect(() => {
     if (suppressOverlayRef.current) {
       suppressOverlayRef.current = false;
@@ -685,39 +265,194 @@ export default function App() {
     prevProgressPercent.current = progressPercent;
   }, [progressPercent]);
 
-  // ─── Set actions ─────────────────────────────────────────────────────────
+  // ─── Cloud sync helpers ───────────────────────────────────────────────
+  const resolveSnapshotSettings = useCallback(
+    (settings: Partial<AppDataSnapshot["settings"]>, fallback: AppDataSnapshot["settings"]): AppDataSnapshot["settings"] => ({
+      strengthRestDuration: typeof settings.strengthRestDuration === "number" ? settings.strengthRestDuration : fallback.strengthRestDuration,
+      hypertrophyRestDuration: typeof settings.hypertrophyRestDuration === "number" ? settings.hypertrophyRestDuration : fallback.hypertrophyRestDuration,
+      soundEnabled: typeof settings.soundEnabled === "boolean" ? settings.soundEnabled : fallback.soundEnabled,
+      weightUnit: settings.weightUnit === "kg" || settings.weightUnit === "lbs" ? settings.weightUnit : fallback.weightUnit,
+    }),
+    []
+  );
+
+  /** Apply a snapshot from cloud into the Zustand store (skipping identical data). */
+  const applyCloudSnapshot = useCallback(
+    (snapshot: AppDataSnapshot): boolean => {
+      if (stableStringify(currentSnapshotRef.current) === stableStringify(snapshot)) return false;
+      skipNextCloudPushRef.current += 1;
+      suppressOverlayRef.current = true;
+      applySnapshot(snapshot);
+      return true;
+    },
+    [applySnapshot]
+  );
+
+  const pullAndMergeCloudData = useCallback(async (silent = true) => {
+    if (!isLoggedIn) return null;
+    const syncBase = lastSyncedAtRef.current;
+    try {
+      const data = await fetchCloudData();
+      if (!data) return null;
+
+      const localSnapshot = currentSnapshotRef.current;
+      const preferCloudOnConflict = hasRemoteChangesSinceBase(syncBase, data.lastSyncedAt);
+      const mergeSummary = data.lastSyncedAt != null
+        ? preferCloudOnConflict
+          ? "Overlapping data was merged using the server copy (the cloud had newer changes than your last sync on this device)."
+          : "Overlapping data was merged using this device's copy (your changes were newer than the last cloud update)."
+        : null;
+
+      const remoteWorkoutTemplate = normalizeWorkoutTemplate(data.workoutTemplate);
+      const nextWorkoutTemplate =
+        remoteWorkoutTemplate && (preferCloudOnConflict || !syncBase)
+          ? remoteWorkoutTemplate
+          : localSnapshot.workoutTemplate;
+
+      const mergedSnapshot: AppDataSnapshot = {
+        workoutTemplate: nextWorkoutTemplate,
+        progress: pruneProgressForWorkoutTemplate(
+          mergeWorkoutProgressWithPreference(localSnapshot.progress, data.progress ?? {}, preferCloudOnConflict),
+          nextWorkoutTemplate
+        ),
+        sessions: mergeSessionHistory(localSnapshot.sessions, data.sessions ?? [], preferCloudOnConflict),
+        bodyWeightEntries: mergeBodyWeightEntries(localSnapshot.bodyWeightEntries, data.bodyWeightEntries ?? [], preferCloudOnConflict),
+        exerciseNotes: pruneExerciseNotesForWorkoutTemplate(
+          mergeExerciseNotes(localSnapshot.exerciseNotes, data.exerciseNotes ?? {}, preferCloudOnConflict),
+          nextWorkoutTemplate
+        ),
+        settings: resolveSnapshotSettings(
+          mergeSettings(localSnapshot.settings, data.settings ?? {}, preferCloudOnConflict),
+          localSnapshot.settings
+        ),
+        customExercises: mergeById(localSnapshot.customExercises, data.customExercises ?? [], preferCloudOnConflict),
+      };
+
+      const cloudWorkoutTemplate = remoteWorkoutTemplate ?? localSnapshot.workoutTemplate;
+      const cloudSnapshot: AppDataSnapshot = {
+        workoutTemplate: cloudWorkoutTemplate,
+        progress: pruneProgressForWorkoutTemplate(data.progress ?? {}, cloudWorkoutTemplate),
+        sessions: data.sessions ?? [],
+        bodyWeightEntries: data.bodyWeightEntries ?? [],
+        exerciseNotes: pruneExerciseNotesForWorkoutTemplate(data.exerciseNotes ?? {}, cloudWorkoutTemplate),
+        settings: resolveSnapshotSettings(data.settings ?? {}, localSnapshot.settings),
+        customExercises: data.customExercises ?? [],
+      };
+
+      cancelScheduledPush();
+      applyCloudSnapshot(mergedSnapshot);
+
+      const needsUpload = stableStringify(mergedSnapshot) !== stableStringify(cloudSnapshot);
+      if (needsUpload) {
+        const pushed = await pushToCloud(mergedSnapshot);
+        if (!silent) showToast(pushed ? "Cloud sync complete" : "Cloud sync failed", pushed ? undefined : "error");
+      } else if (!silent) {
+        showToast("Cloud merge complete");
+      }
+
+      if (mergeSummary) setLastMergeSummary(mergeSummary);
+      return { mergedSnapshot, mergeSummary };
+    } catch {
+      if (!silent) showToast("Cloud sync failed", "error");
+      return null;
+    }
+  }, [applyCloudSnapshot, cancelScheduledPush, fetchCloudData, isLoggedIn, pushToCloud, resolveSnapshotSettings, showToast]);
+
+  // Bootstrap cloud data on login
+  useEffect(() => {
+    if (!isLoggedIn) { cloudBootstrapped.current = false; setCanPushCloud(false); return; }
+    if (cloudBootstrapped.current) return;
+    cloudBootstrapped.current = true;
+    let cancelled = false;
+    pullAndMergeCloudData(true).finally(() => { if (!cancelled) setCanPushCloud(true); });
+    return () => { cancelled = true; };
+  }, [isLoggedIn, pullAndMergeCloudData]);
+
+  // Auto-push on data change
+  useEffect(() => {
+    if (!isLoggedIn || !canPushCloud) return;
+    if (skipNextCloudPushRef.current > 0) { skipNextCloudPushRef.current -= 1; return; }
+    schedulePush(currentSnapshot);
+  }, [canPushCloud, currentSnapshot, isLoggedIn, schedulePush]);
+
+  // Auto-pull on focus / flush on background
+  useEffect(() => {
+    if (!isLoggedIn || !canPushCloud) return;
+    const onFocus = () => pullAndMergeCloudData(true);
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") onFocus();
+      else if (document.visibilityState === "hidden") {
+        cancelScheduledPush();
+        void pushToCloud(getFreshSnapshot(), { keepalive: true });
+      }
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [isLoggedIn, canPushCloud, pullAndMergeCloudData, cancelScheduledPush, pushToCloud, getFreshSnapshot]);
+
+  const handleManualSync = useCallback(async () => {
+    const result = await pullAndMergeCloudData(false);
+    if (!result) {
+      showToast("Could not fetch cloud data, pushing local state...");
+      const pushed = await pushToCloud(getFreshSnapshot());
+      showToast(pushed ? "Cloud sync complete" : "Cloud sync failed", pushed ? undefined : "error");
+    }
+  }, [pushToCloud, pullAndMergeCloudData, showToast, getFreshSnapshot]);
+
+  // ─── Weight unit handler (also persists to profile API) ──────────────
+  const handleSetWeightUnit = useCallback(
+    (fn: (v: "kg" | "lbs") => "kg" | "lbs") => {
+      setWeightUnit((prev) => {
+        const next = fn(prev);
+        if (isLoggedIn && next !== prev) {
+          void fetch("/api/user/profile", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ weightUnit: next }),
+          }).catch(() => { });
+        }
+        return next;
+      });
+    },
+    [isLoggedIn, setWeightUnit]
+  );
+
+  // ─── Template helpers ─────────────────────────────────────────────────
+  const applyWorkoutTemplate = useCallback(
+    (nextTemplate: typeof safeWorkoutTemplate, successMessage?: string) => {
+      const normalized = normalizeWorkoutTemplate(nextTemplate);
+      if (!normalized) { showToast("Invalid workout template", "error"); return null; }
+      // Store setter handles pruning via applySnapshot for the new template
+      setProgress((prev) => pruneProgressForWorkoutTemplate(prev, normalized));
+      setExerciseNotes((prev) => pruneExerciseNotesForWorkoutTemplate(prev, normalized));
+      setActiveDayIndex(Math.min(activeDayIndex, Math.max(normalized.length - 1, 0)));
+      // Use the store's workout template setter directly
+      useAppStore.getState().setWorkoutTemplate(normalized);
+      if (successMessage) showToast(successMessage);
+      return normalized;
+    },
+    [activeDayIndex, setProgress, setExerciseNotes, setActiveDayIndex, showToast]
+  );
+
+  // ─── Set-level actions ────────────────────────────────────────────────
   const toggleSet = useCallback(
     (dayId: string, exerciseId: string, setId: string, restType: "strength" | "hypertrophy" | "other") => {
-      const wasCompleted =
-        currentSnapshotRef.current.progress[dayId]?.[exerciseId]?.[setId]?.completed ?? false;
-
+      const wasCompleted = currentSnapshotRef.current.progress[dayId]?.[exerciseId]?.[setId]?.completed ?? false;
       setProgress((prev) => {
-        const dayProgress = prev[dayId] || {};
-        const exProgress = dayProgress[exerciseId] || {};
-        const currentSetProgress = exProgress[setId] || { completed: false, loggedWeight: "", loggedReps: "" };
-        const nowCompleted = !currentSetProgress.completed;
-        return {
-          ...prev,
-          [dayId]: {
-            ...dayProgress,
-            [exerciseId]: {
-              ...exProgress,
-              [setId]: {
-                ...currentSetProgress,
-                completed: nowCompleted,
-                completedAt: nowCompleted ? Date.now() : undefined,
-              }
-            }
-          }
-        };
+        const dayP = prev[dayId] || {};
+        const exP = dayP[exerciseId] || {};
+        const setP = exP[setId] || { completed: false, loggedWeight: "", loggedReps: "" };
+        const nowCompleted = !setP.completed;
+        return { ...prev, [dayId]: { ...dayP, [exerciseId]: { ...exP, [setId]: { ...setP, completed: nowCompleted, completedAt: nowCompleted ? Date.now() : undefined } } } };
       });
-
       if (!wasCompleted) {
         if ("vibrate" in navigator) navigator.vibrate(50);
         workoutTimer.start();
-        if (restType !== "other") {
-          restTimer.startTimer(restType as "strength" | "hypertrophy");
-        }
+        if (restType !== "other") restTimer.startTimer(restType as "strength" | "hypertrophy");
       }
     },
     [setProgress, workoutTimer, restTimer]
@@ -726,19 +461,10 @@ export default function App() {
   const updateSetData = useCallback(
     (dayId: string, exerciseId: string, setId: string, field: "loggedWeight" | "loggedReps" | "rpe" | "setType" | "completedAt", value: string | number | undefined) => {
       setProgress((prev) => {
-        const dayProgress = prev[dayId] || {};
-        const exProgress = dayProgress[exerciseId] || {};
-        const currentSetProgress = exProgress[setId] || { completed: false, loggedWeight: "", loggedReps: "" };
-        return {
-          ...prev,
-          [dayId]: {
-            ...dayProgress,
-            [exerciseId]: {
-              ...exProgress,
-              [setId]: { ...currentSetProgress, [field]: value }
-            }
-          }
-        };
+        const dayP = prev[dayId] || {};
+        const exP = dayP[exerciseId] || {};
+        const setP = exP[setId] || { completed: false, loggedWeight: "", loggedReps: "" };
+        return { ...prev, [dayId]: { ...dayP, [exerciseId]: { ...exP, [setId]: { ...setP, [field]: value } } } };
       });
     },
     [setProgress]
@@ -748,15 +474,14 @@ export default function App() {
     (exerciseId: string, setId: string, delta: number) => {
       const currentVal = progress[activeDay.id]?.[exerciseId]?.[setId]?.loggedWeight || "";
       if (currentVal.startsWith("BW")) {
-        const offsetStr = currentVal.replace("BW", "").replace("+", "");
-        const currentNum = offsetStr ? parseFloat(offsetStr) : 0;
-        const next = Math.round((currentNum + delta) * 100) / 100;
-        const newVal = next === 0 ? "BW" : (next > 0 ? `BW+${next}` : `BW${next}`);
-        updateSetData(activeDay.id, exerciseId, setId, "loggedWeight", newVal);
+        const offset = currentVal.replace("BW", "").replace("+", "");
+        const cur = offset ? parseFloat(offset) : 0;
+        const next = Math.round((cur + delta) * 100) / 100;
+        updateSetData(activeDay.id, exerciseId, setId, "loggedWeight", next === 0 ? "BW" : (next > 0 ? `BW+${next}` : `BW${next}`));
         return;
       }
-      const currentNum = parseFloat(currentVal);
-      const base = isNaN(currentNum) ? 0 : currentNum;
+      const cur = parseFloat(currentVal);
+      const base = isNaN(cur) ? 0 : cur;
       const next = Math.max(0, Math.round((base + delta) * 100) / 100);
       updateSetData(activeDay.id, exerciseId, setId, "loggedWeight", next > 0 ? String(next) : "");
     },
@@ -767,25 +492,15 @@ export default function App() {
     (exerciseId: string) => {
       const exercise = activeDay.exercises.find((e) => e.id === exerciseId);
       if (!exercise) return;
-      const allBw = exercise.sets.every(
-        (set) => (progress[activeDay.id]?.[exercise.id]?.[set.id]?.loggedWeight ?? "") === "BW"
-      );
+      const allBw = exercise.sets.every((set) => (progress[activeDay.id]?.[exercise.id]?.[set.id]?.loggedWeight ?? "") === "BW");
       const newValue = allBw ? "" : "BW";
       setProgress((prev) => {
-        const dayProgress = prev[activeDay.id] || {};
-        const exProgress = dayProgress[exerciseId] || {};
-        const newExProgress = { ...exProgress };
+        const dayP = prev[activeDay.id] || {};
+        const exP = { ...(dayP[exerciseId] || {}) };
         exercise.sets.forEach((set) => {
-          const setProgress = newExProgress[set.id] || { completed: false, loggedWeight: "", loggedReps: "" };
-          newExProgress[set.id] = { ...setProgress, loggedWeight: newValue };
+          exP[set.id] = { ...(exP[set.id] || { completed: false, loggedWeight: "", loggedReps: "" }), loggedWeight: newValue };
         });
-        return {
-          ...prev,
-          [activeDay.id]: {
-            ...dayProgress,
-            [exerciseId]: newExProgress
-          }
-        };
+        return { ...prev, [activeDay.id]: { ...dayP, [exerciseId]: exP } };
       });
     },
     [activeDay, progress, setProgress]
@@ -798,54 +513,35 @@ export default function App() {
       const exercise = activeDay.exercises.find((e) => e.id === exerciseId);
       if (!exercise) return;
       setProgress((prev) => {
-        const dayProgress = prev[activeDay.id] || {};
-        const exProgress = dayProgress[exerciseId] || {};
-        const newExProgress = { ...exProgress };
+        const dayP = prev[activeDay.id] || {};
+        const exP = { ...(dayP[exerciseId] || {}) };
         exercise.sets.forEach((set) => {
           const vals = lastVals[set.id];
-          if (vals) {
-            const setProgress = newExProgress[set.id] || { completed: false, loggedWeight: "", loggedReps: "" };
-            newExProgress[set.id] = { ...setProgress, loggedWeight: vals.weight, loggedReps: vals.reps };
-          }
+          if (vals) exP[set.id] = { ...(exP[set.id] || { completed: false, loggedWeight: "", loggedReps: "" }), loggedWeight: vals.weight, loggedReps: vals.reps };
         });
-        return {
-          ...prev,
-          [activeDay.id]: {
-            ...dayProgress,
-            [exerciseId]: newExProgress
-          }
-        };
+        return { ...prev, [activeDay.id]: { ...dayP, [exerciseId]: exP } };
       });
       showToast("Loaded last session");
     },
     [activeDay, lastSessionValues, setProgress, showToast]
   );
 
-  // ─── Clear checkmarks ──────────────────────────────────────────────────────
   const clearCheckmarks = useCallback(() => {
     setProgress((prev) => {
-      const dayProgress = prev[activeDay.id];
-      if (!dayProgress) return prev;
-
-      const newDayProgress = { ...dayProgress };
-      Object.keys(newDayProgress).forEach((exId) => {
-        newDayProgress[exId] = { ...newDayProgress[exId] };
-        Object.keys(newDayProgress[exId]).forEach((setId) => {
-          newDayProgress[exId][setId] = {
-            ...newDayProgress[exId][setId],
-            completed: false,
-            rpe: undefined,
-            completedAt: undefined,
-          };
+      const dayP = prev[activeDay.id];
+      if (!dayP) return prev;
+      const newDayP = { ...dayP };
+      Object.keys(newDayP).forEach((exId) => {
+        newDayP[exId] = { ...newDayP[exId] };
+        Object.keys(newDayP[exId]).forEach((setId) => {
+          newDayP[exId][setId] = { ...newDayP[exId][setId], completed: false, rpe: undefined, completedAt: undefined };
         });
       });
-      return { ...prev, [activeDay.id]: newDayProgress };
+      return { ...prev, [activeDay.id]: newDayP };
     });
-    
     showToast("Checkmarks cleared");
   }, [activeDay.id, setProgress, showToast]);
 
-  // ─── Finish workout with undo ─────────────────────────────────────────────
   const finishWorkout = useCallback(() => {
     const previousProgress = structuredClone(progress);
     const dayProgress = progress[activeDay.id];
@@ -853,32 +549,22 @@ export default function App() {
 
     if (dayProgress) {
       const hasData = activeDay.exercises.some((ex) =>
-        ex.sets.some((set) => {
-          const s = dayProgress[ex.id]?.[set.id];
-          return s && (s.loggedWeight || s.loggedReps || s.completed);
-        })
+        ex.sets.some((set) => { const s = dayProgress[ex.id]?.[set.id]; return s && (s.loggedWeight || s.loggedReps || s.completed); })
       );
       if (hasData) {
         const duration = workoutTimer.getDuration();
         const defaultBw = weightUnit === "lbs" ? 175 : 80;
-        const currentBodyWeight = getClosestBodyWeight(
-          new Date().toISOString(),
-          bodyWeightEntries,
-          defaultBw
-        );
+        const currentBodyWeight = getClosestBodyWeight(new Date().toISOString(), bodyWeightEntries, defaultBw);
 
-        // Calculate total tonnage (excluding warmup sets)
-        const totalTonnage = activeDay.exercises.reduce((total, ex) => {
-          return total + ex.sets.reduce((setTotal, set) => {
+        const totalTonnage = activeDay.exercises.reduce((total, ex) =>
+          total + ex.sets.reduce((st, set) => {
             const state = dayProgress[ex.id]?.[set.id];
             if (state?.completed && state.setType !== "warmup") {
-              const weight = resolveWeight(state.loggedWeight, currentBodyWeight);
-              const reps = parseInt(state.loggedReps) || 0;
-              return setTotal + (weight * reps);
+              return st + resolveWeight(state.loggedWeight, currentBodyWeight) * (parseInt(state.loggedReps) || 0);
             }
-            return setTotal;
-          }, 0);
-        }, 0);
+            return st;
+          }, 0), 0
+        );
 
         const session: WorkoutSession = {
           id: `${activeDay.id}-${Date.now()}`,
@@ -916,37 +602,29 @@ export default function App() {
       }
     }
 
-    // Clear checkmarks but keep weights/reps
+    // Clear checkmarks, keep weights/reps
     setProgress((prev) => {
-      const dayProgress = prev[activeDay.id];
-      if (!dayProgress) return prev;
-
-      const newDayProgress = { ...dayProgress };
-      Object.keys(newDayProgress).forEach((exId) => {
-        newDayProgress[exId] = { ...newDayProgress[exId] };
-        Object.keys(newDayProgress[exId]).forEach((setId) => {
-          newDayProgress[exId][setId] = { 
-            ...newDayProgress[exId][setId], 
-            completed: false,
-            rpe: undefined,
-            completedAt: undefined 
-          };
+      const dayP = prev[activeDay.id];
+      if (!dayP) return prev;
+      const newDayP = { ...dayP };
+      Object.keys(newDayP).forEach((exId) => {
+        newDayP[exId] = { ...newDayP[exId] };
+        Object.keys(newDayP[exId]).forEach((setId) => {
+          newDayP[exId][setId] = { ...newDayP[exId][setId], completed: false, rpe: undefined, completedAt: undefined };
         });
       });
-      return { ...prev, [activeDay.id]: newDayProgress };
+      return { ...prev, [activeDay.id]: newDayP };
     });
 
     restTimer.dismissTimer();
     workoutTimer.reset();
     setShowFinishConfirm(false);
 
-    // Undo data is captured in the toast callback closure below
     showToast(
       `${activeDay.name} saved!`,
       "success",
       addedSessionId
         ? () => {
-          // Undo: restore progress and remove session
           setProgress(previousProgress);
           setSessions((prev) => prev.filter((s) => s.id !== addedSessionId));
           showToast("Workout restored");
@@ -956,176 +634,105 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, [progress, activeDay, workoutTimer, restTimer, setProgress, setSessions, showToast, bodyWeightEntries, weightUnit]);
 
-  // ─── Reset workout timer (without finishing) ──────────────────────────────
-  const handleResetTimer = useCallback(() => {
-    workoutTimer.reset();
-    showToast("Timer reset");
-  }, [workoutTimer, showToast]);
-
-  // ─── Delete session ───────────────────────────────────────────────────────
-  const deleteSession = useCallback(
-    (id: string) => {
-      setSessions((prev) => prev.filter((s) => s.id !== id));
-      showToast("Session deleted");
-    },
-    [setSessions, showToast]
-  );
+  const handleResetTimer = useCallback(() => { workoutTimer.reset(); showToast("Timer reset"); }, [workoutTimer, showToast]);
+  const deleteSession = useCallback((id: string) => { setSessions((prev) => prev.filter((s) => s.id !== id)); showToast("Session deleted"); }, [setSessions, showToast]);
 
   const handleAddPastSessions = useCallback((newSessions: WorkoutSession[]) => {
     setSessions((prev) => [...prev, ...newSessions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
-    showToast(`Added ${newSessions.length} past session${newSessions.length !== 1 ? 's' : ''}`, "success");
+    showToast(`Added ${newSessions.length} past session${newSessions.length !== 1 ? "s" : ""}`, "success");
     setShowAddPastSession(false);
   }, [setSessions, showToast]);
 
-  // ─── Body weight ──────────────────────────────────────────────────────────
-  const logBodyWeight = useCallback(
-    (weight: number) => {
-      const today = toLocalDateKey();
-      setBodyWeightEntries((prev) => {
-        const filtered = prev.filter((e) => e.date !== today);
-        return [...filtered, { date: today, weight }].sort((a, b) => a.date.localeCompare(b.date));
-      });
-      showToast("Body weight logged");
-    },
-    [setBodyWeightEntries, showToast]
-  );
+  const logBodyWeight = useCallback((weight: number) => {
+    const today = toLocalDateKey();
+    setBodyWeightEntries((prev) => {
+      const filtered = prev.filter((e) => e.date !== today);
+      return [...filtered, { date: today, weight }].sort((a, b) => a.date.localeCompare(b.date));
+    });
+    showToast("Body weight logged");
+  }, [setBodyWeightEntries, showToast]);
 
-  // ─── Note change ───────────────────────────────────────────────────────────
-  const handleNoteChange = useCallback(
-    (exerciseId: string, note: string) => {
-      setExerciseNotes((prev) => ({ ...prev, [exerciseId]: note }));
-    },
-    [setExerciseNotes]
-  );
+  const handleNoteChange = useCallback((exerciseId: string, note: string) => {
+    setExerciseNotes((prev) => ({ ...prev, [exerciseId]: note }));
+  }, [setExerciseNotes]);
 
   const handleSaveWorkoutTemplate = useCallback(
-    (nextWorkoutTemplate: WorkoutTemplateData) => {
-      const appliedTemplate = applyWorkoutTemplate(nextWorkoutTemplate, "Workout updated");
-      if (!appliedTemplate) return;
-
-      setShowWorkoutEditor(false);
+    (nextTemplate: typeof safeWorkoutTemplate) => {
+      const applied = applyWorkoutTemplate(nextTemplate, "Workout updated");
+      if (applied) setShowWorkoutEditor(false);
     },
     [applyWorkoutTemplate]
   );
 
   const handleResetWorkoutTemplate = useCallback(() => {
-    const defaultTemplate = createDefaultWorkoutTemplate();
-    applyWorkoutTemplate(defaultTemplate, "Workout reset to default");
+    applyWorkoutTemplate(createDefaultWorkoutTemplate(), "Workout reset to default");
     setShowSettings(false);
   }, [applyWorkoutTemplate]);
 
   const handleApplyFreeWeightWorkout = useCallback(() => {
-    let replacementCount = 0;
-    const convertedTemplate = safeWorkoutTemplate.map((day) => ({
+    let count = 0;
+    const converted = safeWorkoutTemplate.map((day) => ({
       ...day,
       exercises: day.exercises.map((exercise) => {
         const entry = findWikiEntry(exercise.name);
         if (!entry || isFreeWeightFriendly(entry)) return exercise;
-
-        const freeWeightAlternative = resolvePrimaryFreeWeightAlternative(entry.name);
-        if (!freeWeightAlternative || freeWeightAlternative === exercise.name) {
-          return exercise;
-        }
-
-        replacementCount += 1;
-
-        return {
-          ...exercise,
-          id: createWorkoutExerciseId(day.id, freeWeightAlternative),
-          name: freeWeightAlternative,
-        };
+        const alt = resolvePrimaryFreeWeightAlternative(entry.name);
+        if (!alt || alt === exercise.name) return exercise;
+        count++;
+        return { ...exercise, id: createWorkoutExerciseId(day.id, alt), name: alt };
       }),
     }));
-
-    if (replacementCount === 0) {
-      showToast("Workout is already largely free-weight friendly");
-      setShowSettings(false);
-      return;
-    }
-
-    applyWorkoutTemplate(
-      convertedTemplate,
-      "Free-weight-friendly swaps applied"
-    );
+    if (count === 0) { showToast("Workout is already largely free-weight friendly"); setShowSettings(false); return; }
+    applyWorkoutTemplate(converted, "Free-weight-friendly swaps applied");
     setShowSettings(false);
   }, [applyWorkoutTemplate, safeWorkoutTemplate, showToast]);
 
   const handleStartStretching = useCallback((programId?: string) => {
     setSelectedStretchingProgramId(programId || activeDay.stretchingProgramId || null);
     setActiveTab("stretching");
-  }, [activeDay.stretchingProgramId]);
+  }, [activeDay.stretchingProgramId, setSelectedStretchingProgramId, setActiveTab]);
 
-  // ─── Export / Import (now includes workout template) ──────────────────────
   const handleExport = useCallback(() => {
-    const snapshot: AppDataSnapshot & { exportedAt: string; schemaVersion: number } = {
-      workoutTemplate: safeWorkoutTemplate,
-      progress,
-      sessions,
-      bodyWeightEntries,
-      exerciseNotes,
-      settings: {
-        strengthRestDuration,
-        hypertrophyRestDuration,
-        soundEnabled,
-        weightUnit,
-      },
-      customExercises,
-      exportedAt: new Date().toISOString(),
-      schemaVersion: 1,
-    };
-
-    downloadFile(
-      [JSON.stringify(snapshot, null, 2)],
-      "application/json",
-      `recomp88-backup-${new Date().toISOString().slice(0, 10)}.json`
-    );
+    const payload = { ...currentSnapshotRef.current, exportedAt: new Date().toISOString(), schemaVersion: 1 };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `recomp88-backup-${new Date().toISOString().slice(0, 10)}.json`; a.click();
+    URL.revokeObjectURL(url);
     showToast("Backup exported");
-  }, [
-    bodyWeightEntries,
-    customExercises,
-    exerciseNotes,
-    hypertrophyRestDuration,
-    progress,
-    safeWorkoutTemplate,
-    sessions,
-    showToast,
-    soundEnabled,
-    strengthRestDuration,
-    weightUnit,
-  ]);
+  }, [showToast]);
 
   const handleExportCsv = useCallback(() => {
-    const rows = sessions.flatMap((session) =>
-      session.exercises.flatMap((exercise) =>
-        exercise.sets.map((set, index) => [
-          session.date,
-          exercise.name,
-          index + 1,
-          set.loggedWeight,
-          set.loggedReps,
-        ])
-      )
-    );
-
-    if (rows.length === 0) {
-      showToast("No session history to export yet", "error");
-      return;
-    }
-
-    const csv = [
-      ["Date", "Exercise", "Set", "Weight", "Reps"],
-      ...rows,
-    ]
-      .map((row) => row.map((value) => escapeCsvValue(value)).join(","))
-      .join("\r\n");
-
-    downloadFile(
-      [csv],
-      "text/csv;charset=utf-8",
-      `recomp88-analytics-${new Date().toISOString().slice(0, 10)}.csv`
-    );
+    const escape = (v: string | number | null | undefined) => `"${String(v ?? "").replace(/"/g, '""').replace(/[\r\n]+/g, " ")}"`;
+    const rows = sessions.flatMap((s) => s.exercises.flatMap((ex) => ex.sets.map((set, i) => [s.date, ex.name, i + 1, set.loggedWeight, set.loggedReps])));
+    if (!rows.length) { showToast("No session history to export yet", "error"); return; }
+    const csv = [["Date", "Exercise", "Set", "Weight", "Reps"], ...rows].map((r) => r.map(escape).join(",")).join("\r\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `recomp88-analytics-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+    URL.revokeObjectURL(url);
     showToast("CSV exported");
   }, [sessions, showToast]);
+
+  const handleExportConfig = useCallback(() => {
+    let content = "Workout Configuration:\n\n";
+    safeWorkoutTemplate.forEach((day, i) => {
+      content += `Day ${i + 1}: ${day.name}\n`;
+      content += `------------------------\n`;
+      day.exercises.forEach((ex, j) => {
+        content += `${j + 1}. ${ex.name} (${ex.sets.length} sets)\n`;
+      });
+      content += `\n`;
+    });
+
+    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `workout-config-${new Date().toISOString().slice(0, 10)}.txt`; a.click();
+    URL.revokeObjectURL(url);
+    showToast("Workout config exported");
+  }, [safeWorkoutTemplate, showToast]);
 
   const handleImport = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1137,50 +744,21 @@ export default function App() {
           const rawData = JSON.parse(ev.target?.result as string);
           const data = sanitizeSyncPayload(rawData);
           if (!data) throw new Error("Invalid format");
-
-          const importedWorkoutTemplate =
-            data.workoutTemplate ?? safeWorkoutTemplate;
-
-          setWorkoutTemplate(importedWorkoutTemplate);
-
-          if (data.progress) {
-            setProgress(pruneProgressForWorkoutTemplate(data.progress, importedWorkoutTemplate));
-          }
-          if (data.sessions) {
-            setSessions(data.sessions);
-          }
-          if (data.bodyWeightEntries) {
-            setBodyWeightEntries(data.bodyWeightEntries);
-          }
-          if (data.exerciseNotes) {
-            setExerciseNotes(
-              pruneExerciseNotesForWorkoutTemplate(
-                data.exerciseNotes,
-                importedWorkoutTemplate
-              )
-            );
-          }
-          if (data.customExercises) {
-            setCustomExercises(data.customExercises);
-          }
-          const importedSettings = data.settings ?? {};
-          if (Object.keys(importedSettings).length > 0) {
-            if (typeof importedSettings.strengthRestDuration === "number") {
-              setStrengthRestDuration(importedSettings.strengthRestDuration);
-            }
-            if (typeof importedSettings.hypertrophyRestDuration === "number") {
-              setHypertrophyRestDuration(importedSettings.hypertrophyRestDuration);
-            }
-            if (typeof importedSettings.soundEnabled === "boolean") {
-              setSoundEnabled(importedSettings.soundEnabled);
-            }
-            if (importedSettings.weightUnit === "kg" || importedSettings.weightUnit === "lbs") {
-              setWeightUnit(importedSettings.weightUnit);
-            }
-          }
-          setActiveDayIndex((currentIndex) =>
-            Math.min(currentIndex, Math.max(importedWorkoutTemplate.length - 1, 0))
-          );
+          const importedTemplate = data.workoutTemplate ?? safeWorkoutTemplate;
+          applySnapshot({
+            workoutTemplate: importedTemplate,
+            progress: data.progress ? pruneProgressForWorkoutTemplate(data.progress, importedTemplate) : {},
+            sessions: data.sessions ?? [],
+            bodyWeightEntries: data.bodyWeightEntries ?? [],
+            exerciseNotes: data.exerciseNotes ? pruneExerciseNotesForWorkoutTemplate(data.exerciseNotes, importedTemplate) : {},
+            customExercises: data.customExercises ?? [],
+            settings: {
+              strengthRestDuration: typeof data.settings?.strengthRestDuration === "number" ? data.settings.strengthRestDuration : strengthRestDuration,
+              hypertrophyRestDuration: typeof data.settings?.hypertrophyRestDuration === "number" ? data.settings.hypertrophyRestDuration : hypertrophyRestDuration,
+              soundEnabled: typeof data.settings?.soundEnabled === "boolean" ? data.settings.soundEnabled : soundEnabled,
+              weightUnit: data.settings?.weightUnit === "kg" || data.settings?.weightUnit === "lbs" ? data.settings.weightUnit : weightUnit,
+            },
+          });
           setShowSettings(false);
           showToast("Data imported successfully");
         } catch {
@@ -1190,205 +768,65 @@ export default function App() {
       reader.readAsText(file);
       e.target.value = "";
     },
-    [
-      safeWorkoutTemplate,
-      setBodyWeightEntries,
-      setCustomExercises,
-      setExerciseNotes,
-      setHypertrophyRestDuration,
-      setProgress,
-      setSessions,
-      setSoundEnabled,
-      setStrengthRestDuration,
-      setWeightUnit,
-      setWorkoutTemplate,
-      showToast,
-    ]
+    [safeWorkoutTemplate, applySnapshot, strengthRestDuration, hypertrophyRestDuration, soundEnabled, weightUnit, showToast]
   );
 
   const handleClearData = useCallback(() => {
-    const resetWorkoutTemplate = createDefaultWorkoutTemplate();
-    const emptySnapshot: AppDataSnapshot = {
-      workoutTemplate: resetWorkoutTemplate,
-      progress: {},
-      sessions: [],
-      bodyWeightEntries: [],
-      exerciseNotes: {},
-      settings: { ...DEFAULT_SETTINGS },
-      customExercises: [],
-    };
-
-    APP_STORAGE_KEYS.forEach((key) => {
-      localStorage.removeItem(key);
-    });
-
-    setWorkoutTemplate(resetWorkoutTemplate);
-    setProgress({});
-    setSessions([]);
-    setBodyWeightEntries([]);
-    setCustomExercises([]);
-    setExerciseNotes({});
-    setStrengthRestDuration(() => DEFAULT_SETTINGS.strengthRestDuration);
-    setHypertrophyRestDuration(() => DEFAULT_SETTINGS.hypertrophyRestDuration);
-    setSoundEnabled(() => DEFAULT_SETTINGS.soundEnabled);
-    setWeightUnit(() => DEFAULT_SETTINGS.weightUnit);
-    setActiveDayIndex(0);
+    useAppStore.getState().resetToDefaults();
     restTimer.dismissTimer();
     workoutTimer.reset();
     setShowSettings(false);
-
-    if (isLoggedIn) {
-      void pushToCloud(emptySnapshot);
-    }
-
+    if (isLoggedIn) void pushToCloud({ workoutTemplate: createDefaultWorkoutTemplate(), progress: {}, sessions: [], bodyWeightEntries: [], exerciseNotes: {}, settings: { strengthRestDuration: 120, hypertrophyRestDuration: 90, soundEnabled: true, weightUnit: "kg" }, customExercises: [] });
     showToast("All data reset");
-  }, [
-    isLoggedIn,
-    pushToCloud,
-    restTimer,
-    setBodyWeightEntries,
-    setCustomExercises,
-    setExerciseNotes,
-    setHypertrophyRestDuration,
-    setProgress,
-    setSessions,
-    setSoundEnabled,
-    setStrengthRestDuration,
-    setWeightUnit,
-    setWorkoutTemplate,
-    showToast,
-    workoutTimer,
-  ]);
+  }, [isLoggedIn, pushToCloud, restTimer, workoutTimer, showToast]);
 
-  const openExerciseInfo = useCallback((exerciseName: string) => {
-    const entry = findWikiEntry(exerciseName);
+  const openExerciseInfo = useCallback((name: string) => {
+    const entry = findWikiEntry(name);
     if (entry) setModalEntry(entry);
   }, []);
 
-  const tabs = [
-    { id: "workout" as TabId, label: "Tracker", icon: Dumbbell },
-    { id: "stretching" as TabId, label: "Stretch", icon: Timer },
-    { id: "wiki" as TabId, label: "Wiki", icon: BookOpen },
-    { id: "charts" as TabId, label: "Progress", icon: BarChart3 },
-    { id: "profile" as TabId, label: "Profile", icon: UserCircle2 },
-  ];
+  const handleSaveCustomExercise = useCallback((ex: ExerciseWiki) => {
+    setCustomExercises((prev) => [...prev, ex]);
+    showToast(`Saved ${ex.name} to library`);
+  }, [setCustomExercises, showToast]);
 
-  // ─── Render ───────────────────────────────────────────────────────────────
+  // ─── Render ────────────────────────────────────────────────────────────
+  if (!isHydrated) {
+    return (
+      <div
+        className="min-h-screen bg-[#080808] text-neutral-200 font-sans selection:bg-lime-400/30 overflow-hidden relative"
+        style={{ ["--bottom-nav-height" as never]: "68px" } as React.CSSProperties}
+      >
+        <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(163,230,53,0.04),transparent_60%),radial-gradient(ellipse_at_bottom_right,rgba(163,230,53,0.03),transparent_60%)] pointer-events-none" />
+      </div>
+    );
+  }
+
   return (
     <div
       className="min-h-screen bg-[#080808] text-neutral-200 font-sans selection:bg-lime-400/30 overflow-hidden relative"
-      style={
-        {
-          // Used to reserve space for the fixed bottom navigation.
-          // Keep in sync with the bar's actual non-safe-area height.
-          ["--bottom-nav-height" as never]: "68px",
-        } as React.CSSProperties
-      }
+      style={{ ["--bottom-nav-height" as never]: "68px" } as React.CSSProperties}
     >
+      {/* Background gradient */}
       <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(163,230,53,0.04),transparent_60%),radial-gradient(ellipse_at_bottom_right,rgba(163,230,53,0.03),transparent_60%)] pointer-events-none" />
 
-      {/* ═══ Toast Notifications ═══ */}
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
 
       <div className="max-w-md mx-auto min-h-dvh bg-neutral-950/50 relative shadow-2xl flex flex-col pb-[calc(var(--bottom-nav-height)+env(safe-area-inset-bottom))] border-x border-white/4">
-        {/* ═══ Sticky Header ═══ */}
-        <header className="sticky top-0 z-40 bg-[#080808]/80 backdrop-blur-2xl border-b border-white/6 px-4 pt-4 pb-3">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-baseline gap-1.5">
-              <h1 className="text-2xl font-black uppercase tracking-[0.12em] text-lime-400">Recomp</h1>
-              <span className="text-2xl font-black uppercase tracking-[0.12em] text-white/90">88</span>
-            </div>
-            <div className="flex items-center gap-2">
-              {activeTab === "workout" && (workoutTimer.isRunning || workoutTimer.isPaused) && (
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={workoutTimer.togglePause}
-                    className={cn(
-                      "flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border transition-all active:scale-95",
-                      workoutTimer.isPaused ? "bg-amber-400/10 border-amber-400/20 text-amber-400" : "bg-white/5 border-white/8 text-lime-400 hover:bg-white/10"
-                    )}
-                    aria-label={workoutTimer.isPaused ? "Resume workout" : "Pause workout"}
-                  >
-                    {workoutTimer.isPaused ? <Play size={12} className="text-amber-400" /> : <Clock size={12} className="text-lime-400" />}
-                    <span className={cn("text-[11px] font-mono font-bold tabular-nums", workoutTimer.isPaused ? "text-amber-400" : "text-lime-400")}>
-                      {formatTime(workoutTimer.elapsedSeconds)}
-                    </span>
-                  </button>
-                  <button
-                    onClick={handleResetTimer}
-                    className="w-7 h-7 flex items-center justify-center rounded-xl bg-white/5 border border-white/8 text-neutral-500 hover:text-red-400 hover:bg-red-400/10 hover:border-red-400/20 transition-all active:scale-90"
-                    aria-label="Reset workout timer"
-                    title="Reset timer"
-                  >
-                    <RotateCcw size={11} />
-                  </button>
-                </div>
-              )}
-              {activeTab === "workout" && (
-                <button
-                  onClick={() => setShowPlateCalc(true)}
-                  className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/5 border border-white/8 text-neutral-500 hover:text-lime-400 hover:bg-lime-400/10 hover:border-lime-400/20 transition-all"
-                  aria-label="Open plate calculator"
-                >
-                  <Calculator size={15} />
-                </button>
-              )}
-              <button
-                onClick={() => setShowSettings(true)}
-                className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/5 border border-white/8 text-neutral-500 hover:text-neutral-300 hover:bg-white/8 transition-all"
-                aria-label="Open settings"
-              >
-                <Settings size={15} />
-              </button>
-            </div>
-          </div>
 
-          {activeTab === "workout" && (
-            <>
-              <div className="flex items-center gap-3 mb-3">
-                <div className="flex-1 bg-white/6 h-1.5 rounded-full overflow-hidden" role="progressbar" aria-valuenow={progressPercent} aria-valuemin={0} aria-valuemax={100}>
-                  <div
-                    className="h-full bg-lime-400 shadow-[0_0_8px_rgba(163,230,53,0.6)] transition-all duration-700 ease-out rounded-full"
-                    style={{ width: `${progressPercent}%` }}
-                  />
-                </div>
-                <span className="text-[11px] font-mono font-bold text-lime-400 tabular-nums shrink-0">
-                  {progressPercent}%
-                </span>
-              </div>
+        {/* ══ Header (extracted component) ════════════════════════════════ */}
+        <AppHeader
+          progressPercent={progressPercent}
+          isTimerRunning={workoutTimer.isRunning}
+          isTimerPaused={workoutTimer.isPaused}
+          elapsedSeconds={workoutTimer.elapsedSeconds}
+          onTogglePause={workoutTimer.togglePause}
+          onResetTimer={handleResetTimer}
+          onShowPlateCalc={() => setShowPlateCalc(true)}
+          onShowSettings={() => setShowSettings(true)}
+        />
 
-              <div className="flex overflow-x-auto gap-1.5 scrollbar-none snap-x -mx-0.5 px-0.5" role="tablist" aria-label="Workout days">
-                {safeWorkoutTemplate.map((day, idx) => (
-                  <button
-                    key={day.id}
-                    onClick={() => setActiveDayIndex(idx)}
-                    role="tab"
-                    aria-selected={clampedActiveDayIndex === idx}
-                    className={cn(
-                      "snap-center shrink-0 px-3.5 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-widest transition-all duration-200 border",
-                      clampedActiveDayIndex === idx
-                        ? "bg-lime-400 text-neutral-950 border-lime-400 shadow-[0_0_12px_rgba(163,230,53,0.25)]"
-                        : "bg-white/4 text-neutral-500 border-white/6 hover:bg-white/8 hover:text-neutral-300"
-                    )}
-                  >
-                    D{day.dayNumber}
-                  </button>
-                ))}
-              </div>
-
-              <div className="flex items-center justify-between mt-2">
-                <p className="text-[11px] font-semibold text-neutral-500 uppercase tracking-widest">
-                  {activeDay.name}
-                </p>
-                <p className="text-[9px] font-bold text-neutral-700 uppercase tracking-widest">
-                  swipe to change day
-                </p>
-              </div>
-            </>
-          )}
-        </header>
-
-        {/* ═══ Content ═══ */}
+        {/* ══ Content ══════════════════════════════════════════════════════ */}
         <main className="flex-1 p-4">
           <ErrorBoundary>
             <div className={activeTab === "workout" ? "block" : "hidden"}>
@@ -1402,7 +840,7 @@ export default function App() {
                 allTimePRs={allTimePRs}
                 progressPercent={progressPercent}
                 weightUnit={weightUnit}
-                onSetActiveDayIndex={setActiveDayIndex}
+                onSetActiveDayIndex={(fn) => setActiveDayIndex(typeof fn === 'function' ? fn(activeDayIndex) : fn)}
                 onToggleSet={toggleSet}
                 onUpdateSetData={updateSetData}
                 onAdjustWeight={adjustWeight}
@@ -1426,25 +864,11 @@ export default function App() {
             </div>
 
             <div className={activeTab === "wiki" ? "block" : "hidden"}>
-              <Suspense
-                fallback={
-                  <div className="flex items-center justify-center py-20">
-                    <div className="w-6 h-6 border-2 border-lime-400/30 border-t-lime-400 rounded-full animate-spin" />
-                  </div>
-                }
-              >
-                <WikiView />
-              </Suspense>
+              <Suspense fallback={<Spinner />}><WikiView /></Suspense>
             </div>
 
             <div className={activeTab === "charts" ? "block" : "hidden"}>
-              <Suspense
-                fallback={
-                  <div className="flex items-center justify-center py-20">
-                    <div className="w-6 h-6 border-2 border-lime-400/30 border-t-lime-400 rounded-full animate-spin" />
-                  </div>
-                }
-              >
+              <Suspense fallback={<Spinner />}>
                 <ChartsView
                   workoutTemplate={safeWorkoutTemplate}
                   progress={progress}
@@ -1460,13 +884,7 @@ export default function App() {
             </div>
 
             <div className={activeTab === "profile" ? "block" : "hidden"}>
-              <Suspense
-                fallback={
-                  <div className="flex items-center justify-center py-20">
-                    <div className="w-6 h-6 border-2 border-lime-400/30 border-t-lime-400 rounded-full animate-spin" />
-                  </div>
-                }
-              >
+              <Suspense fallback={<Spinner />}>
                 <ProfileTab
                   sessions={sessions}
                   bodyWeightEntries={bodyWeightEntries}
@@ -1482,10 +900,8 @@ export default function App() {
           </ErrorBoundary>
         </main>
 
-        {/* ═══ Day Complete Overlay ═══ */}
         <DayCompleteOverlay show={showDayComplete} dayName={activeDay.name} />
 
-        {/* ═══ Rest Timer Toast ═══ */}
         <RestTimerToast
           restTimer={restTimer.restTimer}
           timerPercent={restTimer.timerPercent}
@@ -1495,138 +911,43 @@ export default function App() {
           onTogglePause={restTimer.togglePause}
         />
 
-        {/* ═══ Desktop/Mobile PWA Install Prompt ═══ */}
         <InstallPrompt />
 
-        {/* ═══ Bottom Navigation ═══ */}
-        <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md pointer-events-none z-50">
-          <div className="pointer-events-auto bg-[#080808]/88 backdrop-blur-2xl border-t border-white/6 shadow-[0_-10px_40px_rgba(0,0,0,0.55)] px-2 pb-[env(safe-area-inset-bottom)]">
-            <div className="h-[var(--bottom-nav-height)] flex items-center justify-center">
-              <nav className="grid grid-cols-5 w-full gap-0.5" aria-label="Main navigation">
-              {tabs.map(({ id, label, icon: Icon }) => {
-                const isActive = activeTab === id;
-                return (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => {
-                      setActiveTab(id);
-                      window.scrollTo({ top: 0, behavior: "smooth" });
-                    }}
-                    className={cn(
-                      "group relative flex flex-col items-center justify-center gap-[2px] rounded-2xl transition-all duration-200 py-1.5",
-                      "min-h-[52px] min-w-0 select-none outline-none",
-                      "focus-visible:ring-2 focus-visible:ring-lime-400/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#080808]",
-                      isActive ? "text-lime-400" : "text-neutral-600 hover:text-neutral-300"
-                    )}
-                    aria-current={isActive ? "page" : undefined}
-                  >
-                    <div
-                      className={cn(
-                        "w-9 h-8 flex items-center justify-center rounded-2xl transition-all duration-200 border",
-                        isActive
-                          ? "bg-lime-400/12 border-lime-400/25 shadow-[0_0_18px_rgba(163,230,53,0.14)]"
-                          : "border-transparent group-hover:bg-white/4"
-                      )}
-                    >
-                      <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
-                    </div>
-                    <span
-                      className={cn(
-                        "text-[8px] uppercase font-bold tracking-[0.1em] leading-none transition-colors truncate w-full text-center px-0.5",
-                        isActive ? "text-lime-400" : "text-neutral-600 group-hover:text-neutral-400"
-                      )}
-                    >
-                      {label}
-                    </span>
-                    <span
-                      aria-hidden="true"
-                      className={cn(
-                        "absolute -top-px left-1/2 -translate-x-1/2 h-[2px] w-8 rounded-full transition-opacity",
-                        "bg-lime-400/80 shadow-[0_0_10px_rgba(163,230,53,0.45)]",
-                        isActive ? "opacity-100" : "opacity-0"
-                      )}
-                    />
-                  </button>
-                );
-              })}
-              </nav>
-            </div>
-          </div>
-        </div>
+        {/* ══ Bottom Nav (extracted component) ════════════════════════════ */}
+        <BottomNav />
       </div>
 
-      {/* ═══ Modals ═══ */}
-      {showFinishConfirm && (
-        <FinishConfirmModal
-          dayName={activeDay.name}
-          elapsedSeconds={workoutTimer.elapsedSeconds}
-          onConfirm={finishWorkout}
-          onCancel={() => setShowFinishConfirm(false)}
-        />
-      )}
-
-      {modalEntry && (
-        <ExerciseDetailModal entry={modalEntry} onClose={() => setModalEntry(null)} />
-      )}
-
-      {showPlateCalc && <PlateCalculator weightUnit={weightUnit} onClose={() => setShowPlateCalc(false)} />}
-
-      {showSettings && (
-        <SettingsModal
-          strengthRestDuration={strengthRestDuration}
-          setStrengthRestDuration={setStrengthRestDuration}
-          hypertrophyRestDuration={hypertrophyRestDuration}
-          setHypertrophyRestDuration={setHypertrophyRestDuration}
-          soundEnabled={soundEnabled}
-          setSoundEnabled={setSoundEnabled}
-          weightUnit={weightUnit}
-          setWeightUnit={handleSetWeightUnit}
-          sessionCount={sessions.length}
-          workoutDayCount={safeWorkoutTemplate.length}
-          onExport={handleExport}
-          onExportCsv={handleExportCsv}
-          onImport={handleImport}
-          onOpenWorkoutEditor={() => {
-            setShowSettings(false);
-            setShowWorkoutEditor(true);
-          }}
-          onOpenAddPastSession={() => {
-            setShowAddPastSession(true);
-          }}
-          onApplyFreeWeightWorkout={handleApplyFreeWeightWorkout}
-          onResetWorkoutTemplate={handleResetWorkoutTemplate}
-          onClearData={handleClearData}
-          onClose={() => setShowSettings(false)}
-        />
-      )}
-
-      {showWorkoutEditor && (
-        <WorkoutEditorModal
-          workoutTemplate={safeWorkoutTemplate}
-          customExercises={customExercises}
-          onSave={handleSaveWorkoutTemplate}
-          onSaveCustomExercise={(ex) => {
-            setCustomExercises([...customExercises, ex]);
-            showToast(`Saved ${ex.name} to library`);
-          }}
-          onClose={() => setShowWorkoutEditor(false)}
-        />
-      )}
-
-      {showAddPastSession && (
-        <AddPastSessionModal
-          workoutTemplate={safeWorkoutTemplate}
-          bodyWeightEntries={bodyWeightEntries}
-          weightUnit={weightUnit}
-          onAddSessions={handleAddPastSessions}
-          onClose={() => setShowAddPastSession(false)}
-        />
-      )}
+      {/* ══ Modals ═══════════════════════════════════════════════════════ */}
+      <GlobalModals
+        showFinishConfirm={showFinishConfirm}
+        showPlateCalc={showPlateCalc}
+        showSettings={showSettings}
+        showWorkoutEditor={showWorkoutEditor}
+        showAddPastSession={showAddPastSession}
+        modalExerciseEntry={modalEntry}
+        activeDayName={activeDay.name}
+        elapsedSeconds={workoutTimer.elapsedSeconds}
+        onFinishWorkout={finishWorkout}
+        onCancelFinish={() => setShowFinishConfirm(false)}
+        onSetWeightUnit={handleSetWeightUnit}
+        onExport={handleExport}
+        onExportCsv={handleExportCsv}
+        onExportConfig={handleExportConfig}
+        onImport={handleImport}
+        onOpenWorkoutEditor={() => { setShowSettings(false); setShowWorkoutEditor(true); }}
+        onOpenAddPastSession={() => setShowAddPastSession(true)}
+        onApplyFreeWeightWorkout={handleApplyFreeWeightWorkout}
+        onResetWorkoutTemplate={handleResetWorkoutTemplate}
+        onClearData={handleClearData}
+        onCloseSettings={() => setShowSettings(false)}
+        onSaveWorkoutTemplate={handleSaveWorkoutTemplate}
+        onSaveCustomExercise={handleSaveCustomExercise}
+        onCloseWorkoutEditor={() => setShowWorkoutEditor(false)}
+        onAddPastSessions={handleAddPastSessions}
+        onCloseAddPastSession={() => setShowAddPastSession(false)}
+        onCloseExerciseDetail={() => setModalEntry(null)}
+        onClosePlateCalc={() => setShowPlateCalc(false)}
+      />
     </div>
   );
 }
-
-// triggered rebuild
-
-// triggered rebuild

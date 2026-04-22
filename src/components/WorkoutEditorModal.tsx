@@ -1,16 +1,16 @@
 'use client';
 
 import { useState } from "react";
-import { ArrowLeftRight, Plus, Save, Trash2, X } from "lucide-react";
+import { ArrowLeftRight, Download, Plus, Save, Trash2, X } from "lucide-react";
 import { cloneWorkoutTemplate, createTemplateSet, sanitizeExerciseLinks } from "../data";
 import { useModalEscape } from "../hooks/useModalEscape";
 import { StretchingPrograms } from "../stretchingData";
 import {
-  ExerciseWiki,
-  Exercise,
+    ExerciseWiki,
+    Exercise,
     ExerciseLinkType,
-  ExerciseType,
-  WorkoutTemplate,
+    ExerciseType,
+    WorkoutTemplate,
 } from "../types";
 import { cn } from "../utils";
 import {
@@ -80,10 +80,10 @@ const getExerciseLibraryNames = (
     const relevantEntries = category
         ? allEntries.filter((entry) => entry.category === category)
         : allEntries.filter((entry) =>
-              exerciseType === "other"
-                  ? entry.category === "Cardio/Mobility"
-                  : entry.category !== "Cardio/Mobility"
-          );
+            exerciseType === "other"
+                ? entry.category === "Cardio/Mobility"
+                : entry.category !== "Cardio/Mobility"
+        );
 
 
     const names = new Set<string>();
@@ -246,10 +246,21 @@ export default function WorkoutEditorModal({
                 details:
                     currentExercise.type === "other"
                         ? DEFAULT_OTHER_EXERCISE_DETAILS[nextExerciseName] ??
-                          currentExercise.details
+                        currentExercise.details
                         : undefined,
             };
         });
+    };
+
+    const handleExport = () => {
+        const payload = { workoutTemplate: draft, schemaVersion: 1, exportedAt: new Date().toISOString() };
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `recomp88-plan-${new Date().toISOString().slice(0, 10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
     };
 
     if (!activeDay) return null;
@@ -699,10 +710,10 @@ export default function WorkoutEditorModal({
                                                                         sets: currentExercise.sets.map((currentSet) =>
                                                                             currentSet.id === set.id
                                                                                 ? {
-                                                                                      ...currentSet,
-                                                                                      targetReps:
-                                                                                          event.target.value,
-                                                                                  }
+                                                                                    ...currentSet,
+                                                                                    targetReps:
+                                                                                        event.target.value,
+                                                                                }
                                                                                 : currentSet
                                                                         ),
                                                                     }))
@@ -826,6 +837,16 @@ export default function WorkoutEditorModal({
                     </p>
 
                     <div className="flex gap-2">
+                        <button
+                            type="button"
+                            onClick={handleExport}
+                            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-white/8 bg-white/4 text-neutral-300 text-[11px] font-black uppercase tracking-widest hover:bg-white/7 transition-all"
+                            title="Export Current Program"
+                        >
+                            <Download size={13} />
+                            Export
+                        </button>
+
                         <button
                             type="button"
                             onClick={onClose}

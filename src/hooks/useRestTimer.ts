@@ -1,7 +1,4 @@
-import { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
-
-const useIsomorphicLayoutEffect =
-    typeof document !== "undefined" ? useLayoutEffect : useEffect;
+import { useState, useEffect, useRef, useCallback } from "react";
 
 interface UseRestTimerOptions {
     soundEnabled: boolean;
@@ -26,7 +23,7 @@ export function useRestTimer({
     const [state, setState] = useState<RestState>(DEFAULT_REST_STATE);
     const shouldSkipPersist = useRef(true);
 
-    useIsomorphicLayoutEffect(() => {
+    useEffect(() => {
         try {
             const val = localStorage.getItem("recomp88-rest-state");
             if (val) {
@@ -57,7 +54,7 @@ export function useRestTimer({
             }
 
             if (audioCtxRef.current.state === "suspended") {
-                void audioCtxRef.current.resume().catch(() => {});
+                void audioCtxRef.current.resume().catch(() => { });
             }
 
             return audioCtxRef.current;
