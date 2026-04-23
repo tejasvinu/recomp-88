@@ -1,7 +1,7 @@
 'use client';
 
 import { create } from 'zustand';
-import { createDefaultWorkoutTemplate, normalizeWorkoutTemplate, pruneExerciseNotesForWorkoutTemplate, pruneProgressForWorkoutTemplate } from '../data';
+import { createDefaultWorkoutTemplate, normalizeWorkoutTemplate } from '../data';
 import { readLocalStorageValue, writeLocalStorageValue } from '../services/storageService';
 import type {
     AppDataSnapshot,
@@ -79,11 +79,6 @@ export interface AppState {
     resetToDefaults: () => void;
 }
 
-// ─── Helper: resolve updater or value ────────────────────────────────────────
-function resolve<T>(updater: T | ((prev: T) => T), current: T): T {
-    return typeof updater === 'function' ? (updater as (prev: T) => T)(current) : updater;
-}
-
 // ─── Persisted-setter factory ────────────────────────────────────────────────
 function makePersistedSetter<K extends keyof AppState>(
     set: (fn: (s: AppState) => Partial<AppState>) => void,
@@ -93,8 +88,12 @@ function makePersistedSetter<K extends keyof AppState>(
 ) {
     return (updater: AppState[K] | ((prev: AppState[K]) => AppState[K])) => {
         const current = get()[key];
-        // eslint-disable-next-line @typescript-eslint/ban-types
-        const next = (typeof updater === 'function' ? (updater as Function)(current) : updater) as AppState[K];
+        const next = (
+            typeof updater === 'function'
+                ? (updater as (prev: AppState[K]) => AppState[K])(current)
+                : updater
+        ) as AppState[K];
+        if (Object.is(next, current)) return;
         writeLocalStorageValue(storageKey, next);
         set(() => ({ [key]: next } as Partial<AppState>));
     };
@@ -103,21 +102,26 @@ function makePersistedSetter<K extends keyof AppState>(
 // ─── Build the default initial values (Server-safe) ────────────────────────
 const DEFAULT_TEMPLATE = createDefaultWorkoutTemplate();
 
-const getInitialPersistedState = () => {
-    if (typeof window === 'undefined') {
-        return {
-            workoutTemplate: DEFAULT_TEMPLATE,
-            progress: {} as WorkoutProgress,
-            sessions: [] as SessionHistory,
-            strengthRestDuration: DEFAULT_SETTINGS.strengthRestDuration,
-            hypertrophyRestDuration: DEFAULT_SETTINGS.hypertrophyRestDuration,
-            exerciseNotes: {} as Record<string, string>,
-            soundEnabled: DEFAULT_SETTINGS.soundEnabled,
-            bodyWeightEntries: [] as BodyWeightEntry[],
-            weightUnit: DEFAULT_SETTINGS.weightUnit,
-            customExercises: [] as ExerciseWiki[],
-        };
-    }
+// IMPORTANT: The store is created with DETERMINISTIC defaults so that the
+// server snapshot and the first client render both produce the same
+// `getState()` reference. This avoids React's "getServerSnapshot should be
+// cached" warning (and its downstream infinite-loop / hydration errors).
+// Persisted localStorage values are loaded AFTER mount via `hydrateFromStorage()`.
+const SSR_SAFE_INITIAL = {
+    workoutTemplate: DEFAULT_TEMPLATE,
+    progress: {} as WorkoutProgress,
+    sessions: [] as SessionHistory,
+    strengthRestDuration: DEFAULT_SETTINGS.strengthRestDuration,
+    hypertrophyRestDuration: DEFAULT_SETTINGS.hypertrophyRestDuration,
+    exerciseNotes: {} as Record<string, string>,
+    soundEnabled: DEFAULT_SETTINGS.soundEnabled,
+    bodyWeightEntries: [] as BodyWeightEntry[],
+    weightUnit: DEFAULT_SETTINGS.weightUnit,
+    customExercises: [] as ExerciseWiki[],
+};
+
+const readPersistedState = () => {
+    if (typeof window === 'undefined') return SSR_SAFE_INITIAL;
 
     const storedTemplate = readLocalStorageValue<WorkoutTemplateData>('recomp88-workout-template', DEFAULT_TEMPLATE);
     const workoutTemplate = normalizeWorkoutTemplate(storedTemplate) ?? DEFAULT_TEMPLATE;
@@ -136,9 +140,21 @@ const getInitialPersistedState = () => {
     };
 };
 
+/**
+ * Hydrate the store from localStorage before store subscribers mount. Running
+ * it during the store initializer would make the Zustand snapshot diverge
+ * between SSR and the first client render.
+ */
+let storageHydrated = false;
+export const hydrateStoreFromStorage = () => {
+    if (storageHydrated || typeof window === 'undefined') return;
+    storageHydrated = true;
+    useAppStore.setState(readPersistedState());
+};
+
 // ─── Store ────────────────────────────────────────────────────────────────────
 export const useAppStore = create<AppState>((set, get) => {
-    const initial = getInitialPersistedState();
+    const initial = SSR_SAFE_INITIAL;
 
     return {
         // Persisted state

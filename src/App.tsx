@@ -26,7 +26,7 @@ import type {
   ExerciseWiki,
   WorkoutSession,
 } from "./types";
-import { cn, getClosestBodyWeight, resolveWeight, toLocalDateKey } from "./utils";
+import { getClosestBodyWeight, resolveWeight, toLocalDateKey } from "./utils";
 import {
   findWikiEntry,
   isFreeWeightFriendly,
@@ -36,8 +36,7 @@ import {
 // ─── Zustand store ────────────────────────────────────────────────────────────
 import {
   useAppStore,
-  selectCurrentSnapshot,
-  selectSafeWorkoutTemplate,
+  hydrateStoreFromStorage,
 } from "./store/appStore";
 
 // ─── New sub-components ────────────────────────────────────────────────────
@@ -47,7 +46,7 @@ import BottomNav from "./components/BottomNav";
 // ─── Existing components ──────────────────────────────────────────────────
 import ErrorBoundary from "./components/ErrorBoundary";
 import WorkoutTab from "./components/WorkoutTab";
-import StretchingTab from "./components/StretchingTab";
+import RecoveryTab from "./components/RecoveryTab";
 import RestTimerToast from "./components/RestTimerToast";
 import DayCompleteOverlay from "./components/DayCompleteOverlay";
 import GlobalModals from "./components/GlobalModals";
@@ -89,10 +88,7 @@ const Spinner = () => (
   </div>
 );
 
-export default function App() {
-  const [isHydrated, setIsHydrated] = useState(false);
-  useEffect(() => { setIsHydrated(true); }, []);
-
+function AppMain() {
   // ─── Global store (individual selectors for stability) ──────────────────
   const progress = useAppStore((s) => s.progress);
   const setProgress = useAppStore((s) => s.setProgress);
@@ -109,7 +105,6 @@ export default function App() {
   const strengthRestDuration = useAppStore((s) => s.strengthRestDuration);
   const hypertrophyRestDuration = useAppStore((s) => s.hypertrophyRestDuration);
   const soundEnabled = useAppStore((s) => s.soundEnabled);
-  const setSoundEnabled = useAppStore((s) => s.setSoundEnabled);
   const activeTab = useAppStore((s) => s.activeTab);
   const setActiveTab = useAppStore((s) => s.setActiveTab);
   const activeDayIndex = useAppStore((s) => s.activeDayIndex);
@@ -146,12 +141,12 @@ export default function App() {
   const clampedActiveDayIndex = Math.min(activeDayIndex, Math.max(safeWorkoutTemplate.length - 1, 0));
   const activeDay = safeWorkoutTemplate[clampedActiveDayIndex];
 
-  // Clamp activeDayIndex if template shrinks
+  // Clamp activeDayIndex if template shrinks (AppMain mounts only after localStorage hydrate)
   useEffect(() => {
-    if (isHydrated && activeDayIndex !== clampedActiveDayIndex) {
+    if (activeDayIndex !== clampedActiveDayIndex) {
       setActiveDayIndex(clampedActiveDayIndex);
     }
-  }, [isHydrated, activeDayIndex, clampedActiveDayIndex, setActiveDayIndex]);
+  }, [activeDayIndex, clampedActiveDayIndex, setActiveDayIndex]);
 
   // Hydration guard moved to bottom
   // ─── Cloud sync ─────────────────────────────────────────────────────────
@@ -515,10 +510,16 @@ export default function App() {
       setProgress((prev) => {
         const dayP = prev[activeDay.id] || {};
         const exP = { ...(dayP[exerciseId] || {}) };
+        let changed = false;
         exercise.sets.forEach((set) => {
           const vals = lastVals[set.id];
-          if (vals) exP[set.id] = { ...(exP[set.id] || { completed: false, loggedWeight: "", loggedReps: "" }), loggedWeight: vals.weight, loggedReps: vals.reps };
+          if (!vals) return;
+          const cur = exP[set.id] || { completed: false, loggedWeight: "", loggedReps: "" };
+          if (cur.loggedWeight === vals.weight && cur.loggedReps === vals.reps) return;
+          changed = true;
+          exP[set.id] = { ...cur, loggedWeight: vals.weight, loggedReps: vals.reps };
         });
+        if (!changed) return prev;
         return { ...prev, [activeDay.id]: { ...dayP, [exerciseId]: exP } };
       });
       showToast("Loaded last session");
@@ -813,17 +814,6 @@ export default function App() {
   }, [setCustomExercises, showToast]);
 
   // ─── Render ────────────────────────────────────────────────────────────
-  if (!isHydrated) {
-    return (
-      <div
-        className="min-h-screen bg-[#080808] text-neutral-200 font-sans selection:bg-lime-400/30 overflow-hidden relative"
-        style={{ ["--bottom-nav-height" as never]: "68px" } as React.CSSProperties}
-      >
-        <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(163,230,53,0.04),transparent_60%),radial-gradient(ellipse_at_bottom_right,rgba(163,230,53,0.03),transparent_60%)] pointer-events-none" />
-      </div>
-    );
-  }
-
   return (
     <div
       className="min-h-screen bg-[#080808] text-neutral-200 font-sans selection:bg-lime-400/30 overflow-hidden relative"
@@ -877,7 +867,7 @@ export default function App() {
             </div>
 
             <div className={activeTab === "stretching" ? "block" : "hidden"}>
-              <StretchingTab
+              <RecoveryTab
                 soundEnabled={soundEnabled}
                 selectedProgramId={selectedStretchingProgramId}
                 onSelectProgram={setSelectedStretchingProgramId}
@@ -972,4 +962,13 @@ export default function App() {
       />
     </div>
   );
+}
+
+/**
+ * The page imports this component with `ssr: false`, so hydrate the external
+ * store before any Zustand subscriber mounts.
+ */
+export default function App() {
+  hydrateStoreFromStorage();
+  return <AppMain />;
 }

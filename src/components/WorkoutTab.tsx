@@ -122,6 +122,16 @@ export default function WorkoutTab({
             onTouchStart={handleTouchStart}
             onTouchEnd={handleTouchEnd}
         >
+            {isMounted && activeDay.primerId && (
+                <button
+                    onClick={() => onStartStretching?.(activeDay.primerId!)}
+                    className="w-full active:scale-[0.98] flex items-center justify-center gap-2.5 py-4 rounded-2xl font-black text-[13px] tracking-[0.2em] uppercase transition-all border bg-amber-500/15 hover:bg-amber-500/25 border-amber-500/40 text-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.15)] mt-1 mb-2"
+                >
+                    <Timer size={18} />
+                    Start Session Primer
+                </button>
+            )}
+
             {exerciseSegments.map((segment) => {
                 if (!segment.linkType || segment.exercises.length === 1) {
                     const exercise = segment.exercises[0];
@@ -248,6 +258,15 @@ export default function WorkoutTab({
                     >
                         <Timer size={15} className="text-amber-400" />
                         Start Pre-Workout Warmup
+                    </button>
+                )}
+                {isMounted && activeDay.finisherId && (
+                    <button
+                        onClick={() => onStartStretching?.(activeDay.finisherId!)}
+                        className="w-full active:scale-[0.98] flex items-center justify-center gap-2.5 py-4 rounded-2xl font-black text-[13px] tracking-[0.2em] uppercase transition-all border bg-rose-500/15 hover:bg-rose-500/25 border-rose-500/40 text-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.15)]"
+                    >
+                        <Timer size={18} />
+                        Start Session Finisher
                     </button>
                 )}
                 {isMounted && (activeDay.postWorkoutStretchId || activeDay.stretchingProgramId) && (

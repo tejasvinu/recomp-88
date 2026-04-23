@@ -45,6 +45,8 @@ const DEFAULT_WORKOUT_TEMPLATE: WorkoutTemplate = [
         stretchingProgramId: "post-workout-push",
         preWorkoutStretchId: "pre-workout-push",
         postWorkoutStretchId: "post-workout-push",
+        primerId: "upper-body-primer",
+        finisherId: "core-annihilator",
         exercises: [
             makeExercise("d1-e1", "Bench Press", 4, "6-8", "strength"),
             makeExercise("d1-e2", "Seated DB Press", 3, "8-10", "hypertrophy"),
@@ -61,6 +63,8 @@ const DEFAULT_WORKOUT_TEMPLATE: WorkoutTemplate = [
         stretchingProgramId: "post-workout-pull",
         preWorkoutStretchId: "pre-workout-pull",
         postWorkoutStretchId: "post-workout-pull",
+        primerId: "upper-body-primer",
+        finisherId: "core-annihilator",
         exercises: [
             makeExercise("d2-e1", "Barbell Rows", 4, "6-8", "strength"),
             makeExercise("d2-e2", "Pull-ups", 3, "8-10", "hypertrophy"),
@@ -78,6 +82,8 @@ const DEFAULT_WORKOUT_TEMPLATE: WorkoutTemplate = [
         stretchingProgramId: "post-workout-legs",
         preWorkoutStretchId: "pre-workout-legs",
         postWorkoutStretchId: "post-workout-legs",
+        primerId: "heavy-squat-primer",
+        finisherId: "leg-day-executioner",
         exercises: [
             makeExercise("d3-e1", "Barbell Squats", 4, "6-8", "strength"),
             makeExercise("d3-e2", "RDLs", 3, "8-10", "hypertrophy"),
@@ -94,6 +100,8 @@ const DEFAULT_WORKOUT_TEMPLATE: WorkoutTemplate = [
         stretchingProgramId: "post-workout-push",
         preWorkoutStretchId: "pre-workout-push",
         postWorkoutStretchId: "post-workout-push",
+        primerId: "upper-body-primer",
+        finisherId: "core-annihilator",
         exercises: [
             makeExercise("d4-e1", "Incline Barbell Press", 3, "8-10", "hypertrophy"),
             makeExercise("d4-e2", "Pec Deck", 3, "12-15", "hypertrophy"),
@@ -110,6 +118,8 @@ const DEFAULT_WORKOUT_TEMPLATE: WorkoutTemplate = [
         stretchingProgramId: "post-workout-pull",
         preWorkoutStretchId: "pre-workout-pull",
         postWorkoutStretchId: "post-workout-pull",
+        primerId: "upper-body-primer",
+        finisherId: "core-annihilator",
         exercises: [
             makeExercise("d5-e1", "Single-Arm Rows", 3, "10-12", "hypertrophy"),
             makeExercise("d5-e2", "Close-Grip Pulldowns", 3, "10-12", "hypertrophy"),
@@ -126,6 +136,8 @@ const DEFAULT_WORKOUT_TEMPLATE: WorkoutTemplate = [
         stretchingProgramId: "post-workout-legs",
         preWorkoutStretchId: "pre-workout-legs",
         postWorkoutStretchId: "post-workout-legs",
+        primerId: "heavy-squat-primer",
+        finisherId: "leg-day-executioner",
         exercises: [
             makeExercise("d6-e1", "Hack Squats", 3, "8-12", "hypertrophy"),
             makeExercise("d6-e2", "Leg Extensions", 3, "12-15", "hypertrophy"),
@@ -252,48 +264,48 @@ export const normalizeWorkoutTemplate = (value: unknown): WorkoutTemplate | null
         const exercisesValue = Array.isArray(dayValue.exercises) ? dayValue.exercises : [];
         const exercises = sanitizeExerciseLinks(
             exercisesValue.flatMap((exerciseValue, exerciseIndex) => {
-            if (!isRecord(exerciseValue)) return [];
+                if (!isRecord(exerciseValue)) return [];
 
-            const type = normalizeExerciseType(exerciseValue.type);
-            const setsValue = Array.isArray(exerciseValue.sets) ? exerciseValue.sets : [];
-            const defaultTargetReps = type === "other" ? "1" : "8-12";
-            const sets = setsValue.length
-                ? setsValue.flatMap((setValue, setIndex) => {
-                      if (!isRecord(setValue)) return [];
-                      const id =
-                          typeof setValue.id === "string" && setValue.id.trim()
-                              ? setValue.id.trim()
-                              : `set-${setIndex + 1}`;
-                      return [
-                          createTemplateSet(
-                              id,
-                              typeof setValue.targetReps === "string" && setValue.targetReps.trim()
-                                  ? setValue.targetReps.trim()
-                                  : defaultTargetReps
-                          ),
-                      ];
-                  })
-                : [createTemplateSet("set-1", defaultTargetReps)];
+                const type = normalizeExerciseType(exerciseValue.type);
+                const setsValue = Array.isArray(exerciseValue.sets) ? exerciseValue.sets : [];
+                const defaultTargetReps = type === "other" ? "1" : "8-12";
+                const sets = setsValue.length
+                    ? setsValue.flatMap((setValue, setIndex) => {
+                        if (!isRecord(setValue)) return [];
+                        const id =
+                            typeof setValue.id === "string" && setValue.id.trim()
+                                ? setValue.id.trim()
+                                : `set-${setIndex + 1}`;
+                        return [
+                            createTemplateSet(
+                                id,
+                                typeof setValue.targetReps === "string" && setValue.targetReps.trim()
+                                    ? setValue.targetReps.trim()
+                                    : defaultTargetReps
+                            ),
+                        ];
+                    })
+                    : [createTemplateSet("set-1", defaultTargetReps)];
 
-            return [
-                {
-                    id:
-                        typeof exerciseValue.id === "string" && exerciseValue.id.trim()
-                            ? exerciseValue.id.trim()
-                            : `day-${dayNumber}-exercise-${exerciseIndex + 1}`,
-                    name:
-                        typeof exerciseValue.name === "string" && exerciseValue.name.trim()
-                            ? exerciseValue.name.trim()
-                            : `Exercise ${exerciseIndex + 1}`,
-                    type,
-                    details:
-                        typeof exerciseValue.details === "string" && exerciseValue.details.trim()
-                            ? exerciseValue.details.trim()
-                            : undefined,
-                    linkToNext: normalizeExerciseLinkType(exerciseValue.linkToNext),
-                    sets,
-                } satisfies Exercise,
-            ];
+                return [
+                    {
+                        id:
+                            typeof exerciseValue.id === "string" && exerciseValue.id.trim()
+                                ? exerciseValue.id.trim()
+                                : `day-${dayNumber}-exercise-${exerciseIndex + 1}`,
+                        name:
+                            typeof exerciseValue.name === "string" && exerciseValue.name.trim()
+                                ? exerciseValue.name.trim()
+                                : `Exercise ${exerciseIndex + 1}`,
+                        type,
+                        details:
+                            typeof exerciseValue.details === "string" && exerciseValue.details.trim()
+                                ? exerciseValue.details.trim()
+                                : undefined,
+                        linkToNext: normalizeExerciseLinkType(exerciseValue.linkToNext),
+                        sets,
+                    } satisfies Exercise,
+                ];
             })
         );
 
@@ -328,6 +340,14 @@ export const normalizeWorkoutTemplate = (value: unknown): WorkoutTemplate | null
                 postWorkoutStretchId:
                     typeof dayValue.postWorkoutStretchId === "string" && dayValue.postWorkoutStretchId.trim()
                         ? dayValue.postWorkoutStretchId.trim()
+                        : undefined,
+                primerId:
+                    typeof dayValue.primerId === "string" && dayValue.primerId.trim()
+                        ? dayValue.primerId.trim()
+                        : undefined,
+                finisherId:
+                    typeof dayValue.finisherId === "string" && dayValue.finisherId.trim()
+                        ? dayValue.finisherId.trim()
                         : undefined,
                 exercises,
             } satisfies DayRoutine,

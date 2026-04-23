@@ -4,7 +4,7 @@ import { useState } from "react";
 import { ArrowLeftRight, Download, Plus, Save, Trash2, X } from "lucide-react";
 import { cloneWorkoutTemplate, createTemplateSet, sanitizeExerciseLinks } from "../data";
 import { useModalEscape } from "../hooks/useModalEscape";
-import { StretchingPrograms } from "../stretchingData";
+import { FinisherPrograms, PrimerPrograms, StretchPrograms } from "../stretchingData";
 import {
     ExerciseWiki,
     Exercise,
@@ -396,7 +396,7 @@ export default function WorkoutEditorModal({
                                     className="bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm font-semibold text-white outline-none focus:ring-1 focus:ring-lime-400/30 focus:border-lime-400/20 transition-all"
                                 >
                                     <option value="">None</option>
-                                    {StretchingPrograms.map((program) => (
+                                    {PrimerPrograms.map((program) => (
                                         <option key={program.id} value={program.id}>
                                             {program.name}
                                         </option>
@@ -421,7 +421,55 @@ export default function WorkoutEditorModal({
                                     className="bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm font-semibold text-white outline-none focus:ring-1 focus:ring-lime-400/30 focus:border-lime-400/20 transition-all"
                                 >
                                     <option value="">None</option>
-                                    {StretchingPrograms.map((program) => (
+                                    {StretchPrograms.map((program) => (
+                                        <option key={program.id} value={program.id}>
+                                            {program.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
+
+                            <label className="flex flex-col gap-1.5 md:col-span-1">
+                                <span className="text-[10px] text-amber-500/80 font-black uppercase tracking-widest">
+                                    Session Primer (Warm-Up)
+                                </span>
+                                <select
+                                    value={activeDay.primerId ?? ""}
+                                    onChange={(event) =>
+                                        updateDay((day) => ({
+                                            ...day,
+                                            primerId:
+                                                event.target.value || undefined,
+                                        }))
+                                    }
+                                    className="bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm font-semibold text-white outline-none focus:ring-1 focus:ring-amber-400/30 focus:border-amber-400/20 transition-all"
+                                >
+                                    <option value="">None</option>
+                                    {PrimerPrograms.map((program) => (
+                                        <option key={program.id} value={program.id}>
+                                            {program.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
+
+                            <label className="flex flex-col gap-1.5 md:col-span-1">
+                                <span className="text-[10px] text-rose-500/80 font-black uppercase tracking-widest">
+                                    Session Finisher (Burnout)
+                                </span>
+                                <select
+                                    value={activeDay.finisherId ?? ""}
+                                    onChange={(event) =>
+                                        updateDay((day) => ({
+                                            ...day,
+                                            finisherId:
+                                                event.target.value || undefined,
+                                        }))
+                                    }
+                                    className="bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm font-semibold text-white outline-none focus:ring-1 focus:ring-rose-400/30 focus:border-rose-400/20 transition-all"
+                                >
+                                    <option value="">None</option>
+                                    {FinisherPrograms.map((program) => (
                                         <option key={program.id} value={program.id}>
                                             {program.name}
                                         </option>

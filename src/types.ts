@@ -97,6 +97,8 @@ export interface DayRoutine {
     stretchingProgramId?: string; // Legacy / Fallback
     preWorkoutStretchId?: string;
     postWorkoutStretchId?: string;
+    primerId?: string;
+    finisherId?: string;
 }
 
 export type WorkoutTemplate = DayRoutine[];

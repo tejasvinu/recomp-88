@@ -617,6 +617,162 @@ const STRETCH_LIBRARY: Record<string, Stretch> = {
         benefits: ["Stretches the entire posterior chain while prepping the anterior line"],
         commonMistakes: ["Bending the knees sharply to reach the floor", "Letting the lower back sag in plank position"],
         equipment: ["None"]
+    },
+
+    // NEW BODYWEIGHT MOVEMENTS (PRIMERS & FINISHERS)
+    "burpees": {
+        id: "burpees",
+        name: "Burpees",
+        duration: 45,
+        description: "A full-body explosive movement to spike heart rate and burn fat.",
+        instructions: [
+            "Start in a standing position.",
+            "Drop into a squat position and place your hands on the ground.",
+            "Kick your feet back into a plank position, keeping your core tight.",
+            "Quickly jump your feet back to the squat position.",
+            "Stand up and jump explosively with your hands reaching overhead."
+        ],
+        targetAreas: ["full body", "cardio", "shoulders", "legs"],
+        cues: ["Stay light on your feet", "Keep the core braced during the plank kick-out"],
+        benefits: ["Spikes heart rate", "Builds explosive power"],
+        commonMistakes: ["Letting the lower back sag in the plank", "Skipping the jump at the top"],
+        equipment: ["None"]
+    },
+    "planks": {
+        id: "planks",
+        name: "Plank Hold",
+        duration: 60,
+        description: "An isometric hold to build core stability and endurance.",
+        instructions: [
+            "Start on your forearms and toes, with elbows directly under shoulders.",
+            "Keep your body in a straight line from head to heels.",
+            "Squeeze your glutes and brace your core tightly.",
+            "Breathe steadily while holding the position."
+        ],
+        targetAreas: ["core", "shoulders", "glutes"],
+        cues: ["Pull your belly button toward your spine", "Push the floor away with your forearms"],
+        benefits: ["Improves core stability", "Protects the lower back"],
+        commonMistakes: ["Hips dipping too low", "Hips piked too high in the air"],
+        equipment: ["None"]
+    },
+    "bird-dogs": {
+        id: "bird-dogs",
+        name: "Bird-Dogs",
+        duration: 45,
+        description: "A core and spinal stabilization movement.",
+        instructions: [
+            "Start on all fours with hands under shoulders and knees under hips.",
+            "Simultaneously extend your right arm forward and your left leg backward.",
+            "Keep your back flat and your hips square to the ground.",
+            "Hold for a second, then return to the start and switch sides."
+        ],
+        targetAreas: ["core", "lower back", "glutes"],
+        cues: ["Reach long, not just high", "Keep your lower back from arching"],
+        benefits: ["Improves spinal stability", "Builds cross-body coordination"],
+        commonMistakes: ["Arching the lower back", "Rotating the hips toward the ceiling"],
+        equipment: ["None"]
+    },
+    "mountain-climbers": {
+        id: "mountain-climbers",
+        name: "Mountain Climbers",
+        duration: 45,
+        description: "A high-intensity core and cardio movement.",
+        instructions: [
+            "Start in a straight-arm plank position.",
+            "Drive one knee forward toward your chest.",
+            "Quickly switch legs, driving the other knee forward.",
+            "Keep your hips down and move securely but quickly."
+        ],
+        targetAreas: ["core", "shoulders", "cardio"],
+        cues: ["Keep your shoulders stacked over your wrists", "Brace your core so your hips don't bounce"],
+        benefits: ["Shreds the core", "Drives up the heart rate quickly"],
+        commonMistakes: ["Bouncing the hips too high", "Looking back at the feet instead of slightly forward"],
+        equipment: ["None"]
+    },
+    "jump-squats": {
+        id: "jump-squats",
+        name: "Jump Squats",
+        duration: 45,
+        description: "An explosive lower body movement for power and burnout.",
+        instructions: [
+            "Stand with your feet shoulder-width apart.",
+            "Lower your hips into a squat.",
+            "Explode upward, jumping as high as you can.",
+            "Land softly with bent knees and go straight into the next repetition."
+        ],
+        targetAreas: ["quads", "glutes", "cardio"],
+        cues: ["Use your arms for momentum", "Land softly to protect the joints"],
+        benefits: ["Builds lower body power", "Great for burning out the legs"],
+        commonMistakes: ["Landing with stiff knees", "Letting the knees cave inward"],
+        equipment: ["None"]
+    },
+    "pushups": {
+        id: "pushups",
+        name: "Push-ups",
+        duration: 30,
+        description: "A classic upper body pushing movement.",
+        instructions: [
+            "Start in a high plank position.",
+            "Lower your body until your chest nearly touches the floor.",
+            "Keep your elbows tucked at roughly 45 degrees.",
+            "Push back up to the starting position."
+        ],
+        targetAreas: ["chest", "shoulders", "triceps"],
+        cues: ["Keep your body in a straight line", "Squeeze your glutes"],
+        benefits: ["Warms up the pressing muscles", "Builds endurance"],
+        commonMistakes: ["Flaring the elbows out 90 degrees", "Sagging the hips"],
+        equipment: ["None"]
+    },
+    "high-knees": {
+        id: "high-knees",
+        name: "High Knees",
+        duration: 45,
+        description: "A rapid standing cardio drill.",
+        instructions: [
+            "Stand tall with your feet about hip-width apart.",
+            "Quickly drive one knee up toward your chest.",
+            "Switch legs quickly, as if running in place.",
+            "Pump your arms to maintain rhythm."
+        ],
+        targetAreas: ["cardio", "hip flexors", "calves"],
+        cues: ["Stay tall, don't lean backward", "Land lightly on the balls of your feet"],
+        benefits: ["Maximizes heart rate", "Activates hip flexors"],
+        commonMistakes: ["Barely lifting the knees", "Slamming the heels down"],
+        equipment: ["None"]
+    },
+    "hollow-body": {
+        id: "hollow-body",
+        name: "Hollow Body Hold",
+        duration: 45,
+        description: "An advanced gymnastic core hold.",
+        instructions: [
+            "Lie flat on your back.",
+            "Press your lower back firmly into the ground.",
+            "Lift your shoulders and legs slightly off the floor.",
+            "Extend your arms overhead and point your toes."
+        ],
+        targetAreas: ["core", "abs"],
+        cues: ["Your lower back must not leave the floor", "Squeeze your quads and glutes"],
+        benefits: ["Builds elite core tension", "Transfers well to heavy lifts"],
+        commonMistakes: ["Arching the lower back", "Tucking the chin excessively into the chest"],
+        equipment: ["None"]
+    },
+    "glute-bridges": {
+        id: "glute-bridges",
+        name: "Glute Bridges",
+        duration: 40,
+        description: "A foundational exercise to activate the glutes and protect the back.",
+        instructions: [
+            "Lie on your back with your knees bent and feet flat on the floor.",
+            "Squeeze your glutes and push through your heels to lift your hips.",
+            "Ensure a straight line from your knees to your shoulders at the top.",
+            "Lower back down with control."
+        ],
+        targetAreas: ["glutes", "hamstrings", "lower back"],
+        cues: ["Don't overextend your lower back at the top", "Drive through the heels"],
+        benefits: ["Wakes up sleepy glutes", "Great primer for squats and deadlifts"],
+        commonMistakes: ["Pushing through the toes", "Using the lower back instead of the glutes"],
+        equipment: ["None"]
     }
 };
 
@@ -800,10 +956,96 @@ export const StretchingPrograms: StretchingProgram[] = [
         difficulty: "Moderate",
         equipment: ["Wall", "Bench"],
         stretches: [
-            stretch("couch-stretch"),
-            stretch("pigeon-pose"),
             stretch("hamstring-fold"),
+            stretch("pigeon-pose"),
+            stretch("couch-stretch"),
             stretch("calf-wall-stretch")
         ]
     },
+
+    // NEW PRIMERS (WARM-UPS)
+    {
+        id: "upper-body-primer",
+        name: "Upper Body Primer",
+        focusAreas: ["shoulders", "chest", "core", "cardio"],
+        bestFor: ["before heavy pushing", "waking up the nervous system"],
+        difficulty: "Moderate",
+        equipment: ["None"],
+        stretches: [
+            stretch("arm-circles"),
+            stretch("inchworms"),
+            stretch("pushups"),
+            stretch("planks")
+        ]
+    },
+    {
+        id: "heavy-squat-primer",
+        name: "Heavy Squat Primer",
+        focusAreas: ["hips", "glutes", "core", "ankles"],
+        bestFor: ["before heavy leg days", "protecting the joints"],
+        difficulty: "Moderate",
+        equipment: ["None"],
+        stretches: [
+            stretch("leg-swings-forward"),
+            stretch("glute-bridges"),
+            stretch("bird-dogs"),
+            stretch("deep-squat-pry")
+        ]
+    },
+
+    // NEW FINISHERS (BURNOUTS)
+    {
+        id: "core-annihilator",
+        name: "Core Annihilator",
+        focusAreas: ["core", "abs", "cardio"],
+        bestFor: ["after an upper body workout", "shredding the core"],
+        difficulty: "Focused",
+        equipment: ["None"],
+        stretches: [
+            stretch("mountain-climbers"),
+            stretch("hollow-body"),
+            stretch("planks"),
+            stretch("bird-dogs")
+        ]
+    },
+    {
+        id: "leg-day-executioner",
+        name: "Leg Day Executioner",
+        focusAreas: ["quads", "glutes", "cardio", "full body"],
+        bestFor: ["emptying the tank after leg day", "burning fat"],
+        difficulty: "Focused",
+        equipment: ["None"],
+        stretches: [
+            stretch("jump-squats"),
+            stretch("high-knees"),
+            stretch("burpees"),
+            stretch("planks")
+        ]
+    }
 ];
+
+const PRIMER_PROGRAM_IDS = new Set([
+    "pre-workout-primer",
+    "pre-workout-push",
+    "pre-workout-pull",
+    "pre-workout-legs",
+    "upper-body-primer",
+    "heavy-squat-primer",
+]);
+
+const FINISHER_PROGRAM_IDS = new Set([
+    "core-annihilator",
+    "leg-day-executioner",
+]);
+
+export const PrimerPrograms = StretchingPrograms.filter((program) =>
+    PRIMER_PROGRAM_IDS.has(program.id)
+);
+
+export const FinisherPrograms = StretchingPrograms.filter((program) =>
+    FINISHER_PROGRAM_IDS.has(program.id)
+);
+
+export const StretchPrograms = StretchingPrograms.filter(
+    (program) => !PRIMER_PROGRAM_IDS.has(program.id) && !FINISHER_PROGRAM_IDS.has(program.id)
+);
