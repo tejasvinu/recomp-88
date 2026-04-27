@@ -206,7 +206,9 @@ export default function ProfileTab({
               <User size={24} className="text-neutral-500" />
             </div>
             <p className="font-bold text-white mb-0.5">Guest Mode</p>
-            <p className="text-xs text-neutral-500 mb-4">Sign in to sync your data across devices</p>
+            <p className="text-xs text-neutral-500 mb-4">
+              Your data stays only on this device until you sign in.
+            </p>
             <button
               onClick={() => signIn()}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-lime-400 text-neutral-950 text-xs font-black uppercase tracking-widest hover:bg-lime-300 transition-all shadow-[0_0_15px_rgba(163,230,53,0.25)]"
@@ -332,7 +334,7 @@ export default function ProfileTab({
         <div className="bg-amber-400/5 border border-amber-400/15 rounded-2xl px-4 py-3 flex items-start gap-3">
           <Lock size={15} className="text-amber-400 mt-0.5 shrink-0" />
           <p className="text-xs text-amber-300/80">
-            You have <strong className="text-amber-400">{sessions.length} workout sessions</strong> stored locally. Sign in to back them up to the cloud.
+            You have <strong className="text-amber-400">{sessions.length} workout sessions</strong> only on this device. Sign in to back them up before clearing browser data or switching devices.
           </p>
         </div>
       )}

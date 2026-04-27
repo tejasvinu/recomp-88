@@ -24,6 +24,7 @@ const getRpeColor = (rpe: number) => {
 interface SetRowProps {
     set: SetData;
     setIdx: number;
+    setLabel?: string;
     exerciseId: string;
     exerciseType: "strength" | "hypertrophy" | "other";
     dayId: string;
@@ -40,6 +41,7 @@ interface SetRowProps {
 export default memo(function SetRow({
     set,
     setIdx,
+    setLabel,
     exerciseId,
     exerciseType,
     dayId,
@@ -93,7 +95,7 @@ export default memo(function SetRow({
                         )}
                         title={`Set type: ${setTypeInfo.label} — tap to change`}
                     >
-                        {currentSetType === "working" ? setIdx + 1 : setTypeInfo.short}
+                        {currentSetType === "working" ? setLabel ?? setIdx + 1 : setTypeInfo.short}
                     </button>
                 )}
 

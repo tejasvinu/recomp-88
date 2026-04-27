@@ -86,9 +86,12 @@ export default function StretchingTab({
 
     useEffect(() => {
         if (selectedProgramId) return;
-        setSearchMobility('');
-        setSearchTraining('');
-        setExpandedMobilityId(null);
+        const resetId = window.setTimeout(() => {
+            setSearchMobility('');
+            setSearchTraining('');
+            setExpandedMobilityId(null);
+        }, 0);
+        return () => window.clearTimeout(resetId);
     }, [selectedProgramId]);
 
     const mobilityQuery = searchMobility.trim().toLowerCase();
@@ -153,7 +156,7 @@ export default function StretchingTab({
                                     Optimize your body. Choose structured mobility flows or intense training extras.
                                 </p>
                             </div>
-                            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-white/10 to-white/5 border border-white/10 flex items-center justify-center text-lime-400 shadow-xl">
+                            <div className="w-12 h-12 rounded-2xl bg-linear-to-br from-white/10 to-white/5 border border-white/10 flex items-center justify-center text-lime-400 shadow-xl">
                                 <Activity size={24} />
                             </div>
                         </div>
@@ -176,7 +179,7 @@ export default function StretchingTab({
                             </div>
 
                             <div className="flex items-start gap-5 relative z-10">
-                                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-lime-400/20 to-lime-400/5 border border-lime-400/30 flex items-center justify-center text-lime-400 shrink-0 shadow-[0_0_20px_rgba(163,230,53,0.1)] group-hover:shadow-[0_0_30px_rgba(163,230,53,0.2)] transition-shadow">
+                                <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-lime-400/20 to-lime-400/5 border border-lime-400/30 flex items-center justify-center text-lime-400 shrink-0 shadow-[0_0_20px_rgba(163,230,53,0.1)] group-hover:shadow-[0_0_30px_rgba(163,230,53,0.2)] transition-shadow">
                                     <HeartPulse size={26} />
                                 </div>
                                 <div className="min-w-0 flex-1 pt-1">
@@ -214,8 +217,8 @@ export default function StretchingTab({
                             </div>
 
                             <div className="flex items-start gap-5 relative z-10">
-                                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400/20 via-orange-400/10 to-rose-400/20 border border-amber-400/30 flex items-center justify-center text-amber-400 shrink-0 shadow-[0_0_20px_rgba(251,191,36,0.1)] group-hover:shadow-[0_0_30px_rgba(251,191,36,0.2)] transition-all duration-500">
-                                    <Dumbbell size={26} className="rotate-[-12deg] group-hover:rotate-0 transition-transform duration-500" />
+                                <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-amber-400/20 via-orange-400/10 to-rose-400/20 border border-amber-400/30 flex items-center justify-center text-amber-400 shrink-0 shadow-[0_0_20px_rgba(251,191,36,0.1)] group-hover:shadow-[0_0_30px_rgba(251,191,36,0.2)] transition-all duration-500">
+                                    <Dumbbell size={26} className="-rotate-12 group-hover:rotate-0 transition-transform duration-500" />
                                 </div>
                                 <div className="min-w-0 flex-1 pt-1">
                                     <p className="text-[11px] font-black uppercase tracking-[0.2em] text-amber-400/90 mb-1">
@@ -507,7 +510,7 @@ function MobilityProgramRow({
                         onClick={onStart}
                         className={cn(
                             'flex items-center justify-center gap-1.5 rounded-xl border px-4 py-2.5',
-                            'text-xs font-black uppercase tracking-[0.1em]',
+                            'text-xs font-black uppercase tracking-widest',
                             'text-lime-300 bg-lime-400/10 border-lime-400/20 hover:bg-lime-400/20 hover:border-lime-400/30 transition-all active:scale-95 shadow-sm',
                         )}
                     >
@@ -606,7 +609,7 @@ function TrainingProgramRow({
                 type="button"
                 onClick={onStart}
                 className={cn(
-                    'shrink-0 rounded-xl border px-5 py-2.5 text-xs font-black uppercase tracking-[0.1em] transition-all active:scale-95 shadow-sm',
+                    'shrink-0 rounded-xl border px-5 py-2.5 text-xs font-black uppercase tracking-widest transition-all active:scale-95 shadow-sm',
                     accent,
                 )}
             >

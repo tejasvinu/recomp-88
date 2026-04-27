@@ -58,7 +58,10 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
     }, [key]);
 
     const setValue = useCallback((value: T | ((val: T) => T)) => {
-        const next = value instanceof Function ? (value as any)(stateRef.current) : value;
+        const next =
+            typeof value === "function"
+                ? (value as (val: T) => T)(stateRef.current)
+                : value;
         stateRef.current = next;
         setStoredValue(next);
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import {
     X,
     Timer,
@@ -22,6 +22,8 @@ import { useModalEscape } from "../hooks/useModalEscape";
 const REST_STEP = 15;
 const REST_MIN = 30;
 const REST_MAX = 300;
+
+type ConfirmAction = "reset-workout" | "clear-data";
 
 interface SettingsModalProps {
     strengthRestDuration: number;
@@ -70,6 +72,28 @@ export default function SettingsModal({
 }: SettingsModalProps) {
     useModalEscape(onClose);
     const importRef = useRef<HTMLInputElement>(null);
+    const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null);
+
+    const confirmCopy = confirmAction === "reset-workout"
+        ? {
+            title: "Reset Workout Plan?",
+            body: "Restore the default workout plan while keeping your saved history.",
+            confirm: "Reset Plan",
+        }
+        : {
+            title: "Delete All Data?",
+            body: "This clears workout history, preferences, timers, and local backups from this device. This cannot be undone.",
+            confirm: "Delete Everything",
+        };
+
+    const handleConfirmAction = () => {
+        if (confirmAction === "reset-workout") {
+            onResetWorkoutTemplate();
+        } else if (confirmAction === "clear-data") {
+            onClearData();
+        }
+        setConfirmAction(null);
+    };
 
     return (
         <div
@@ -87,9 +111,14 @@ export default function SettingsModal({
                 <div className="border-b border-white/6 px-5 pt-5 pb-4">
                     <div className="w-10 h-1 bg-white/12 rounded-full mx-auto mb-4 sm:hidden" />
                     <div className="flex items-center justify-between">
-                        <h2 id="settings-title" className="text-[16px] font-black text-white tracking-wide">
-                            Settings
-                        </h2>
+                        <div>
+                            <h2 id="settings-title" className="text-[16px] font-black text-white tracking-wide">
+                                Settings
+                            </h2>
+                            <p className="mt-0.5 text-[10px] font-medium text-neutral-600">
+                                Common controls first. Backup and reset tools stay below.
+                            </p>
+                        </div>
                         <button
                             onClick={onClose}
                             className="w-8 h-8 bg-white/6 rounded-full flex items-center justify-center text-neutral-400 hover:text-white hover:bg-white/10 transition-all border border-white/7"
@@ -260,11 +289,7 @@ export default function SettingsModal({
                             </button>
 
                             <button
-                                onClick={() => {
-                                    if (window.confirm("Reset your workout plan back to the default program? Your saved history will be kept.")) {
-                                        onResetWorkoutTemplate();
-                                    }
-                                }}
+                                onClick={() => setConfirmAction("reset-workout")}
                                 className="flex items-center gap-3 w-full bg-white/4 hover:bg-white/7 border border-white/8 rounded-xl px-4 py-3.5 transition-all group"
                             >
                                 <div className="w-9 h-9 bg-white/6 border border-white/10 rounded-xl flex items-center justify-center shrink-0">
@@ -307,7 +332,7 @@ export default function SettingsModal({
                                         Add Past Session
                                     </p>
                                     <p className="text-[10px] text-neutral-500 font-medium mt-0.5">
-                                        Backfill previous workouts manually or via JSON
+                                        Backfill previous workouts with normal inputs; JSON is advanced
                                     </p>
                                 </div>
                             </button>
@@ -321,10 +346,10 @@ export default function SettingsModal({
                                 </div>
                                 <div className="text-left">
                                     <p className="text-[13px] font-bold text-white group-hover:text-lime-400 transition-colors">
-                                        Export JSON
+                                        Export Full Backup
                                     </p>
                                     <p className="text-[10px] text-neutral-500 font-medium mt-0.5">
-                                        Download your workout plan, progress, sessions &amp; notes
+                                        Download a restorable backup of plan, sessions, notes &amp; settings
                                     </p>
                                 </div>
                             </button>
@@ -374,9 +399,9 @@ export default function SettingsModal({
                                     />
                                 </div>
                                 <div className="text-left">
-                                    <p className="text-[13px] font-bold text-white">Import JSON</p>
+                                    <p className="text-[13px] font-bold text-white">Restore Backup</p>
                                     <p className="text-[10px] text-neutral-500 font-medium mt-0.5">
-                                        Restore from a previous export
+                                        Advanced: import a previous Recomp 88 JSON export
                                     </p>
                                 </div>
                             </button>
@@ -403,16 +428,40 @@ export default function SettingsModal({
                 {/* Danger Zone */}
                 <div className="pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] mt-2 border-t border-white/6 flex justify-center">
                     <button
-                        onClick={() => {
-                            if (window.confirm("Are you sure you want to delete all workout history and preferences? This action cannot be undone.")) {
-                                onClearData();
-                            }
-                        }}
+                        onClick={() => setConfirmAction("clear-data")}
                         className="bg-red-400/10 hover:bg-red-400/20 text-red-400 font-bold uppercase tracking-widest text-[11px] px-6 py-3 rounded-xl border border-red-400/20 transition-all active:scale-95"
                     >
-                        Reset All Data
+                        Delete All Data
                     </button>
                 </div>
+                {confirmAction && (
+                    <div className="absolute inset-0 z-20 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+                        <div className="w-full rounded-2xl border border-white/10 bg-[#111] p-5 shadow-2xl">
+                            <p className="text-[15px] font-black text-white tracking-wide">
+                                {confirmCopy.title}
+                            </p>
+                            <p className="mt-2 text-[12px] leading-relaxed text-neutral-400">
+                                {confirmCopy.body}
+                            </p>
+                            <div className="mt-5 grid grid-cols-2 gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setConfirmAction(null)}
+                                    className="rounded-xl border border-white/8 bg-white/5 py-3 text-[11px] font-black uppercase tracking-widest text-neutral-300 transition-all hover:bg-white/8"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleConfirmAction}
+                                    className="rounded-xl border border-red-400/30 bg-red-400/15 py-3 text-[11px] font-black uppercase tracking-widest text-red-300 transition-all hover:bg-red-400/25"
+                                >
+                                    {confirmCopy.confirm}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

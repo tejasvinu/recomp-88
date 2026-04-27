@@ -111,6 +111,8 @@ export interface SavedSetState {
     rpe?: number;          // Rate of Perceived Exertion (1-10)
     setType?: SetType;     // Intent of the set
     completedAt?: number;  // UNIX timestamp when the checkmark was hit
+    targetReps?: string;   // Session-only target for extra sets
+    isExtra?: boolean;     // True when the set was added during a workout
 }
 
 // Flat structure per day: dayId -> exerciseId -> setId -> SavedSetState
@@ -126,6 +128,7 @@ export interface SessionSet {
     completedAt?: number;  // UNIX timestamp when completed
     rpe?: number;
     setType?: SetType;
+    isExtra?: boolean;
 }
 
 export interface SessionExercise {

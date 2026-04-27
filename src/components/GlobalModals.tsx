@@ -1,13 +1,13 @@
 'use client';
 
-import type { ExerciseWiki, WorkoutTemplate, BodyWeightEntry } from '../types';
+import type { ExerciseWiki, WorkoutTemplate } from '../types';
 import ExerciseDetailModal from './ExerciseDetailModal';
 import PlateCalculator from './PlateCalculator';
 import FinishConfirmModal from './FinishConfirmModal';
 import SettingsModal from './SettingsModal';
 import WorkoutEditorModal from './WorkoutEditorModal';
 import AddPastSessionModal from './AddPastSessionModal';
-import { useAppStore, selectSafeWorkoutTemplate } from '../store/appStore';
+import { useAppStore } from '../store/appStore';
 export interface GlobalModalsProps {
     // Modal visibility flags
     showFinishConfirm: boolean;

@@ -15,28 +15,40 @@ interface RestState {
 
 const DEFAULT_REST_STATE: RestState = { endTime: null, duration: 90, type: null, pausedRemaining: null };
 
+const readPersistedRestState = (): RestState => {
+    if (typeof window === "undefined") return DEFAULT_REST_STATE;
+
+    try {
+        const val = window.localStorage.getItem("recomp88-rest-state");
+        if (!val) return DEFAULT_REST_STATE;
+
+        const parsed = JSON.parse(val);
+        const endTime = typeof parsed.endTime === "number" ? parsed.endTime : null;
+        const pausedRemaining = typeof parsed.pausedRemaining === "number" ? parsed.pausedRemaining : null;
+
+        if (pausedRemaining === null && endTime !== null && endTime <= Date.now()) {
+            window.localStorage.removeItem("recomp88-rest-state");
+            return DEFAULT_REST_STATE;
+        }
+
+        return {
+            endTime,
+            duration: typeof parsed.duration === "number" && parsed.duration > 0 ? parsed.duration : 90,
+            type: parsed.type === "strength" || parsed.type === "hypertrophy" ? parsed.type : null,
+            pausedRemaining,
+        };
+    } catch {
+        return DEFAULT_REST_STATE;
+    }
+};
+
 export function useRestTimer({
     soundEnabled,
     strengthDuration,
     hypertrophyDuration,
 }: UseRestTimerOptions) {
-    const [state, setState] = useState<RestState>(DEFAULT_REST_STATE);
+    const [state, setState] = useState<RestState>(readPersistedRestState);
     const shouldSkipPersist = useRef(true);
-
-    useEffect(() => {
-        try {
-            const val = localStorage.getItem("recomp88-rest-state");
-            if (val) {
-                const parsed = JSON.parse(val);
-                setState({
-                    endTime: typeof parsed.endTime === "number" ? parsed.endTime : null,
-                    duration: typeof parsed.duration === "number" ? parsed.duration : 90,
-                    type: (parsed.type === "strength" || parsed.type === "hypertrophy") ? parsed.type : null,
-                    pausedRemaining: typeof parsed.pausedRemaining === "number" ? parsed.pausedRemaining : null
-                });
-            }
-        } catch { /* empty */ }
-    }, []);
 
     const [restTimer, setRestTimer] = useState<number | null>(null);
     const audioCtxRef = useRef<AudioContext | null>(null);
@@ -173,8 +185,39 @@ export function useRestTimer({
         });
     }, []);
 
+    const adjustTimer = useCallback((deltaSeconds: number) => {
+        setState(s => {
+            const currentRemaining =
+                s.pausedRemaining !== null
+                    ? s.pausedRemaining
+                    : s.endTime !== null
+                        ? Math.ceil((s.endTime - Date.now()) / 1000)
+                        : null;
+
+            if (currentRemaining === null) return s;
+
+            const nextRemaining = Math.max(0, currentRemaining + deltaSeconds);
+            if (nextRemaining === 0) {
+                setRestTimer(null);
+                return { endTime: null, duration: 90, type: null, pausedRemaining: null };
+            }
+
+            const nextDuration = Math.max(s.duration, nextRemaining);
+            if (s.pausedRemaining !== null) {
+                setRestTimer(nextRemaining);
+                return { ...s, duration: nextDuration, pausedRemaining: nextRemaining };
+            }
+
+            return {
+                ...s,
+                duration: nextDuration,
+                endTime: Date.now() + nextRemaining * 1000,
+            };
+        });
+    }, []);
+
     const timerPercent =
-        state.duration > 0 && restTimer !== null ? (restTimer / state.duration) * 100 : 0;
+        state.duration > 0 && restTimer !== null ? Math.min(100, (restTimer / state.duration) * 100) : 0;
 
     return {
         restTimer,
@@ -185,5 +228,6 @@ export function useRestTimer({
         startTimer,
         dismissTimer,
         togglePause,
+        adjustTimer,
     };
 }

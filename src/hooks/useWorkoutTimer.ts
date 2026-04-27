@@ -1,30 +1,44 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 
-export function useWorkoutTimer() {
-    const [workoutStartTime, setWorkoutStartTime] = useState<number | null>(null);
-    const [pausedAt, setPausedAt] = useState<number | null>(null);
-    const [elapsedSeconds, setElapsedSeconds] = useState(0);
-    const shouldSkipPersist = useRef(true);
+interface PersistedWorkoutTimer {
+    workoutStartTime: number | null;
+    pausedAt: number | null;
+    elapsedSeconds: number;
+}
 
-    useEffect(() => {
-        try {
-            const startVal = localStorage.getItem("recomp88-timer-start");
-            const pausedVal = localStorage.getItem("recomp88-timer-paused");
-            const start = startVal ? parseInt(startVal, 10) : null;
-            const paused = pausedVal ? parseInt(pausedVal, 10) : null;
+const readPersistedWorkoutTimer = (): PersistedWorkoutTimer => {
+    if (typeof window === "undefined") {
+        return { workoutStartTime: null, pausedAt: null, elapsedSeconds: 0 };
+    }
 
-            if (start !== null) {
-                setWorkoutStartTime(start);
-                const now = paused !== null ? paused : Date.now();
-                setElapsedSeconds(Math.floor((now - start) / 1000));
-            }
-            if (paused !== null) {
-                setPausedAt(paused);
-            }
-        } catch {
-            // ignore
+    try {
+        const startVal = window.localStorage.getItem("recomp88-timer-start");
+        const pausedVal = window.localStorage.getItem("recomp88-timer-paused");
+        const start = startVal ? parseInt(startVal, 10) : null;
+        const paused = pausedVal ? parseInt(pausedVal, 10) : null;
+
+        if (start === null || !Number.isFinite(start)) {
+            return { workoutStartTime: null, pausedAt: null, elapsedSeconds: 0 };
         }
-    }, []);
+
+        const safePaused = paused !== null && Number.isFinite(paused) ? paused : null;
+        const now = safePaused ?? Date.now();
+        return {
+            workoutStartTime: start,
+            pausedAt: safePaused,
+            elapsedSeconds: Math.max(0, Math.floor((now - start) / 1000)),
+        };
+    } catch {
+        return { workoutStartTime: null, pausedAt: null, elapsedSeconds: 0 };
+    }
+};
+
+export function useWorkoutTimer() {
+    const [initialTimer] = useState(readPersistedWorkoutTimer);
+    const [workoutStartTime, setWorkoutStartTime] = useState<number | null>(initialTimer.workoutStartTime);
+    const [pausedAt, setPausedAt] = useState<number | null>(initialTimer.pausedAt);
+    const [elapsedSeconds, setElapsedSeconds] = useState(initialTimer.elapsedSeconds);
+    const shouldSkipPersist = useRef(true);
 
     useEffect(() => {
         if (shouldSkipPersist.current) {

@@ -28,6 +28,8 @@ export const APP_STORAGE_KEYS = [
     'recomp88-timer-paused',
     'recomp88-pwa-dismissed',
     'recomp88-custom-exercises',
+    'recomp88-active-tab',
+    'recomp88-active-day-index',
 ] as const;
 
 export const DEFAULT_SETTINGS = {
@@ -69,7 +71,7 @@ export interface AppState {
     setCustomExercises: (v: ExerciseWiki[] | ((prev: ExerciseWiki[]) => ExerciseWiki[])) => void;
 
     setActiveTab: (tab: AppState['activeTab']) => void;
-    setActiveDayIndex: (idx: number) => void;
+    setActiveDayIndex: (idx: number | ((prev: number) => number)) => void;
     setSelectedStretchingProgramId: (id: string | null) => void;
 
     // Bulk apply (used by cloud sync import)
@@ -120,6 +122,20 @@ const SSR_SAFE_INITIAL = {
     customExercises: [] as ExerciseWiki[],
 };
 
+const VALID_TABS = ['workout', 'stretching', 'wiki', 'charts', 'profile'] as const;
+
+const readActiveTab = (): AppState['activeTab'] => {
+    const stored = readLocalStorageValue<unknown>('recomp88-active-tab', 'workout');
+    return VALID_TABS.includes(stored as AppState['activeTab'])
+        ? (stored as AppState['activeTab'])
+        : 'workout';
+};
+
+const readActiveDayIndex = () => {
+    const stored = readLocalStorageValue<unknown>('recomp88-active-day-index', 0);
+    return typeof stored === 'number' && Number.isInteger(stored) && stored >= 0 ? stored : 0;
+};
+
 const readPersistedState = () => {
     if (typeof window === 'undefined') return SSR_SAFE_INITIAL;
 
@@ -137,6 +153,8 @@ const readPersistedState = () => {
         bodyWeightEntries: readLocalStorageValue<BodyWeightEntry[]>('recomp88-bodyweight', []),
         weightUnit: readLocalStorageValue<'kg' | 'lbs'>('recomp88-weight-unit', DEFAULT_SETTINGS.weightUnit),
         customExercises: readLocalStorageValue<ExerciseWiki[]>('recomp88-custom-exercises', []),
+        activeTab: readActiveTab(),
+        activeDayIndex: Math.min(readActiveDayIndex(), Math.max(workoutTemplate.length - 1, 0)),
     };
 };
 
@@ -178,8 +196,18 @@ export const useAppStore = create<AppState>((set, get) => {
         setCustomExercises: makePersistedSetter(set, get, 'customExercises', 'recomp88-custom-exercises'),
 
         // Ephemeral setters
-        setActiveTab: (tab) => set(() => ({ activeTab: tab })),
-        setActiveDayIndex: (idx) => set(() => ({ activeDayIndex: idx })),
+        setActiveTab: (tab) => {
+            writeLocalStorageValue('recomp88-active-tab', tab);
+            set(() => ({ activeTab: tab }));
+        },
+        setActiveDayIndex: (idx) => {
+            const current = get().activeDayIndex;
+            const rawNext = typeof idx === 'function' ? idx(current) : idx;
+            const maxIndex = Math.max(get().workoutTemplate.length - 1, 0);
+            const next = Math.min(Math.max(rawNext, 0), maxIndex);
+            writeLocalStorageValue('recomp88-active-day-index', next);
+            set(() => ({ activeDayIndex: next }));
+        },
         setSelectedStretchingProgramId: (id) => set(() => ({ selectedStretchingProgramId: id })),
 
         // Bulk snapshot apply (cloud pull / import)
@@ -230,6 +258,7 @@ export const useAppStore = create<AppState>((set, get) => {
                 hypertrophyRestDuration: DEFAULT_SETTINGS.hypertrophyRestDuration,
                 soundEnabled: DEFAULT_SETTINGS.soundEnabled,
                 weightUnit: DEFAULT_SETTINGS.weightUnit,
+                activeTab: 'workout',
                 activeDayIndex: 0,
             }));
         },

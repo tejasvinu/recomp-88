@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from "react";
-import { RotateCcw } from "lucide-react";
+import { Save } from "lucide-react";
 import { formatTime } from "../utils";
 import { useModalEscape } from "../hooks/useModalEscape";
 
@@ -44,7 +44,7 @@ export default function FinishConfirmModal({
                 <div className="w-10 h-1 bg-white/12 rounded-full mx-auto mb-5 sm:hidden" />
                 <div className="flex flex-col items-center text-center gap-4">
                     <div className="w-14 h-14 bg-lime-400/10 border border-lime-400/20 rounded-2xl flex items-center justify-center">
-                        <RotateCcw size={24} className="text-lime-400" />
+                        <Save size={24} className="text-lime-400" />
                     </div>
                     <div>
                         <h3
@@ -54,7 +54,7 @@ export default function FinishConfirmModal({
                             {dayName}
                         </h3>
                         <p className="text-[13px] text-neutral-400 font-medium mt-1">
-                            Save this session and reset checkmarks?
+                            Save this session to history and clear checkmarks?
                         </p>
                         {elapsedSeconds > 0 && (
                             <p className="text-[11px] text-neutral-600 font-medium mt-2">
@@ -76,7 +76,7 @@ export default function FinishConfirmModal({
                             disabled={isSaving}
                             className="flex-1 py-3 rounded-xl border border-lime-400/30 bg-lime-400/15 text-lime-400 font-black text-[13px] hover:bg-lime-400/25 transition-all disabled:opacity-50"
                         >
-                            {isSaving ? "Saving..." : "Save & Reset"}
+                            {isSaving ? "Saving..." : "Save Workout"}
                         </button>
                     </div>
                 </div>

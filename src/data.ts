@@ -19,6 +19,49 @@ export const createTemplateSet = (id: string, targetReps: string): SetData => ({
     loggedReps: "",
 });
 
+export const EXTRA_SET_ID_PREFIX = "extra-set-";
+
+export const createExtraSetId = (): string => {
+    const suffix =
+        typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+            ? crypto.randomUUID().slice(0, 8)
+            : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    return `${EXTRA_SET_ID_PREFIX}${Date.now()}-${suffix}`;
+};
+
+export const isExtraSetId = (setId: string): boolean =>
+    setId.startsWith(EXTRA_SET_ID_PREFIX);
+
+export const isExtraSetState = (
+    setId: string,
+    state: SavedSetState | undefined
+): boolean => !!state?.isExtra || isExtraSetId(setId);
+
+export const getExerciseSetsWithExtras = (
+    exercise: Exercise,
+    exerciseProgress: Record<string, SavedSetState> | undefined
+): SetData[] => {
+    if (!exerciseProgress) return exercise.sets;
+
+    const plannedSetIds = new Set(exercise.sets.map((set) => set.id));
+    const fallbackTarget =
+        exercise.sets[exercise.sets.length - 1]?.targetReps ??
+        (exercise.type === "other" ? "1" : "8-12");
+    const extraSets = Object.entries(exerciseProgress)
+        .filter(([setId, state]) => !plannedSetIds.has(setId) && isExtraSetState(setId, state))
+        .sort(([leftId], [rightId]) => leftId.localeCompare(rightId))
+        .map(([setId, state]) =>
+            createTemplateSet(
+                setId,
+                typeof state.targetReps === "string" && state.targetReps.trim()
+                    ? state.targetReps.trim()
+                    : fallbackTarget
+            )
+        );
+
+    return [...exercise.sets, ...extraSets];
+};
+
 const makeSets = (count: number, targetReps: string): SetData[] => {
     return Array.from({ length: count }, (_, i) => createTemplateSet(`set-${i + 1}`, targetReps));
 };
@@ -240,6 +283,15 @@ const normalizeSavedSetState = (value: unknown): SavedSetState | null => {
     ) {
         result.setType = st;
     }
+    if (typeof value.completedAt === "number" && Number.isFinite(value.completedAt)) {
+        result.completedAt = value.completedAt;
+    }
+    if (typeof value.targetReps === "string" && value.targetReps.trim()) {
+        result.targetReps = value.targetReps.trim();
+    }
+    if (value.isExtra === true) {
+        result.isExtra = true;
+    }
     return result;
 };
 
@@ -373,14 +425,33 @@ export const pruneProgressForWorkoutTemplate = (
         day.exercises.forEach((exercise) => {
             const exerciseProgress = dayProgress[exercise.id];
             if (!exerciseProgress) return;
+            const plannedSetIds = new Set(exercise.sets.map((set) => set.id));
+            const saveState = (setId: string, savedState: SavedSetState) => {
+                pruned[day.id] = pruned[day.id] ?? {};
+                pruned[day.id][exercise.id] = pruned[day.id][exercise.id] ?? {};
+                pruned[day.id][exercise.id][setId] = savedState;
+            };
 
             exercise.sets.forEach((set) => {
                 const savedState = normalizeSavedSetState(exerciseProgress[set.id]);
                 if (!savedState) return;
 
-                pruned[day.id] = pruned[day.id] ?? {};
-                pruned[day.id][exercise.id] = pruned[day.id][exercise.id] ?? {};
-                pruned[day.id][exercise.id][set.id] = savedState;
+                saveState(set.id, savedState);
+            });
+
+            Object.entries(exerciseProgress).forEach(([setId, setValue]) => {
+                if (plannedSetIds.has(setId)) return;
+                const savedState = normalizeSavedSetState(setValue);
+                if (!savedState || !isExtraSetState(setId, savedState)) return;
+                const fallbackTarget =
+                    exercise.sets[exercise.sets.length - 1]?.targetReps ??
+                    (exercise.type === "other" ? "1" : "8-12");
+
+                saveState(setId, {
+                    ...savedState,
+                    isExtra: true,
+                    targetReps: savedState.targetReps || fallbackTarget,
+                });
             });
         });
     });

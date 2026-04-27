@@ -1,4 +1,4 @@
-import { normalizeWorkoutTemplate } from "@/data";
+import { isExtraSetId, normalizeWorkoutTemplate } from "@/data";
 import type {
   AppDataSnapshot,
   BodyWeightEntry,
@@ -140,6 +140,14 @@ const normalizeSavedSetState = (
     result.completedAt = value.completedAt;
   }
 
+  if (typeof value.targetReps === "string" && value.targetReps.trim()) {
+    result.targetReps = value.targetReps.trim();
+  }
+
+  if (value.isExtra === true) {
+    result.isExtra = true;
+  }
+
   return result;
 };
 
@@ -161,6 +169,10 @@ export const sanitizeWorkoutProgress = (value: unknown): WorkoutProgress => {
       Object.entries(setMap).forEach(([setId, savedState]) => {
         const normalizedState = normalizeSavedSetState(savedState);
         if (!normalizedState) return;
+        if (normalizedState.isExtra || isExtraSetId(setId)) {
+          normalizedState.isExtra = true;
+          normalizedState.targetReps = normalizedState.targetReps || "8-12";
+        }
         exerciseProgress[setId] = normalizedState;
       });
 
@@ -200,6 +212,8 @@ const sanitizeSessionSet = (value: unknown): SessionSet | null => {
 
   const setType = normalizeSetType(value.setType);
   if (setType !== undefined) result.setType = setType;
+
+  if (value.isExtra === true) result.isExtra = true;
 
   return result;
 };

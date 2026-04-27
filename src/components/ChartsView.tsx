@@ -11,7 +11,6 @@ import type {
 import { cn, getClosestBodyWeight, resolveWeight } from "../utils";
 import {
   useAnalytics,
-  MUSCLE_REGIONS,
   MUSCLE_STATUS_STYLES,
   formatSessionDateLabel,
   formatSessionTooltipLabel,
@@ -817,7 +816,7 @@ export default function ChartsView({
               </div>
               <p className="text-[15px] font-black text-white mb-1.5 tracking-wide">No progression data yet</p>
               <p className="text-[12px] text-neutral-500 font-medium leading-relaxed max-w-[260px] mx-auto">
-                Log weights and reps in the tracker, then tap &quot;Finish &amp; Reset&quot; to save your first session.
+                Log weights and reps in the tracker, then tap &quot;Save Workout&quot; to save your first session.
               </p>
             </div>
           )}

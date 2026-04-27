@@ -10,6 +10,8 @@
 
 import {
     createDefaultWorkoutTemplate,
+    getExerciseSetsWithExtras,
+    isExtraSetState,
     normalizeWorkoutTemplate,
     pruneExerciseNotesForWorkoutTemplate,
     pruneProgressForWorkoutTemplate,
@@ -112,7 +114,7 @@ export function buildWorkoutSession(
     if (!dayProgress) return null;
 
     const hasData = activeDay.exercises.some((ex) =>
-        ex.sets.some((set) => {
+        getExerciseSetsWithExtras(ex, dayProgress[ex.id]).some((set) => {
             const s = dayProgress[ex.id]?.[set.id];
             return s && (s.loggedWeight || s.loggedReps || s.completed);
         }),
@@ -126,7 +128,7 @@ export function buildWorkoutSession(
     const totalTonnage = activeDay.exercises.reduce((total, ex) => {
         return (
             total +
-            ex.sets.reduce((setTotal, set) => {
+            getExerciseSetsWithExtras(ex, dayProgress[ex.id]).reduce((setTotal, set) => {
                 const state = dayProgress[ex.id]?.[set.id];
                 if (state?.completed && state.setType !== 'warmup') {
                     const weight = resolveWeight(state.loggedWeight, currentBodyWeight);
@@ -151,7 +153,7 @@ export function buildWorkoutSession(
                 exerciseId: ex.id,
                 name: ex.name,
                 type: ex.type,
-                sets: ex.sets
+                sets: getExerciseSetsWithExtras(ex, dayProgress[ex.id])
                     .map((set) => {
                         const s = dayProgress[ex.id]?.[set.id];
                         return {
@@ -163,6 +165,7 @@ export function buildWorkoutSession(
                             ...(s?.completedAt != null ? { completedAt: s.completedAt } : {}),
                             ...(s?.rpe != null ? { rpe: s.rpe } : {}),
                             ...(s?.setType ? { setType: s.setType } : {}),
+                            ...(isExtraSetState(set.id, s) ? { isExtra: true } : {}),
                         };
                     })
                     .filter((s) => s.loggedWeight || s.loggedReps || s.completed),
@@ -261,8 +264,9 @@ export function computeProgressPercent(
     let total = 0;
     let completed = 0;
     day.exercises.forEach((ex) => {
-        total += ex.sets.length;
-        ex.sets.forEach((set) => {
+        const sets = getExerciseSetsWithExtras(ex, progress[day.id]?.[ex.id]);
+        total += sets.length;
+        sets.forEach((set) => {
             if (progress[day.id]?.[ex.id]?.[set.id]?.completed) completed++;
         });
     });

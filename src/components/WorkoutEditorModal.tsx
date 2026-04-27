@@ -13,6 +13,7 @@ import {
     WorkoutTemplate,
 } from "../types";
 import { cn } from "../utils";
+import { DarkSelect } from "./DarkSelect";
 import {
     getFreeWeightAlternatives,
     isHomeGymFriendly,
@@ -41,6 +42,9 @@ const DEFAULT_OTHER_EXERCISE_DETAILS: Record<string, string> = {
     "Treadmill Incline Walk": "45 mins",
     "Mobility Work": "15 mins",
 };
+
+const isOlympicLift = (entry: ExerciseWiki) =>
+    entry.movementPattern?.toLowerCase().includes("olympic") ?? false;
 
 const makeId = (prefix: string) => {
     if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
@@ -77,13 +81,12 @@ const getExerciseLibraryNames = (
     customExercises: ExerciseWiki[] = []
 ) => {
     const allEntries = [...WIKI_DATA, ...customExercises];
-    const relevantEntries = category
-        ? allEntries.filter((entry) => entry.category === category)
-        : allEntries.filter((entry) =>
-            exerciseType === "other"
-                ? entry.category === "Cardio/Mobility"
-                : entry.category !== "Cardio/Mobility"
-        );
+    const relevantEntries = allEntries.filter((entry) => {
+        if (exerciseType === "other") return entry.category === "Cardio/Mobility";
+        if (!category) return entry.category !== "Cardio/Mobility";
+
+        return entry.category === category || isOlympicLift(entry);
+    });
 
 
     const names = new Set<string>();
@@ -267,7 +270,7 @@ export default function WorkoutEditorModal({
 
     return (
         <div
-            className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center"
+            className="fixed inset-0 z-80 flex items-end sm:items-center justify-center"
             onClick={onClose}
             role="dialog"
             aria-modal="true"
@@ -384,97 +387,99 @@ export default function WorkoutEditorModal({
                                 <span className="text-[10px] text-neutral-500 font-black uppercase tracking-widest">
                                     Pre-Workout Protocol
                                 </span>
-                                <select
+                                <DarkSelect
                                     value={activeDay.preWorkoutStretchId ?? ""}
-                                    onChange={(event) =>
+                                    onChange={(next) =>
                                         updateDay((day) => ({
                                             ...day,
-                                            preWorkoutStretchId:
-                                                event.target.value || undefined,
+                                            preWorkoutStretchId: next || undefined,
                                         }))
                                     }
-                                    className="bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm font-semibold text-white outline-none focus:ring-1 focus:ring-lime-400/30 focus:border-lime-400/20 transition-all"
-                                >
-                                    <option value="">None</option>
-                                    {PrimerPrograms.map((program) => (
-                                        <option key={program.id} value={program.id}>
-                                            {program.name}
-                                        </option>
-                                    ))}
-                                </select>
+                                    placeholder="None"
+                                    options={[
+                                        { value: "", label: "None" },
+                                        ...PrimerPrograms.map((program) => ({
+                                            value: program.id,
+                                            label: program.name,
+                                        })),
+                                    ]}
+                                />
                             </label>
 
                             <label className="flex flex-col gap-1.5 md:col-span-1">
                                 <span className="text-[10px] text-neutral-500 font-black uppercase tracking-widest">
                                     Post-Workout Protocol
                                 </span>
-                                <select
-                                    value={activeDay.postWorkoutStretchId ?? activeDay.stretchingProgramId ?? ""}
-                                    onChange={(event) =>
+                                <DarkSelect
+                                    value={
+                                        activeDay.postWorkoutStretchId ??
+                                        activeDay.stretchingProgramId ??
+                                        ""
+                                    }
+                                    onChange={(next) =>
                                         updateDay((day) => ({
                                             ...day,
-                                            postWorkoutStretchId:
-                                                event.target.value || undefined,
-                                            stretchingProgramId: undefined, // Clear legacy prop on change
+                                            postWorkoutStretchId: next || undefined,
+                                            stretchingProgramId: undefined,
                                         }))
                                     }
-                                    className="bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm font-semibold text-white outline-none focus:ring-1 focus:ring-lime-400/30 focus:border-lime-400/20 transition-all"
-                                >
-                                    <option value="">None</option>
-                                    {StretchPrograms.map((program) => (
-                                        <option key={program.id} value={program.id}>
-                                            {program.name}
-                                        </option>
-                                    ))}
-                                </select>
+                                    placeholder="None"
+                                    options={[
+                                        { value: "", label: "None" },
+                                        ...StretchPrograms.map((program) => ({
+                                            value: program.id,
+                                            label: program.name,
+                                        })),
+                                    ]}
+                                />
                             </label>
 
                             <label className="flex flex-col gap-1.5 md:col-span-1">
                                 <span className="text-[10px] text-amber-500/80 font-black uppercase tracking-widest">
                                     Session Primer (Warm-Up)
                                 </span>
-                                <select
+                                <DarkSelect
                                     value={activeDay.primerId ?? ""}
-                                    onChange={(event) =>
+                                    onChange={(next) =>
                                         updateDay((day) => ({
                                             ...day,
-                                            primerId:
-                                                event.target.value || undefined,
+                                            primerId: next || undefined,
                                         }))
                                     }
-                                    className="bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm font-semibold text-white outline-none focus:ring-1 focus:ring-amber-400/30 focus:border-amber-400/20 transition-all"
-                                >
-                                    <option value="">None</option>
-                                    {PrimerPrograms.map((program) => (
-                                        <option key={program.id} value={program.id}>
-                                            {program.name}
-                                        </option>
-                                    ))}
-                                </select>
+                                    placeholder="None"
+                                    options={[
+                                        { value: "", label: "None" },
+                                        ...PrimerPrograms.map((program) => ({
+                                            value: program.id,
+                                            label: program.name,
+                                        })),
+                                    ]}
+                                    className="focus:border-amber-400/20 focus:ring-amber-400/30"
+                                />
                             </label>
 
                             <label className="flex flex-col gap-1.5 md:col-span-1">
                                 <span className="text-[10px] text-rose-500/80 font-black uppercase tracking-widest">
                                     Session Finisher (Burnout)
                                 </span>
-                                <select
+                                <DarkSelect
                                     value={activeDay.finisherId ?? ""}
-                                    onChange={(event) =>
+                                    onChange={(next) =>
                                         updateDay((day) => ({
                                             ...day,
-                                            finisherId:
-                                                event.target.value || undefined,
+                                            finisherId: next || undefined,
                                         }))
                                     }
-                                    className="bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm font-semibold text-white outline-none focus:ring-1 focus:ring-rose-400/30 focus:border-rose-400/20 transition-all"
-                                >
-                                    <option value="">None</option>
-                                    {FinisherPrograms.map((program) => (
-                                        <option key={program.id} value={program.id}>
-                                            {program.name}
-                                        </option>
-                                    ))}
-                                </select>
+                                    placeholder="None"
+                                    options={[
+                                        { value: "", label: "None" },
+                                        ...FinisherPrograms.map((program) => ({
+                                            value: program.id,
+                                            label: program.name,
+                                        })),
+                                    ]}
+                                    className="focus:border-rose-400/20 focus:ring-rose-400/30"
+                                />
                             </label>
                         </div>
                     </div>
@@ -601,22 +606,22 @@ export default function WorkoutEditorModal({
                                                     <span className="text-[10px] text-neutral-500 font-black uppercase tracking-widest">
                                                         Type
                                                     </span>
-                                                    <select
+                                                    <DarkSelect
                                                         value={exercise.type}
-                                                        onChange={(event) =>
-                                                            updateExercise(exercise.id, (currentExercise) => ({
-                                                                ...currentExercise,
-                                                                type: event.target.value as ExerciseType,
-                                                            }))
+                                                        onChange={(next) =>
+                                                            updateExercise(
+                                                                exercise.id,
+                                                                (currentExercise) => ({
+                                                                    ...currentExercise,
+                                                                    type: next as ExerciseType,
+                                                                })
+                                                            )
                                                         }
-                                                        className="bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm font-semibold text-white outline-none focus:ring-1 focus:ring-lime-400/30 focus:border-lime-400/20 transition-all"
-                                                    >
-                                                        {EXERCISE_TYPES.map((option) => (
-                                                            <option key={option.value} value={option.value}>
-                                                                {option.label}
-                                                            </option>
-                                                        ))}
-                                                    </select>
+                                                        options={EXERCISE_TYPES.map((option) => ({
+                                                            value: option.value,
+                                                            label: option.label,
+                                                        }))}
+                                                    />
                                                 </label>
                                             </div>
 
@@ -643,9 +648,9 @@ export default function WorkoutEditorModal({
                                                                 )}
                                                         </div>
                                                         <p className="text-[10px] text-neutral-500 font-medium mt-1.5 leading-relaxed">
-                                                            Quick picks now prioritize free-weight and
-                                                            low-access alternatives so the program still
-                                                            works when cables or machines are missing.
+                                                            Quick picks prioritize free-weight swaps,
+                                                            low-access alternatives, and Olympic lift
+                                                            options for explosive power blocks.
                                                         </p>
                                                     </div>
                                                 </div>
@@ -674,32 +679,26 @@ export default function WorkoutEditorModal({
                                                     <span className="text-[10px] text-neutral-500 font-black uppercase tracking-widest">
                                                         Exercise Library
                                                     </span>
-                                                    <select
-                                                        defaultValue=""
-                                                        onChange={(event) => {
-                                                            const nextExerciseName = event.target.value;
+                                                    <DarkSelect
+                                                        value=""
+                                                        onChange={(nextExerciseName) => {
                                                             if (nextExerciseName) {
                                                                 swapExercise(
                                                                     exercise.id,
                                                                     nextExerciseName
                                                                 );
-                                                                event.target.value = "";
                                                             }
                                                         }}
-                                                        className="bg-black/25 border border-white/8 rounded-xl px-3 py-2.5 text-sm font-semibold text-white outline-none focus:ring-1 focus:ring-lime-400/30 focus:border-lime-400/20 transition-all"
-                                                    >
-                                                        <option value="">
-                                                            Choose a compatible alternative...
-                                                        </option>
-                                                        {swapOptions.libraryNames.map((libraryName) => (
-                                                            <option
-                                                                key={libraryName}
-                                                                value={libraryName}
-                                                            >
-                                                                {libraryName}
-                                                            </option>
-                                                        ))}
-                                                    </select>
+                                                        triggerLabelMode="placeholder"
+                                                        placeholder="Choose from library or Olympic lifts..."
+                                                        options={swapOptions.libraryNames.map(
+                                                            (libraryName) => ({
+                                                                value: libraryName,
+                                                                label: libraryName,
+                                                            })
+                                                        )}
+                                                        className="border-white/8 bg-black/25"
+                                                    />
                                                 </label>
                                             </div>
 

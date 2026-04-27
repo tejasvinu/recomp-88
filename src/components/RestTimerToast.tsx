@@ -10,6 +10,7 @@ interface RestTimerToastProps {
     isPaused: boolean;
     onDismiss: () => void;
     onTogglePause: () => void;
+    onAdjustTimer: (deltaSeconds: number) => void;
 }
 
 export default function RestTimerToast({
@@ -19,6 +20,7 @@ export default function RestTimerToast({
     isPaused,
     onDismiss,
     onTogglePause,
+    onAdjustTimer,
 }: RestTimerToastProps) {
     return (
         <div
@@ -69,6 +71,20 @@ export default function RestTimerToast({
                     </div>
                 </div>
                 <div className="flex items-center gap-1.5">
+                    <button
+                        onClick={() => onAdjustTimer(-15)}
+                        className="h-8 px-2 bg-white/5 hover:bg-white/10 rounded-full flex items-center justify-center text-[10px] font-black text-neutral-500 hover:text-white transition-colors border border-white/7"
+                        aria-label="Subtract 15 seconds from rest timer"
+                    >
+                        -15
+                    </button>
+                    <button
+                        onClick={() => onAdjustTimer(15)}
+                        className="h-8 px-2 bg-white/5 hover:bg-white/10 rounded-full flex items-center justify-center text-[10px] font-black text-neutral-500 hover:text-white transition-colors border border-white/7"
+                        aria-label="Add 15 seconds to rest timer"
+                    >
+                        +15
+                    </button>
                     <button
                         onClick={onTogglePause}
                         className="w-8 h-8 bg-white/5 hover:bg-white/10 rounded-full flex items-center justify-center text-neutral-500 hover:text-white transition-colors border border-white/7"

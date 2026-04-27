@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useMemo, useEffect } from "react";
-import { X, Calendar, Dumbbell, Code, Check, DatabaseBackup, Save, FileJson } from "lucide-react";
-import { cn, resolveWeight, getClosestBodyWeight } from "../utils";
+import { X, DatabaseBackup, Save, FileJson } from "lucide-react";
+import { cn, resolveWeight, getClosestBodyWeight, toLocalDateKey } from "../utils";
 import { useModalEscape } from "../hooks/useModalEscape";
+import { sanitizeSessionHistory } from "../lib/sync";
 import type { WorkoutTemplate, WorkoutSession, BodyWeightEntry } from "../types";
 
 interface AddPastSessionModalProps {
@@ -15,6 +16,15 @@ interface AddPastSessionModalProps {
 }
 
 type EntryMode = "manual" | "day-json" | "json";
+
+const createLocalNoonFromDateKey = (dateKey: string) => {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateKey);
+  if (!match) return null;
+
+  const [, year, month, day] = match;
+  const date = new Date(Number(year), Number(month) - 1, Number(day), 12, 0, 0, 0);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
 
 export default function AddPastSessionModal({
   workoutTemplate,
@@ -35,10 +45,11 @@ export default function AddPastSessionModal({
   }, []);
 
   const [mode, setMode] = useState<EntryMode>("manual");
+  const [showAdvancedJson, setShowAdvancedJson] = useState(false);
 
   // Manual Mode State
   const [selectedDate, setSelectedDate] = useState<string>(
-    new Date().toISOString().slice(0, 10)
+    toLocalDateKey()
   );
   const [selectedDayId, setSelectedDayId] = useState<string>(
     workoutTemplate[0]?.id || ""
@@ -49,6 +60,7 @@ export default function AddPastSessionModal({
   const [progress, setProgress] = useState<
     Record<string, Record<string, { loggedWeight: string; loggedReps: string }>>
   >({});
+  const [manualError, setManualError] = useState("");
 
   // JSON Mode State
   const [jsonInput, setJsonInput] = useState("");
@@ -69,6 +81,7 @@ export default function AddPastSessionModal({
     field: "loggedWeight" | "loggedReps",
     value: string
   ) => {
+    setManualError("");
     setProgress((prev) => ({
       ...prev,
       [exerciseId]: {
@@ -85,7 +98,13 @@ export default function AddPastSessionModal({
     if (!activeDay) return;
 
     const defaultBw = weightUnit === "lbs" ? 175 : 80;
-    const dateStr = new Date(selectedDate).toISOString();
+    const sessionDate = createLocalNoonFromDateKey(selectedDate);
+    if (!sessionDate) {
+      setManualError("Choose a valid session date.");
+      return;
+    }
+    const dateStr = sessionDate.toISOString();
+    const completedAt = sessionDate.getTime();
     const currentBodyWeight = getClosestBodyWeight(dateStr, bodyWeightEntries, defaultBw);
 
     let totalTonnage = 0;
@@ -105,7 +124,7 @@ export default function AddPastSessionModal({
             loggedWeight: s.loggedWeight,
             loggedReps: s.loggedReps,
             completed: true,
-            completedAt: new Date(selectedDate).getTime(),
+            completedAt,
           });
 
           // update tonnage
@@ -126,12 +145,12 @@ export default function AddPastSessionModal({
     });
 
     if (sessionExercises.length === 0) {
-      alert("Please enter at least one set to save the session.");
+      setManualError("Please enter at least one set to save the session.");
       return;
     }
 
     const session: WorkoutSession = {
-      id: `${activeDay.id}-${new Date(selectedDate).getTime()}-${Math.random().toString(36).slice(2, 6)}`,
+      id: `${activeDay.id}-${completedAt}-${Math.random().toString(36).slice(2, 6)}`,
       date: dateStr,
       dayId: activeDay.id,
       dayName: activeDay.name,
@@ -151,13 +170,22 @@ export default function AddPastSessionModal({
     let parsed: Record<string, { weight: number | string; reps: number | string }[]>;
     try {
       parsed = JSON.parse(dayJsonInput);
+      if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+        throw new Error("Expected an object keyed by exercise name.");
+      }
     } catch {
       setDayJsonError("Invalid JSON format. Please ensure it follows the format of the sample.");
       return;
     }
 
     const defaultBw = weightUnit === "lbs" ? 175 : 80;
-    const dateStr = new Date(selectedDate).toISOString();
+    const sessionDate = createLocalNoonFromDateKey(selectedDate);
+    if (!sessionDate) {
+      setDayJsonError("Choose a valid session date.");
+      return;
+    }
+    const dateStr = sessionDate.toISOString();
+    const completedAt = sessionDate.getTime();
     const currentBodyWeight = getClosestBodyWeight(dateStr, bodyWeightEntries, defaultBw);
 
     let totalTonnage = 0;
@@ -177,14 +205,14 @@ export default function AddPastSessionModal({
           sets.push({
             setId: set.id,
             targetReps: set.targetReps,
-            loggedWeight: String(s.weight || ""),
-            loggedReps: String(s.reps || ""),
+            loggedWeight: String(s.weight ?? ""),
+            loggedReps: String(s.reps ?? ""),
             completed: true,
-            completedAt: new Date(selectedDate).getTime(),
+            completedAt,
           });
 
-          const weightNum = resolveWeight(String(s.weight || ""), currentBodyWeight);
-          const repsNum = parseFloat(String(s.reps || "")) || 0;
+          const weightNum = resolveWeight(String(s.weight ?? ""), currentBodyWeight);
+          const repsNum = parseFloat(String(s.reps ?? "")) || 0;
           totalTonnage += weightNum * repsNum;
         }
       });
@@ -200,12 +228,12 @@ export default function AddPastSessionModal({
     });
 
     if (sessionExercises.length === 0) {
-      alert("No matching exercises found. Ensure exercise names match the Day template exactly.");
+      setDayJsonError("No matching exercises found. Ensure exercise names match the day template exactly.");
       return;
     }
 
     const session: WorkoutSession = {
-      id: `${activeDay.id}-${new Date(selectedDate).getTime()}-${Math.random().toString(36).slice(2, 6)}`,
+      id: `${activeDay.id}-${completedAt}-${Math.random().toString(36).slice(2, 6)}`,
       date: dateStr,
       dayId: activeDay.id,
       dayName: activeDay.name,
@@ -221,17 +249,14 @@ export default function AddPastSessionModal({
 
   const handleSaveJson = () => {
     try {
-      const parsed = JSON.parse(jsonInput);
+      const parsed: unknown = JSON.parse(jsonInput);
       const arr = Array.isArray(parsed) ? parsed : [parsed];
-
-      // Basic validation
-      for (const item of arr) {
-        if (!item.id || !item.date || !item.dayId || !Array.isArray(item.exercises)) {
-          throw new Error("Invalid session format. Missing required fields.");
-        }
+      const sessions = sanitizeSessionHistory(arr);
+      if (sessions.length === 0 || sessions.length !== arr.length) {
+        throw new Error("Invalid session format. Check id, date, dayId, dayName, exercises, and sets.");
       }
 
-      onAddSessions(arr as WorkoutSession[]);
+      onAddSessions(sessions);
       onClose();
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -284,6 +309,19 @@ export default function AddPastSessionModal({
     setDayJsonError("");
   };
 
+  const openManualMode = () => {
+    setMode("manual");
+    setShowAdvancedJson(false);
+  };
+
+  const toggleAdvancedJson = () => {
+    setShowAdvancedJson((current) => {
+      const next = !current;
+      setMode(next ? "day-json" : "manual");
+      return next;
+    });
+  };
+
   return (
     <div
       className="fixed inset-0 z-70 flex items-end sm:items-center justify-center p-4 sm:p-0"
@@ -296,10 +334,15 @@ export default function AddPastSessionModal({
       >
         <div className="border-b border-white/6 px-5 pt-5 pb-4 shrink-0">
           <div className="flex items-center justify-between">
-            <h2 className="text-[16px] font-black text-white tracking-wide flex items-center gap-2">
-              <DatabaseBackup size={18} className="text-lime-400" />
-              Add Past Session
-            </h2>
+            <div>
+              <h2 className="text-[16px] font-black text-white tracking-wide flex items-center gap-2">
+                <DatabaseBackup size={18} className="text-lime-400" />
+                Add Past Session
+              </h2>
+              <p className="mt-1 text-[10px] font-medium text-neutral-600">
+                Manual entry is safest for backfilling. JSON import is tucked under Advanced.
+              </p>
+            </div>
             <button
               onClick={onClose}
               className="w-8 h-8 bg-white/6 rounded-full flex items-center justify-center text-neutral-400 hover:text-white hover:bg-white/10 transition-all border border-white/7"
@@ -310,39 +353,55 @@ export default function AddPastSessionModal({
 
           <div className="flex gap-2 mt-4">
             <button
-              onClick={() => setMode("manual")}
+              onClick={openManualMode}
               className={cn(
-                "flex-[1.2] py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all px-1",
+                "flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all px-1",
                 mode === "manual"
                   ? "bg-lime-400/15 border border-lime-400/30 text-lime-400"
                   : "bg-white/4 border border-white/7 text-neutral-500 hover:text-neutral-300"
               )}
             >
-              Inputs
+              Manual Entry
             </button>
             <button
-              onClick={() => setMode("day-json")}
-              className={cn(
-                "flex-[1.2] py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all px-1",
-                mode === "day-json"
-                  ? "bg-lime-400/15 border border-lime-400/30 text-lime-400"
-                  : "bg-white/4 border border-white/7 text-neutral-500 hover:text-neutral-300"
-              )}
-            >
-              Day JSON
-            </button>
-            <button
-              onClick={() => setMode("json")}
+              onClick={toggleAdvancedJson}
               className={cn(
                 "flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all px-1",
-                mode === "json"
-                  ? "bg-lime-400/15 border border-lime-400/30 text-lime-400"
+                showAdvancedJson
+                  ? "bg-sky-400/15 border border-sky-400/30 text-sky-400"
                   : "bg-white/4 border border-white/7 text-neutral-500 hover:text-neutral-300"
               )}
             >
-              Backup JSON
+              Advanced JSON
             </button>
           </div>
+
+          {showAdvancedJson && (
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              <button
+                onClick={() => setMode("day-json")}
+                className={cn(
+                  "py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all px-1 border",
+                  mode === "day-json"
+                    ? "bg-lime-400/15 border-lime-400/30 text-lime-400"
+                    : "bg-white/4 border-white/7 text-neutral-500 hover:text-neutral-300"
+                )}
+              >
+                Paste Day Sets
+              </button>
+              <button
+                onClick={() => setMode("json")}
+                className={cn(
+                  "py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all px-1 border",
+                  mode === "json"
+                    ? "bg-lime-400/15 border-lime-400/30 text-lime-400"
+                    : "bg-white/4 border-white/7 text-neutral-500 hover:text-neutral-300"
+                )}
+              >
+                Paste Backup
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="flex-1 overflow-y-auto p-5 overscroll-contain max-h-[75vh]">
@@ -356,7 +415,11 @@ export default function AddPastSessionModal({
                   <input
                     type="date"
                     value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
+                    onChange={(e) => {
+                      setSelectedDate(e.target.value);
+                      setManualError("");
+                      setDayJsonError("");
+                    }}
                     className="w-full bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm font-mono font-bold text-white outline-none focus:ring-1 focus:ring-lime-400/40 focus:border-lime-400/30"
                   />
                 </div>
@@ -372,6 +435,11 @@ export default function AddPastSessionModal({
                   />
                 </div>
               </div>
+              {manualError && mode === "manual" && (
+                <p className="text-[10px] font-bold text-red-400 uppercase tracking-widest">
+                  {manualError}
+                </p>
+              )}
 
               <div>
                 <label className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest mb-1.5 block">

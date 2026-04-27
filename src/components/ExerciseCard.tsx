@@ -3,8 +3,9 @@
 import { memo } from "react";
 import type { Exercise, SavedSetState } from "../types";
 import { cn } from "../utils";
-import { Info, FileText, History } from "lucide-react";
+import { Info, FileText, History, Plus, Trash2 } from "lucide-react";
 import { findWikiEntry } from "../wikiData";
+import { getExerciseSetsWithExtras, isExtraSetState } from "../data";
 import SetRow from "./SetRow";
 
 interface ExerciseCardProps {
@@ -25,6 +26,8 @@ interface ExerciseCardProps {
     onBwFill: (exerciseId: string) => void;
     onLoadLastSession: (exerciseId: string) => void;
     onOpenExerciseInfo: (name: string) => void;
+    onAddExtraSet: (dayId: string, exerciseId: string) => void;
+    onRemoveExtraSet: (dayId: string, exerciseId: string, setId: string) => void;
 }
 
 export default memo(function ExerciseCard({
@@ -45,15 +48,25 @@ export default memo(function ExerciseCard({
     onBwFill,
     onLoadLastSession,
     onOpenExerciseInfo,
+    onAddExtraSet,
+    onRemoveExtraSet,
 }: ExerciseCardProps) {
     const hasWikiEntry = !!findWikiEntry(exercise.name);
     const hasLastSession = !!lastSessionVals;
     const hasNote = !!exerciseNote?.trim();
+    const visibleSets = getExerciseSetsWithExtras(exercise, exerciseProgress);
+    const plannedSetIds = new Set(exercise.sets.map((set) => set.id));
+    const plannedSetsComplete =
+        exercise.sets.length > 0 &&
+        exercise.sets.every((set) => !!exerciseProgress?.[set.id]?.completed);
+    const extraSetCount = visibleSets.filter((set) =>
+        !plannedSetIds.has(set.id) && isExtraSetState(set.id, exerciseProgress?.[set.id])
+    ).length;
 
     const isBwActive =
-        exercise.sets.every(
+        visibleSets.every(
             (set) => (exerciseProgress?.[set.id]?.loggedWeight ?? "").startsWith("BW")
-        ) && exercise.sets.length > 0;
+        ) && visibleSets.length > 0;
 
     return (
         <div className="bg-neutral-900/50 border border-white/6 p-4 rounded-2xl flex flex-col gap-3 shadow-lg">
@@ -155,30 +168,73 @@ export default memo(function ExerciseCard({
             )}
 
             {/* Set Rows */}
-            {exercise.sets.map((set, setIdx) => {
+            {visibleSets.map((set, setIdx) => {
                 const setData = exerciseProgress?.[set.id];
                 const weightVal = setData?.loggedWeight || "";
                 const isBwSet = weightVal.startsWith("BW");
+                const isExtraSet = !plannedSetIds.has(set.id) && isExtraSetState(set.id, setData);
+                const extraSetNumber = isExtraSet
+                    ? visibleSets
+                        .slice(0, setIdx + 1)
+                        .filter((item) => !plannedSetIds.has(item.id)).length
+                    : 0;
 
                 return (
-                    <SetRow
-                        key={set.id}
-                        set={set}
-                        setIdx={setIdx}
-                        exerciseId={exercise.id}
-                        exerciseType={exercise.type}
-                        dayId={dayId}
-                        setProgress={setData}
-                        lastVals={lastSessionVals?.[set.id]}
-                        prBest={prBestWeight}
-                        isBwSet={isBwSet}
-                        weightUnit={weightUnit}
-                        onToggleSet={onToggleSet}
-                        onUpdateSetData={onUpdateSetData}
-                        onAdjustWeight={onAdjustWeight}
-                    />
+                    <div key={set.id} className="flex flex-col gap-1">
+                        <SetRow
+                            set={set}
+                            setIdx={setIdx}
+                            setLabel={isExtraSet ? `E${extraSetNumber}` : undefined}
+                            exerciseId={exercise.id}
+                            exerciseType={exercise.type}
+                            dayId={dayId}
+                            setProgress={setData}
+                            lastVals={lastSessionVals?.[set.id]}
+                            prBest={prBestWeight}
+                            isBwSet={isBwSet}
+                            weightUnit={weightUnit}
+                            onToggleSet={onToggleSet}
+                            onUpdateSetData={onUpdateSetData}
+                            onAdjustWeight={onAdjustWeight}
+                        />
+                        {isExtraSet && (
+                            <button
+                                type="button"
+                                onClick={() => onRemoveExtraSet(dayId, exercise.id, set.id)}
+                                className="self-end flex items-center gap-1.5 px-2 py-1 rounded-lg border border-red-400/15 bg-red-400/6 text-[9px] font-black uppercase tracking-widest text-red-300/80 hover:bg-red-400/12 hover:text-red-300 transition-all"
+                                aria-label={`Remove extra set ${extraSetNumber}`}
+                            >
+                                <Trash2 size={10} />
+                                Remove Extra
+                            </button>
+                        )}
+                    </div>
                 );
             })}
+
+            {exercise.type !== "other" && (
+                <div className="border-t border-white/5 pt-3 mt-1">
+                    <button
+                        type="button"
+                        onClick={() => onAddExtraSet(dayId, exercise.id)}
+                        disabled={!plannedSetsComplete}
+                        className={cn(
+                            "w-full active:scale-[0.98] flex items-center justify-center gap-2 py-2.5 rounded-xl border text-[10px] font-black uppercase tracking-[0.16em] transition-all",
+                            plannedSetsComplete
+                                ? "bg-lime-400/10 border-lime-400/25 text-lime-400 hover:bg-lime-400/16"
+                                : "bg-white/3 border-white/6 text-neutral-600 cursor-not-allowed"
+                        )}
+                    >
+                        <Plus size={12} />
+                        {plannedSetsComplete ? "Add Extra Set" : "Complete Planned Sets First"}
+                    </button>
+                    <p className="text-[9px] text-neutral-600 font-medium mt-1.5 px-1 text-center uppercase tracking-wider">
+                        {extraSetCount > 0
+                            ? `${extraSetCount} extra set${extraSetCount === 1 ? "" : "s"} in this session`
+                            : "Extra sets copy your last load and save only to this session"}
+                    </p>
+                </div>
+            )}
 
             {/* Notes section */}
             {isNoteOpen && (

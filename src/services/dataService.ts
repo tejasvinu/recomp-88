@@ -85,41 +85,55 @@ export type ImportResult =
     | { ok: true; snapshot: AppDataSnapshot }
     | { ok: false; reason: string };
 
-export function parseImportFile(rawText: string, fallbackTemplate: AppDataSnapshot['workoutTemplate']): ImportResult {
+const hasImportableSyncFields = (
+    value: ReturnType<typeof sanitizeSyncPayload>,
+): value is NonNullable<ReturnType<typeof sanitizeSyncPayload>> =>
+    !!value &&
+    (
+        value.workoutTemplate !== undefined ||
+        value.progress !== undefined ||
+        value.sessions !== undefined ||
+        value.bodyWeightEntries !== undefined ||
+        value.exerciseNotes !== undefined ||
+        value.settings !== undefined ||
+        value.customExercises !== undefined
+    );
+
+export function parseImportFile(rawText: string, fallback: AppDataSnapshot): ImportResult {
     try {
         const rawData = JSON.parse(rawText);
         const data = sanitizeSyncPayload(rawData);
-        if (!data) throw new Error('Invalid format');
+        if (!hasImportableSyncFields(data)) throw new Error('Invalid format');
 
         const importedWorkoutTemplate =
-            normalizeWorkoutTemplate(data.workoutTemplate) ?? fallbackTemplate;
+            normalizeWorkoutTemplate(data.workoutTemplate) ?? fallback.workoutTemplate;
 
         const snapshot: AppDataSnapshot = {
             workoutTemplate: importedWorkoutTemplate,
-            progress: data.progress
+            progress: data.progress !== undefined
                 ? pruneProgressForWorkoutTemplate(data.progress, importedWorkoutTemplate)
-                : {},
-            sessions: data.sessions ?? [],
-            bodyWeightEntries: data.bodyWeightEntries ?? [],
-            exerciseNotes: data.exerciseNotes
+                : fallback.progress,
+            sessions: data.sessions ?? fallback.sessions,
+            bodyWeightEntries: data.bodyWeightEntries ?? fallback.bodyWeightEntries,
+            exerciseNotes: data.exerciseNotes !== undefined
                 ? pruneExerciseNotesForWorkoutTemplate(data.exerciseNotes, importedWorkoutTemplate)
-                : {},
-            customExercises: data.customExercises ?? [],
+                : fallback.exerciseNotes,
+            customExercises: data.customExercises ?? fallback.customExercises,
             settings: {
                 strengthRestDuration:
                     typeof data.settings?.strengthRestDuration === 'number'
                         ? data.settings.strengthRestDuration
-                        : 120,
+                        : fallback.settings.strengthRestDuration,
                 hypertrophyRestDuration:
                     typeof data.settings?.hypertrophyRestDuration === 'number'
                         ? data.settings.hypertrophyRestDuration
-                        : 90,
+                        : fallback.settings.hypertrophyRestDuration,
                 soundEnabled:
-                    typeof data.settings?.soundEnabled === 'boolean' ? data.settings.soundEnabled : true,
+                    typeof data.settings?.soundEnabled === 'boolean' ? data.settings.soundEnabled : fallback.settings.soundEnabled,
                 weightUnit:
                     data.settings?.weightUnit === 'kg' || data.settings?.weightUnit === 'lbs'
                         ? data.settings.weightUnit
-                        : 'kg',
+                        : fallback.settings.weightUnit,
             },
         };
 

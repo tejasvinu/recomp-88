@@ -1,11 +1,15 @@
 'use client';
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import type { DayRoutine, ExerciseLinkType, WorkoutProgress } from "../types";
 import { cn } from "../utils";
-import { RotateCcw, Timer } from "lucide-react";
+import { RotateCcw, Save, Timer } from "lucide-react";
 import ExerciseCard from "./ExerciseCard";
 import { useSwipeNavigation } from "../hooks/useSwipeNavigation";
+
+const subscribeToMount = () => () => {};
+const getClientMountedSnapshot = () => true;
+const getServerMountedSnapshot = () => false;
 
 interface WorkoutTabProps {
     activeDay: DayRoutine;
@@ -25,6 +29,8 @@ interface WorkoutTabProps {
     onLoadLastSession: (exerciseId: string) => void;
     onOpenExerciseInfo: (name: string) => void;
     onNoteChange: (exerciseId: string, note: string) => void;
+    onAddExtraSet: (dayId: string, exerciseId: string) => void;
+    onRemoveExtraSet: (dayId: string, exerciseId: string, setId: string) => void;
     onShowFinishConfirm: () => void;
     onClearCheckmarks: () => void;
     onStartStretching?: (programId: string) => void;
@@ -48,17 +54,18 @@ export default function WorkoutTab({
     onLoadLastSession,
     onOpenExerciseInfo,
     onNoteChange,
+    onAddExtraSet,
+    onRemoveExtraSet,
     onShowFinishConfirm,
     onClearCheckmarks,
     onStartStretching,
 }: WorkoutTabProps) {
     const [expandedNoteId, setExpandedNoteId] = useState<string | null>(null);
-    const [isMounted, setIsMounted] = useState(false);
-
-    // Hydration fix: only render dynamic data-dependent buttons on client
-    useEffect(() => {
-        setIsMounted(true);
-    }, []);
+    const isMounted = useSyncExternalStore(
+        subscribeToMount,
+        getClientMountedSnapshot,
+        getServerMountedSnapshot
+    );
 
     const exerciseSegments = useMemo(() => {
         const segments: Array<{
@@ -157,6 +164,8 @@ export default function WorkoutTab({
                             onBwFill={onBwFill}
                             onLoadLastSession={onLoadLastSession}
                             onOpenExerciseInfo={onOpenExerciseInfo}
+                            onAddExtraSet={onAddExtraSet}
+                            onRemoveExtraSet={onRemoveExtraSet}
                         />
                     );
                 }
@@ -234,6 +243,8 @@ export default function WorkoutTab({
                                         onBwFill={onBwFill}
                                         onLoadLastSession={onLoadLastSession}
                                         onOpenExerciseInfo={onOpenExerciseInfo}
+                                        onAddExtraSet={onAddExtraSet}
+                                        onRemoveExtraSet={onRemoveExtraSet}
                                     />
                                 </div>
                             ))}
@@ -242,15 +253,8 @@ export default function WorkoutTab({
                 );
             })}
 
-            {/* Finish Workout */}
+            {/* End-of-workout actions */}
             <div className="mt-6 mb-4 space-y-3">
-                <button
-                    onClick={onClearCheckmarks}
-                    className="w-full active:scale-[0.98] flex items-center justify-center gap-2.5 py-4 rounded-2xl font-bold text-[12px] tracking-[0.18em] uppercase transition-all border bg-white/4 hover:bg-white/7 border-white/9 text-neutral-400"
-                >
-                    <RotateCcw size={15} />
-                    Clear Progress
-                </button>
                 {isMounted && activeDay.preWorkoutStretchId && (
                     <button
                         onClick={() => onStartStretching?.(activeDay.preWorkoutStretchId!)}
@@ -287,11 +291,21 @@ export default function WorkoutTab({
                             : "bg-white/4 hover:bg-white/7 border-white/9 text-white"
                     )}
                 >
-                    <RotateCcw size={15} className="text-lime-400" />
-                    Finish &amp; Reset Workout
+                    <Save size={15} className="text-lime-400" />
+                    Save Workout
                 </button>
                 <p className="text-center text-[10px] text-neutral-600 mt-2.5 px-6 font-medium leading-relaxed">
-                    Saves session to history · clears checkmarks · keeps logged weights &amp; reps
+                    Saves this session to history, then clears checkmarks while keeping planned weights and reps.
+                </p>
+                <button
+                    onClick={onClearCheckmarks}
+                    className="w-full active:scale-[0.98] flex items-center justify-center gap-2.5 py-3 rounded-2xl font-bold text-[11px] tracking-[0.16em] uppercase transition-all border bg-white/3 hover:bg-white/6 border-white/8 text-neutral-500"
+                >
+                    <RotateCcw size={14} />
+                    Clear Unsaved Checkmarks
+                </button>
+                <p className="text-center text-[9px] text-neutral-700 px-6 font-medium leading-relaxed">
+                    Use only when you want to restart today&apos;s checkmarks without saving a session.
                 </p>
             </div>
         </div>

@@ -1,9 +1,8 @@
 'use client';
 
-import { Calculator, Clock, Play, RotateCcw, Settings } from 'lucide-react';
+import { Calculator, ChevronLeft, ChevronRight, Clock, Play, RotateCcw, Settings } from 'lucide-react';
 import { cn, formatTime } from '../utils';
-import { useAppStore, selectSafeWorkoutTemplate } from '../store/appStore';
-import { useShallow } from 'zustand/react/shallow';
+import { useAppStore } from '../store/appStore';
 
 interface AppHeaderProps {
     progressPercent: number;
@@ -34,12 +33,23 @@ export default function AppHeader({
     onShowSettings,
 }: AppHeaderProps) {
     const activeTab = useAppStore((s) => s.activeTab);
+    const setActiveTab = useAppStore((s) => s.setActiveTab);
     const activeDayIndex = useAppStore((s) => s.activeDayIndex);
     const setActiveDayIndex = useAppStore((s) => s.setActiveDayIndex);
     const workoutTemplate = useAppStore((s) => s.workoutTemplate);
     const clampedActiveDayIndex = Math.min(activeDayIndex, Math.max(workoutTemplate.length - 1, 0));
     const activeDay = workoutTemplate[clampedActiveDayIndex];
     const onSetActiveDayIndex = setActiveDayIndex;
+    const canGoPrevious = clampedActiveDayIndex > 0;
+    const canGoNext = clampedActiveDayIndex < workoutTemplate.length - 1;
+    const goToDay = (nextIndex: number) => {
+        const clampedNext = Math.min(Math.max(nextIndex, 0), Math.max(workoutTemplate.length - 1, 0));
+        onSetActiveDayIndex(clampedNext);
+        if (activeTab === 'workout') {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    };
+
     return (
         <header className="sticky top-0 z-40 bg-[#080808]/80 backdrop-blur-2xl border-b border-white/6 px-4 pt-4 pb-3">
             {/* Brand + action buttons row */}
@@ -50,8 +60,8 @@ export default function AppHeader({
                 </div>
 
                 <div className="flex items-center gap-2">
-                    {/* Workout timer (only when on the workout tab and running/paused) */}
-                    {activeTab === 'workout' && (isTimerRunning || isTimerPaused) && (
+                    {/* Workout timer stays visible if the user leaves Tracker mid-session. */}
+                    {(isTimerRunning || isTimerPaused) && (
                         <div className="flex items-center gap-1">
                             <button
                                 onClick={onTogglePause}
@@ -89,15 +99,13 @@ export default function AppHeader({
                     )}
 
                     {/* Plate calculator shortcut */}
-                    {activeTab === 'workout' && (
-                        <button
-                            onClick={onShowPlateCalc}
-                            className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/5 border border-white/8 text-neutral-500 hover:text-lime-400 hover:bg-lime-400/10 hover:border-lime-400/20 transition-all"
-                            aria-label="Open plate calculator"
-                        >
-                            <Calculator size={15} />
-                        </button>
-                    )}
+                    <button
+                        onClick={onShowPlateCalc}
+                        className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/5 border border-white/8 text-neutral-500 hover:text-lime-400 hover:bg-lime-400/10 hover:border-lime-400/20 transition-all"
+                        aria-label="Open plate calculator"
+                    >
+                        <Calculator size={15} />
+                    </button>
 
                     {/* Settings */}
                     <button
@@ -109,6 +117,34 @@ export default function AppHeader({
                     </button>
                 </div>
             </div>
+
+            {activeTab !== 'workout' && activeDay && (
+                <div className="mb-3 rounded-2xl border border-white/7 bg-white/3 px-3 py-2.5 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                        <p className="text-[9px] font-black uppercase tracking-[0.18em] text-neutral-600">
+                            Active workout
+                        </p>
+                        <p className="text-[12px] font-bold text-neutral-200 truncate mt-0.5">
+                            D{activeDay.dayNumber} · {activeDay.name}
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-[11px] font-mono font-bold text-lime-400 tabular-nums">
+                            {progressPercent}%
+                        </span>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setActiveTab('workout');
+                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }}
+                            className="rounded-lg border border-lime-400/25 bg-lime-400/10 px-2.5 py-1.5 text-[9px] font-black uppercase tracking-widest text-lime-400 hover:bg-lime-400/16 transition-all"
+                        >
+                            Open
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* Workout-tab sub-header: progress bar + day pills */}
             {activeTab === 'workout' && (
@@ -141,12 +177,12 @@ export default function AppHeader({
                         {workoutTemplate.map((day, idx) => (
                             <button
                                 key={day.id}
-                                onClick={() => onSetActiveDayIndex(idx)}
+                                onClick={() => goToDay(idx)}
                                 role="tab"
-                                aria-selected={activeDayIndex === idx}
+                                aria-selected={clampedActiveDayIndex === idx}
                                 className={cn(
                                     'snap-center shrink-0 px-3.5 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-widest transition-all duration-200 border',
-                                    activeDayIndex === idx
+                                    clampedActiveDayIndex === idx
                                         ? 'bg-lime-400 text-neutral-950 border-lime-400 shadow-[0_0_12px_rgba(163,230,53,0.25)]'
                                         : 'bg-white/4 text-neutral-500 border-white/6 hover:bg-white/8 hover:text-neutral-300',
                                 )}
@@ -157,13 +193,33 @@ export default function AppHeader({
                     </div>
 
                     {activeDay && (
-                        <div className="flex items-center justify-between mt-2">
-                            <p className="text-[11px] font-semibold text-neutral-500 uppercase tracking-widest">
+                        <div className="flex items-center justify-between mt-2 gap-2">
+                            <p className="text-[11px] font-semibold text-neutral-500 uppercase tracking-widest truncate">
                                 {activeDay.name}
                             </p>
-                            <p className="text-[9px] font-bold text-neutral-700 uppercase tracking-widest">
-                                swipe to change day
-                            </p>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                                <span className="text-[9px] font-bold text-neutral-700 uppercase tracking-widest hidden min-[380px]:inline">
+                                    tap or swipe
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => goToDay(clampedActiveDayIndex - 1)}
+                                    disabled={!canGoPrevious}
+                                    className="w-7 h-7 flex items-center justify-center rounded-lg border border-white/8 bg-white/4 text-neutral-500 hover:text-white hover:bg-white/8 transition-all disabled:opacity-30 disabled:hover:bg-white/4 disabled:hover:text-neutral-500"
+                                    aria-label="Previous workout day"
+                                >
+                                    <ChevronLeft size={14} />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => goToDay(clampedActiveDayIndex + 1)}
+                                    disabled={!canGoNext}
+                                    className="w-7 h-7 flex items-center justify-center rounded-lg border border-white/8 bg-white/4 text-neutral-500 hover:text-white hover:bg-white/8 transition-all disabled:opacity-30 disabled:hover:bg-white/4 disabled:hover:text-neutral-500"
+                                    aria-label="Next workout day"
+                                >
+                                    <ChevronRight size={14} />
+                                </button>
+                            </div>
                         </div>
                     )}
                 </>

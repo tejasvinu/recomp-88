@@ -216,7 +216,7 @@ export default function AuthPage() {
           onClick={handleGuestContinue}
           className="w-full mt-4 text-neutral-600 text-xs hover:text-neutral-400 transition-colors py-2 uppercase tracking-widest font-semibold"
         >
-          Continue as guest (local only)
+          Continue as guest (this device only)
         </button>
       </div>
     </div>

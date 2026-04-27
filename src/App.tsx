@@ -2,7 +2,10 @@
 
 import { useState, useEffect, useMemo, useCallback, useRef, Suspense, lazy } from "react";
 import {
+  createExtraSetId,
   createDefaultWorkoutTemplate,
+  getExerciseSetsWithExtras,
+  isExtraSetState,
   normalizeWorkoutTemplate,
   pruneExerciseNotesForWorkoutTemplate,
   pruneProgressForWorkoutTemplate,
@@ -80,6 +83,20 @@ const stableStringify = (value: unknown) =>
       Object.entries(v as Record<string, unknown>).sort(([a], [b]) => a.localeCompare(b))
     );
   });
+
+const hasImportableSyncFields = (
+  value: ReturnType<typeof sanitizeSyncPayload>
+): value is NonNullable<ReturnType<typeof sanitizeSyncPayload>> =>
+  !!value &&
+  (
+    value.workoutTemplate !== undefined ||
+    value.progress !== undefined ||
+    value.sessions !== undefined ||
+    value.bodyWeightEntries !== undefined ||
+    value.exerciseNotes !== undefined ||
+    value.settings !== undefined ||
+    value.customExercises !== undefined
+  );
 
 // ─── Loading spinner ──────────────────────────────────────────────────────
 const Spinner = () => (
@@ -188,8 +205,9 @@ function AppMain() {
   const progressPercent = useMemo(() => {
     let total = 0, completed = 0;
     activeDay.exercises.forEach((ex) => {
-      total += ex.sets.length;
-      ex.sets.forEach((set) => {
+      const sets = getExerciseSetsWithExtras(ex, progress[activeDay.id]?.[ex.id]);
+      total += sets.length;
+      sets.forEach((set) => {
         if (progress[activeDay.id]?.[ex.id]?.[set.id]?.completed) completed++;
       });
     });
@@ -465,6 +483,76 @@ function AppMain() {
     [setProgress]
   );
 
+  const addExtraSet = useCallback(
+    (dayId: string, exerciseId: string) => {
+      const day = safeWorkoutTemplate.find((item) => item.id === dayId);
+      const exercise = day?.exercises.find((item) => item.id === exerciseId);
+      if (!day || !exercise || exercise.type === "other") return;
+
+      const currentExerciseProgress = currentSnapshotRef.current.progress[dayId]?.[exerciseId];
+      const plannedSetsComplete = exercise.sets.every(
+        (set) => currentExerciseProgress?.[set.id]?.completed
+      );
+      if (!plannedSetsComplete) {
+        showToast("Complete the planned sets first", "error");
+        return;
+      }
+
+      const currentSets = getExerciseSetsWithExtras(exercise, currentExerciseProgress);
+      const previousSet = currentSets[currentSets.length - 1];
+      const previousState = previousSet ? currentExerciseProgress?.[previousSet.id] : undefined;
+      const fallbackTarget =
+        previousState?.targetReps ||
+        previousSet?.targetReps ||
+        exercise.sets[exercise.sets.length - 1]?.targetReps ||
+        "8-12";
+      const setId = createExtraSetId();
+
+      setProgress((prev) => {
+        const dayP = prev[dayId] || {};
+        const exP = dayP[exerciseId] || {};
+        return {
+          ...prev,
+          [dayId]: {
+            ...dayP,
+            [exerciseId]: {
+              ...exP,
+              [setId]: {
+                completed: false,
+                loggedWeight: previousState?.loggedWeight || "",
+                loggedReps: "",
+                setType: previousState?.setType || "working",
+                targetReps: fallbackTarget,
+                isExtra: true,
+              },
+            },
+          },
+        };
+      });
+      showToast("Extra set added");
+    },
+    [safeWorkoutTemplate, setProgress, showToast]
+  );
+
+  const removeExtraSet = useCallback(
+    (dayId: string, exerciseId: string, setId: string) => {
+      const setState = currentSnapshotRef.current.progress[dayId]?.[exerciseId]?.[setId];
+      if (!isExtraSetState(setId, setState)) return;
+
+      setProgress((prev) => {
+        const dayP = prev[dayId];
+        const exP = dayP?.[exerciseId];
+        if (!dayP || !exP || !exP[setId]) return prev;
+
+        const nextExP = { ...exP };
+        delete nextExP[setId];
+        return { ...prev, [dayId]: { ...dayP, [exerciseId]: nextExP } };
+      });
+      showToast("Extra set removed");
+    },
+    [setProgress, showToast]
+  );
+
   const adjustWeight = useCallback(
     (exerciseId: string, setId: string, delta: number) => {
       const currentVal = progress[activeDay.id]?.[exerciseId]?.[setId]?.loggedWeight || "";
@@ -487,12 +575,13 @@ function AppMain() {
     (exerciseId: string) => {
       const exercise = activeDay.exercises.find((e) => e.id === exerciseId);
       if (!exercise) return;
-      const allBw = exercise.sets.every((set) => (progress[activeDay.id]?.[exercise.id]?.[set.id]?.loggedWeight ?? "") === "BW");
+      const visibleSets = getExerciseSetsWithExtras(exercise, progress[activeDay.id]?.[exercise.id]);
+      const allBw = visibleSets.every((set) => (progress[activeDay.id]?.[exercise.id]?.[set.id]?.loggedWeight ?? "") === "BW");
       const newValue = allBw ? "" : "BW";
       setProgress((prev) => {
         const dayP = prev[activeDay.id] || {};
         const exP = { ...(dayP[exerciseId] || {}) };
-        exercise.sets.forEach((set) => {
+        visibleSets.forEach((set) => {
           exP[set.id] = { ...(exP[set.id] || { completed: false, loggedWeight: "", loggedReps: "" }), loggedWeight: newValue };
         });
         return { ...prev, [activeDay.id]: { ...dayP, [exerciseId]: exP } };
@@ -535,12 +624,16 @@ function AppMain() {
       Object.keys(newDayP).forEach((exId) => {
         newDayP[exId] = { ...newDayP[exId] };
         Object.keys(newDayP[exId]).forEach((setId) => {
+          if (isExtraSetState(setId, newDayP[exId][setId])) {
+            delete newDayP[exId][setId];
+            return;
+          }
           newDayP[exId][setId] = { ...newDayP[exId][setId], completed: false, rpe: undefined, completedAt: undefined };
         });
       });
       return { ...prev, [activeDay.id]: newDayP };
     });
-    showToast("Checkmarks cleared");
+    showToast("Workout progress cleared");
   }, [activeDay.id, setProgress, showToast]);
 
   const finishWorkout = useCallback(() => {
@@ -550,7 +643,7 @@ function AppMain() {
 
     if (dayProgress) {
       const hasData = activeDay.exercises.some((ex) =>
-        ex.sets.some((set) => { const s = dayProgress[ex.id]?.[set.id]; return s && (s.loggedWeight || s.loggedReps || s.completed); })
+        getExerciseSetsWithExtras(ex, dayProgress[ex.id]).some((set) => { const s = dayProgress[ex.id]?.[set.id]; return s && (s.loggedWeight || s.loggedReps || s.completed); })
       );
       if (hasData) {
         const duration = workoutTimer.getDuration();
@@ -558,7 +651,7 @@ function AppMain() {
         const currentBodyWeight = getClosestBodyWeight(new Date().toISOString(), bodyWeightEntries, defaultBw);
 
         const totalTonnage = activeDay.exercises.reduce((total, ex) =>
-          total + ex.sets.reduce((st, set) => {
+          total + getExerciseSetsWithExtras(ex, dayProgress[ex.id]).reduce((st, set) => {
             const state = dayProgress[ex.id]?.[set.id];
             if (state?.completed && state.setType !== "warmup") {
               return st + resolveWeight(state.loggedWeight, currentBodyWeight) * (parseInt(state.loggedReps) || 0);
@@ -580,7 +673,7 @@ function AppMain() {
               exerciseId: ex.id,
               name: ex.name,
               type: ex.type,
-              sets: ex.sets
+              sets: getExerciseSetsWithExtras(ex, dayProgress[ex.id])
                 .map((set) => {
                   const s = dayProgress[ex.id]?.[set.id];
                   return {
@@ -592,6 +685,7 @@ function AppMain() {
                     ...(s?.completedAt != null ? { completedAt: s.completedAt } : {}),
                     ...(s?.rpe != null ? { rpe: s.rpe } : {}),
                     ...(s?.setType ? { setType: s.setType } : {}),
+                    ...(isExtraSetState(set.id, s) ? { isExtra: true } : {}),
                   };
                 })
                 .filter((s) => s.loggedWeight || s.loggedReps || s.completed),
@@ -611,6 +705,10 @@ function AppMain() {
       Object.keys(newDayP).forEach((exId) => {
         newDayP[exId] = { ...newDayP[exId] };
         Object.keys(newDayP[exId]).forEach((setId) => {
+          if (isExtraSetState(setId, newDayP[exId][setId])) {
+            delete newDayP[exId][setId];
+            return;
+          }
           newDayP[exId][setId] = { ...newDayP[exId][setId], completed: false, rpe: undefined, completedAt: undefined };
         });
       });
@@ -766,20 +864,25 @@ function AppMain() {
         try {
           const rawData = JSON.parse(ev.target?.result as string);
           const data = sanitizeSyncPayload(rawData);
-          if (!data) throw new Error("Invalid format");
-          const importedTemplate = data.workoutTemplate ?? safeWorkoutTemplate;
+          if (!hasImportableSyncFields(data)) throw new Error("Invalid format");
+          const fallback = currentSnapshotRef.current;
+          const importedTemplate = data.workoutTemplate ?? fallback.workoutTemplate;
           applySnapshot({
             workoutTemplate: importedTemplate,
-            progress: data.progress ? pruneProgressForWorkoutTemplate(data.progress, importedTemplate) : {},
-            sessions: data.sessions ?? [],
-            bodyWeightEntries: data.bodyWeightEntries ?? [],
-            exerciseNotes: data.exerciseNotes ? pruneExerciseNotesForWorkoutTemplate(data.exerciseNotes, importedTemplate) : {},
-            customExercises: data.customExercises ?? [],
+            progress: data.progress !== undefined
+              ? pruneProgressForWorkoutTemplate(data.progress, importedTemplate)
+              : fallback.progress,
+            sessions: data.sessions ?? fallback.sessions,
+            bodyWeightEntries: data.bodyWeightEntries ?? fallback.bodyWeightEntries,
+            exerciseNotes: data.exerciseNotes !== undefined
+              ? pruneExerciseNotesForWorkoutTemplate(data.exerciseNotes, importedTemplate)
+              : fallback.exerciseNotes,
+            customExercises: data.customExercises ?? fallback.customExercises,
             settings: {
-              strengthRestDuration: typeof data.settings?.strengthRestDuration === "number" ? data.settings.strengthRestDuration : strengthRestDuration,
-              hypertrophyRestDuration: typeof data.settings?.hypertrophyRestDuration === "number" ? data.settings.hypertrophyRestDuration : hypertrophyRestDuration,
-              soundEnabled: typeof data.settings?.soundEnabled === "boolean" ? data.settings.soundEnabled : soundEnabled,
-              weightUnit: data.settings?.weightUnit === "kg" || data.settings?.weightUnit === "lbs" ? data.settings.weightUnit : weightUnit,
+              strengthRestDuration: typeof data.settings?.strengthRestDuration === "number" ? data.settings.strengthRestDuration : fallback.settings.strengthRestDuration,
+              hypertrophyRestDuration: typeof data.settings?.hypertrophyRestDuration === "number" ? data.settings.hypertrophyRestDuration : fallback.settings.hypertrophyRestDuration,
+              soundEnabled: typeof data.settings?.soundEnabled === "boolean" ? data.settings.soundEnabled : fallback.settings.soundEnabled,
+              weightUnit: data.settings?.weightUnit === "kg" || data.settings?.weightUnit === "lbs" ? data.settings.weightUnit : fallback.settings.weightUnit,
             },
           });
           setShowSettings(false);
@@ -791,7 +894,7 @@ function AppMain() {
       reader.readAsText(file);
       e.target.value = "";
     },
-    [safeWorkoutTemplate, applySnapshot, strengthRestDuration, hypertrophyRestDuration, soundEnabled, weightUnit, showToast]
+    [applySnapshot, showToast]
   );
 
   const handleClearData = useCallback(() => {
@@ -852,7 +955,7 @@ function AppMain() {
                 allTimePRs={allTimePRs}
                 progressPercent={progressPercent}
                 weightUnit={weightUnit}
-                onSetActiveDayIndex={(fn) => setActiveDayIndex(typeof fn === 'function' ? fn(activeDayIndex) : fn)}
+                onSetActiveDayIndex={setActiveDayIndex}
                 onToggleSet={toggleSet}
                 onUpdateSetData={updateSetData}
                 onAdjustWeight={adjustWeight}
@@ -860,6 +963,8 @@ function AppMain() {
                 onLoadLastSession={loadLastSession}
                 onOpenExerciseInfo={openExerciseInfo}
                 onNoteChange={handleNoteChange}
+                onAddExtraSet={addExtraSet}
+                onRemoveExtraSet={removeExtraSet}
                 onShowFinishConfirm={() => setShowFinishConfirm(true)}
                 onClearCheckmarks={clearCheckmarks}
                 onStartStretching={handleStartStretching}
@@ -921,6 +1026,7 @@ function AppMain() {
           isPaused={restTimer.isPaused}
           onDismiss={restTimer.dismissTimer}
           onTogglePause={restTimer.togglePause}
+          onAdjustTimer={restTimer.adjustTimer}
         />
 
         <InstallPrompt />
