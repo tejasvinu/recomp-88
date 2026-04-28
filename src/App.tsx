@@ -173,6 +173,7 @@ function AppMain() {
     schedulePush,
     cancelScheduledPush,
     pushToCloud,
+    getSyncBase,
     syncStatus,
     lastSyncedAt,
   } = useCloudSync();
@@ -180,11 +181,9 @@ function AppMain() {
   const cloudBootstrapped = useRef(false);
   const skipNextCloudPushRef = useRef(0);
   const suppressOverlayRef = useRef(false);
-  const lastSyncedAtRef = useRef(lastSyncedAt);
   const [canPushCloud, setCanPushCloud] = useState(false);
   const [lastMergeSummary, setLastMergeSummary] = useState<string | null>(null);
 
-  useEffect(() => { lastSyncedAtRef.current = lastSyncedAt; }, [lastSyncedAt]);
   useEffect(() => { if (!isLoggedIn) setLastMergeSummary(null); }, [isLoggedIn]);
 
   // ─── Hooks ────────────────────────────────────────────────────────────
@@ -303,7 +302,7 @@ function AppMain() {
 
   const pullAndMergeCloudData = useCallback(async (silent = true) => {
     if (!isLoggedIn) return null;
-    const syncBase = lastSyncedAtRef.current;
+    const syncBase = getSyncBase();
     try {
       const data = await fetchCloudData();
       if (!data) return null;
@@ -369,7 +368,7 @@ function AppMain() {
       if (!silent) showToast("Cloud sync failed", "error");
       return null;
     }
-  }, [applyCloudSnapshot, cancelScheduledPush, fetchCloudData, isLoggedIn, pushToCloud, resolveSnapshotSettings, showToast]);
+  }, [applyCloudSnapshot, cancelScheduledPush, fetchCloudData, getSyncBase, isLoggedIn, pushToCloud, resolveSnapshotSettings, showToast]);
 
   // Bootstrap cloud data on login
   useEffect(() => {
