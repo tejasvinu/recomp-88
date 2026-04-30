@@ -1,18 +1,19 @@
 'use client';
 
 import type React from 'react';
-import { Dumbbell, BookOpen, BarChart3, UserCircle2, HeartPulse } from 'lucide-react';
+import { Dumbbell, BookOpen, BarChart3, UserCircle2, HeartPulse, Trophy } from 'lucide-react';
 import { cn } from '../utils';
 
 import { useAppStore } from '../store/appStore';
 
-export type TabId = 'workout' | 'stretching' | 'wiki' | 'charts' | 'profile';
+export type TabId = 'workout' | 'stretching' | 'wiki' | 'charts' | 'records' | 'profile';
 
 const TABS: Array<{ id: TabId; label: string; icon: React.ElementType }> = [
     { id: 'workout', label: 'Tracker', icon: Dumbbell },
     { id: 'stretching', label: 'Recovery', icon: HeartPulse },
     { id: 'wiki', label: 'Wiki', icon: BookOpen },
     { id: 'charts', label: 'Progress', icon: BarChart3 },
+    { id: 'records', label: 'Records', icon: Trophy },
     { id: 'profile', label: 'Profile', icon: UserCircle2 },
 ];
 
@@ -27,7 +28,7 @@ export default function BottomNav() {
         <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md pointer-events-none z-50">
             <div className="pointer-events-auto bg-[#080808]/88 backdrop-blur-2xl border-t border-white/6 shadow-[0_-10px_40px_rgba(0,0,0,0.55)] px-2 pb-[env(safe-area-inset-bottom)]">
                 <div className="h-[var(--bottom-nav-height)] flex items-center justify-center">
-                    <nav className="grid grid-cols-5 w-full gap-0.5" aria-label="Main navigation">
+                    <nav className="grid grid-cols-6 w-full gap-0.5" aria-label="Main navigation">
                         {TABS.map(({ id, label, icon: Icon }) => {
                             const isActive = activeTab === id;
                             return (

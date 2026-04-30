@@ -219,6 +219,78 @@ export function computeAllTimePRs(
     return prs;
 }
 
+export interface GlobalExerciseRecord {
+    /** Display name (best-effort merge when the same lift appears with different casing). */
+    name: string;
+    /** Heaviest resolved weight on any single set (kg or lbs per settings). */
+    maxWeight: number;
+    /** Largest volume (Σ weight × reps per set) for that exercise within one session. */
+    maxSessionTonnage: number;
+}
+
+/**
+ * Aggregates all logged sessions: one row per exercise name (case-insensitive).
+ */
+export function computeGlobalExerciseRecords(
+    sessions: SessionHistory,
+    bodyWeightEntries: BodyWeightEntry[],
+    weightUnit: 'kg' | 'lbs',
+): GlobalExerciseRecord[] {
+    const defaultBw = weightUnit === 'lbs' ? 175 : 80;
+    const byKey = new Map<
+        string,
+        { displayName: string; maxWeight: number; maxSessionTonnage: number }
+    >();
+
+    for (const session of sessions) {
+        const bw = getClosestBodyWeight(session.date, bodyWeightEntries, defaultBw);
+        for (const ex of session.exercises) {
+            const trimmed = ex.name.trim();
+            const key = trimmed.toLowerCase();
+            if (!key) continue;
+
+            let sessionTonnage = 0;
+            let maxWSession = 0;
+            for (const set of ex.sets) {
+                const w = resolveWeight(set.loggedWeight, bw);
+                const r = parseFloat(set.loggedReps) || 0;
+                if (w > 0 && r > 0) {
+                    sessionTonnage += w * r;
+                }
+                if (w > maxWSession) maxWSession = w;
+            }
+
+            const prev = byKey.get(key);
+            const displayName =
+                !prev || trimmed.length > prev.displayName.length ? trimmed : prev.displayName;
+
+            if (!prev) {
+                byKey.set(key, {
+                    displayName,
+                    maxWeight: maxWSession,
+                    maxSessionTonnage: Math.round(sessionTonnage),
+                });
+            } else {
+                prev.displayName = displayName;
+                prev.maxWeight = Math.max(prev.maxWeight, maxWSession);
+                prev.maxSessionTonnage = Math.max(
+                    prev.maxSessionTonnage,
+                    Math.round(sessionTonnage),
+                );
+            }
+        }
+    }
+
+    return [...byKey.values()]
+        .map((row) => ({
+            name: row.displayName,
+            maxWeight: Math.round(row.maxWeight * 100) / 100,
+            maxSessionTonnage: row.maxSessionTonnage,
+        }))
+        .filter((row) => row.maxWeight > 0 || row.maxSessionTonnage > 0)
+        .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+}
+
 // ─── Last session values per day/exercise/set ────────────────────────────────
 export function computeLastSessionValues(
     template: WorkoutTemplate,

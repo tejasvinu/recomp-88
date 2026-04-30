@@ -58,6 +58,7 @@ import InstallPrompt from "./components/InstallPrompt";
 
 const WikiView = lazy(() => import("./components/WikiView"));
 const ChartsView = lazy(() => import("./components/ChartsView"));
+const ExerciseRecordsView = lazy(() => import("./components/ExerciseRecordsView"));
 const ProfileTab = lazy(() => import("./components/ProfileTab"));
 
 // ─── Module-level helpers (no state dependency) ───────────────────────────
@@ -995,6 +996,17 @@ function AppMain() {
                   bodyWeightEntries={bodyWeightEntries}
                   onLogBodyWeight={logBodyWeight}
                   weightUnit={weightUnit}
+                />
+              </Suspense>
+            </div>
+
+            <div className={activeTab === "records" ? "block" : "hidden"}>
+              <Suspense fallback={<Spinner />}>
+                <ExerciseRecordsView
+                  sessions={sessions}
+                  bodyWeightEntries={bodyWeightEntries}
+                  weightUnit={weightUnit}
+                  onOpenExercise={openExerciseInfo}
                 />
               </Suspense>
             </div>

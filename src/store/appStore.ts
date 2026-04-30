@@ -54,7 +54,7 @@ export interface AppState {
     customExercises: ExerciseWiki[];
 
     // UI / ephemeral
-    activeTab: 'workout' | 'stretching' | 'wiki' | 'charts' | 'profile';
+    activeTab: 'workout' | 'stretching' | 'wiki' | 'charts' | 'records' | 'profile';
     activeDayIndex: number;
     selectedStretchingProgramId: string | null;
 
@@ -122,7 +122,7 @@ const SSR_SAFE_INITIAL = {
     customExercises: [] as ExerciseWiki[],
 };
 
-const VALID_TABS = ['workout', 'stretching', 'wiki', 'charts', 'profile'] as const;
+const VALID_TABS = ['workout', 'stretching', 'wiki', 'charts', 'records', 'profile'] as const;
 
 const readActiveTab = (): AppState['activeTab'] => {
     const stored = readLocalStorageValue<unknown>('recomp88-active-tab', 'workout');
