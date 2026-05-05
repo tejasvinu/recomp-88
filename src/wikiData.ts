@@ -30,7 +30,13 @@ const BASE_WIKI_DATA: ExerciseWiki[] = [
             "Losing upper back tightness during the press — scapulae must stay retracted the entire set.",
             "Lifting hips off the bench to move more weight — reduces chest activation.",
         ],
-        alternatives: ["Dumbbell Bench Press", "Machine Chest Press", "Floor Press"],
+        alternatives: [
+            "Barbell Bench Press",
+            "Dumbbell Bench Press",
+            "Smith Machine Bench Press",
+            "Machine Chest Press",
+            "Floor Press",
+        ],
         notes:
             "For recomp, the bench is your primary strength marker for pushing. Aim for progressive overload in the 6-8 rep range on Day 1 (Heavy Push). If you stall, try adding a single rep before adding weight. A 2.5kg micro-load increase per week is ideal.",
     },
@@ -161,7 +167,12 @@ const BASE_WIKI_DATA: ExerciseWiki[] = [
             "Lowering bar to the mid-chest instead of upper chest.",
             "Losing arch and tightness as fatigue builds.",
         ],
-        alternatives: ["Incline DB Press", "Smith Machine Incline Press", "Low Cable Flyes"],
+        alternatives: [
+            "Incline DB Press",
+            "Smith Machine Incline Press",
+            "Machine Chest Press",
+            "Low Cable Flyes",
+        ],
         notes:
             "This is your primary push on Hyper Push day. The slightly higher rep range (3x8-10) compared to flat bench allows you to accumulate volume for the upper chest without excessive CNS fatigue.",
     },

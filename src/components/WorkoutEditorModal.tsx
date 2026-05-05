@@ -1,8 +1,13 @@
 'use client';
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ArrowLeftRight, Download, Plus, Save, Trash2, X } from "lucide-react";
 import { cloneWorkoutTemplate, createTemplateSet, sanitizeExerciseLinks } from "../data";
+import {
+    findExerciseLibraryEntry,
+    getExerciseLibraryNames,
+    inferExerciseTypeFromLibraryEntry,
+} from "../exerciseLibrary";
 import { useModalEscape } from "../hooks/useModalEscape";
 import { FinisherPrograms, PrimerPrograms, StretchPrograms } from "../stretchingData";
 import {
@@ -17,7 +22,6 @@ import { DarkSelect } from "./DarkSelect";
 import {
     getFreeWeightAlternatives,
     isHomeGymFriendly,
-    WIKI_DATA,
     findWikiEntry,
 } from "../wikiData";
 
@@ -42,9 +46,6 @@ const DEFAULT_OTHER_EXERCISE_DETAILS: Record<string, string> = {
     "Treadmill Incline Walk": "45 mins",
     "Mobility Work": "15 mins",
 };
-
-const isOlympicLift = (entry: ExerciseWiki) =>
-    entry.movementPattern?.toLowerCase().includes("olympic") ?? false;
 
 const makeId = (prefix: string) => {
     if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
@@ -75,40 +76,20 @@ const inferExerciseCategory = (
     return null;
 };
 
-const getExerciseLibraryNames = (
-    category: ExerciseCategory | null,
-    exerciseType: ExerciseType,
-    customExercises: ExerciseWiki[] = []
-) => {
-    const allEntries = [...WIKI_DATA, ...customExercises];
-    const relevantEntries = allEntries.filter((entry) => {
-        if (exerciseType === "other") return entry.category === "Cardio/Mobility";
-        if (!category) return entry.category !== "Cardio/Mobility";
-
-        return entry.category === category || isOlympicLift(entry);
-    });
-
-
-    const names = new Set<string>();
-    relevantEntries.forEach((entry) => {
-        names.add(entry.name);
-        entry.alternatives.forEach((alternative) => names.add(alternative));
-    });
-
-    return Array.from(names).sort((left, right) => left.localeCompare(right));
-};
-
 const getExerciseSwapOptions = (exercise: Exercise, dayName: string, customExercises: ExerciseWiki[] = []) => {
     const allCustom = customExercises;
-    const currentEntry = findWikiEntry(exercise.name) || allCustom.find(ex => ex.name === exercise.name);
+    const currentEntry = findExerciseLibraryEntry(exercise.name, allCustom);
     const category =
         currentEntry?.category ?? inferExerciseCategory(dayName, exercise.type);
-    const libraryNames = getExerciseLibraryNames(category, exercise.type, allCustom).filter(
+    const libraryNames = getExerciseLibraryNames(allCustom).filter(
         (name) => name !== exercise.name
     );
     const featuredNames = (
         currentEntry && "alternatives" in currentEntry
-            ? getFreeWeightAlternatives(currentEntry)
+            ? [
+                ...getFreeWeightAlternatives(currentEntry),
+                ...currentEntry.alternatives,
+            ]
             : libraryNames
     )
 
@@ -136,6 +117,14 @@ export default function WorkoutEditorModal({
     useModalEscape(onClose);
 
     const activeDay = draft[selectedDayIndex];
+    const exerciseLibraryOptions = useMemo(
+        () =>
+            getExerciseLibraryNames(customExercises).map((exerciseName) => ({
+                value: exerciseName,
+                label: exerciseName,
+            })),
+        [customExercises]
+    );
 
     const updateDay = (updater: (currentDay: WorkoutTemplate[number]) => WorkoutTemplate[number]) => {
         setDraft((currentDraft) =>
@@ -167,6 +156,34 @@ export default function WorkoutEditorModal({
                     name: `Exercise ${day.exercises.length + 1}`,
                     type: "hypertrophy",
                     sets: [createTemplateSet(makeId("set"), "8-12")],
+                },
+            ]),
+        }));
+    };
+
+    const addExerciseFromLibrary = (nextExerciseName: string) => {
+        if (!activeDay || !nextExerciseName) return;
+
+        const nextEntry = findExerciseLibraryEntry(nextExerciseName, customExercises);
+        const nextType = inferExerciseTypeFromLibraryEntry(nextEntry);
+        const setCount = nextType === "other" ? 1 : 3;
+        const targetReps = nextType === "other" ? "1" : "8-12";
+
+        updateDay((day) => ({
+            ...day,
+            exercises: sanitizeExerciseLinks([
+                ...day.exercises,
+                {
+                    id: makeId(`${day.id}-${slugify(nextExerciseName) || "exercise"}`),
+                    name: nextExerciseName,
+                    type: nextType,
+                    details:
+                        nextType === "other"
+                            ? DEFAULT_OTHER_EXERCISE_DETAILS[nextExerciseName] ?? "15 mins"
+                            : undefined,
+                    sets: Array.from({ length: setCount }, () =>
+                        createTemplateSet(makeId("set"), targetReps)
+                    ),
                 },
             ]),
         }));
@@ -239,6 +256,11 @@ export default function WorkoutEditorModal({
 
         updateExercise(exerciseId, (currentExercise) => {
             if (currentExercise.name === nextExerciseName) return currentExercise;
+            const nextEntry = findExerciseLibraryEntry(nextExerciseName, customExercises);
+            const nextType = inferExerciseTypeFromLibraryEntry(
+                nextEntry,
+                currentExercise.type === "other" ? "hypertrophy" : currentExercise.type
+            );
 
             return {
                 ...currentExercise,
@@ -246,8 +268,9 @@ export default function WorkoutEditorModal({
                     `${activeDay.id}-${slugify(nextExerciseName) || "exercise"}`
                 ),
                 name: nextExerciseName,
+                type: nextType,
                 details:
-                    currentExercise.type === "other"
+                    nextType === "other"
                         ? DEFAULT_OTHER_EXERCISE_DETAILS[nextExerciseName] ??
                         currentExercise.details
                         : undefined,
@@ -497,14 +520,26 @@ export default function WorkoutEditorModal({
                                 </p>
                             </div>
 
-                            <button
-                                type="button"
-                                onClick={addExercise}
-                                className="shrink-0 flex items-center gap-2 px-3 py-2 rounded-xl bg-lime-400/12 border border-lime-400/25 text-lime-400 text-[11px] font-black uppercase tracking-widest hover:bg-lime-400/20 transition-all"
-                            >
-                                <Plus size={13} />
-                                Add Exercise
-                            </button>
+                            <div className="shrink-0 flex flex-col sm:flex-row gap-2 sm:items-center">
+                                <div className="w-56">
+                                    <DarkSelect
+                                        value=""
+                                        onChange={addExerciseFromLibrary}
+                                        triggerLabelMode="placeholder"
+                                        placeholder="Add from full library..."
+                                        options={exerciseLibraryOptions}
+                                        className="border-lime-400/20 bg-lime-400/8 text-[11px] uppercase tracking-widest"
+                                    />
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={addExercise}
+                                    className="shrink-0 flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/8 text-neutral-300 text-[11px] font-black uppercase tracking-widest hover:bg-white/8 hover:text-white transition-all"
+                                >
+                                    <Plus size={13} />
+                                    Blank
+                                </button>
+                            </div>
                         </div>
 
                         <div className="flex flex-col gap-3">
@@ -648,9 +683,9 @@ export default function WorkoutEditorModal({
                                                                 )}
                                                         </div>
                                                         <p className="text-[10px] text-neutral-500 font-medium mt-1.5 leading-relaxed">
-                                                            Quick picks prioritize free-weight swaps,
-                                                            low-access alternatives, and Olympic lift
-                                                            options for explosive power blocks.
+                                                            Quick picks prioritize equipment variants and
+                                                            proven swaps. The library below is no longer
+                                                            limited by the current day&apos;s focus.
                                                         </p>
                                                     </div>
                                                 </div>
@@ -690,7 +725,7 @@ export default function WorkoutEditorModal({
                                                             }
                                                         }}
                                                         triggerLabelMode="placeholder"
-                                                        placeholder="Choose from library or Olympic lifts..."
+                                                        placeholder="Choose any exercise from the full library..."
                                                         options={swapOptions.libraryNames.map(
                                                             (libraryName) => ({
                                                                 value: libraryName,

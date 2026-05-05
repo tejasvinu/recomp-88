@@ -344,6 +344,150 @@ export const ADDITIONAL_WIKI_DATA: ExerciseWiki[] = [
         homeGymFriendly: true,
     },
     {
+        id: "e-barbell-bench-press",
+        name: "Barbell Bench Press",
+        category: "Push",
+        muscles: {
+            primary: ["Pectoralis Major"],
+            secondary: ["Anterior Deltoids", "Triceps Brachii", "Serratus Anterior"],
+        },
+        biomechanics:
+            "A rack-based horizontal press using a barbell. The fixed implement lets you load heavier than dumbbells and makes progression simple, while the bench and bar path demand consistent shoulder blade position and leg drive.",
+        cues: [
+            "Set your eyes just under the bar before unracking.",
+            "Pull shoulder blades back and down into the bench.",
+            "Touch the lower chest and press back toward the rack.",
+        ],
+        commonMistakes: [
+            "Benching flat-backed with loose shoulders.",
+            "Letting the wrists fold behind the bar.",
+            "Pressing straight up from the chest and losing the natural J-curve.",
+        ],
+        alternatives: ["Dumbbell Bench Press", "Smith Machine Bench Press", "Machine Chest Press", "Floor Press"],
+        notes:
+            "Use this explicit barbell variant when you want your logs to distinguish rack-based benching from dumbbell, smith, and machine pressing. It is the best default for measurable upper-body strength progression.",
+        equipment: ["barbell", "bench"],
+        difficulty: "Intermediate",
+        movementPattern: "horizontal press",
+        bestFor: ["primary push strength", "progressive overload", "barbell skill practice"],
+        setupChecklist: [
+            "Rack height lets you unrack without losing shoulder position.",
+            "Feet are planted before the unrack.",
+            "Use safeties or a spotter for hard sets.",
+        ],
+        freeWeightAlternatives: ["Dumbbell Bench Press", "Floor Press", "Push-ups"],
+        minimalEquipmentAlternatives: ["Floor Press", "Push-ups"],
+        homeGymFriendly: true,
+    },
+    {
+        id: "e-smith-machine-bench-press",
+        name: "Smith Machine Bench Press",
+        category: "Push",
+        muscles: {
+            primary: ["Pectoralis Major"],
+            secondary: ["Anterior Deltoids", "Triceps Brachii"],
+        },
+        biomechanics:
+            "A guided-bar horizontal press. The smith machine removes most stabilization demands and lets you push close to failure with a predictable path, but setup matters because your body must match the fixed track.",
+        cues: [
+            "Set the bench so the bar tracks over your lower-to-mid chest.",
+            "Keep shoulder blades pinned to the pad.",
+            "Use the hooks only after the rep is locked out and controlled.",
+        ],
+        commonMistakes: [
+            "Positioning the bench too far forward or back for the machine path.",
+            "Relaxing the upper back because the bar is guided.",
+            "Letting elbows flare hard at the bottom.",
+        ],
+        alternatives: ["Barbell Bench Press", "Dumbbell Bench Press", "Machine Chest Press", "Push-ups"],
+        notes:
+            "This is a strong hypertrophy option when racks are busy, when you train alone, or when you want stable pressing volume after heavier free-weight work.",
+        equipment: ["smith-machine", "bench"],
+        difficulty: "Beginner",
+        movementPattern: "horizontal press",
+        bestFor: ["stable chest volume", "solo training", "machine-based hypertrophy"],
+        setupChecklist: [
+            "Bench is centered under the smith track.",
+            "Bar path lines up with your natural touch point.",
+            "Safety stops are set before heavy sets.",
+        ],
+        freeWeightAlternatives: ["Barbell Bench Press", "Dumbbell Bench Press", "Floor Press"],
+        minimalEquipmentAlternatives: ["Push-ups", "Floor Press"],
+        homeGymFriendly: false,
+    },
+    {
+        id: "e-machine-chest-press",
+        name: "Machine Chest Press",
+        category: "Push",
+        muscles: {
+            primary: ["Pectoralis Major"],
+            secondary: ["Anterior Deltoids", "Triceps Brachii"],
+        },
+        biomechanics:
+            "A selectorized or plate-loaded horizontal press. The machine provides external stability, making it easy to train the chest close to failure without spending recovery on setup, balance, or unracking skill.",
+        cues: [
+            "Adjust the seat so handles start around mid-chest.",
+            "Keep chest tall and shoulders down.",
+            "Let the handles come back far enough to load the pecs without dumping the shoulders forward.",
+        ],
+        commonMistakes: [
+            "Setting the seat too low and turning it into a shoulder press.",
+            "Stopping short of a useful chest stretch.",
+            "Rushing reps because the machine feels safe.",
+        ],
+        alternatives: ["Barbell Bench Press", "Dumbbell Bench Press", "Smith Machine Bench Press", "Push-ups"],
+        notes:
+            "Use machine pressing for high-effort chest work with low setup cost. It is especially useful after free-weight presses or on days when joint comfort matters more than skill practice.",
+        equipment: ["machine"],
+        difficulty: "Beginner",
+        movementPattern: "horizontal press",
+        bestFor: ["low-skill chest volume", "failure-friendly hypertrophy", "joint-managed pressing"],
+        setupChecklist: [
+            "Seat height matches your chest line.",
+            "Back pad supports your ribcage without forcing a shrug.",
+            "Handles are even before pressing.",
+        ],
+        freeWeightAlternatives: ["Barbell Bench Press", "Dumbbell Bench Press", "Floor Press"],
+        minimalEquipmentAlternatives: ["Push-ups", "Floor Press"],
+        homeGymFriendly: false,
+    },
+    {
+        id: "e-smith-machine-incline-press",
+        name: "Smith Machine Incline Press",
+        category: "Push",
+        muscles: {
+            primary: ["Pectoralis Major (Clavicular / Upper Chest)"],
+            secondary: ["Anterior Deltoids", "Triceps Brachii"],
+        },
+        biomechanics:
+            "An incline press performed on a guided smith path. The fixed track makes upper-chest loading stable and repeatable, while the incline shifts emphasis toward the clavicular pec fibers.",
+        cues: [
+            "Use a 20-45 degree bench angle.",
+            "Line the bar over your upper chest before unracking.",
+            "Press with the upper chest instead of shrugging into the shoulders.",
+        ],
+        commonMistakes: [
+            "Using an incline so steep it becomes mostly shoulders.",
+            "Setting the bench out of line with the smith path.",
+            "Bouncing off the upper chest.",
+        ],
+        alternatives: ["Incline Barbell Press", "Incline DB Press", "Machine Chest Press", "Low Cable Flyes"],
+        notes:
+            "This variant is useful when you want upper-chest volume with less stabilization than free weights. It pairs well with dumbbell or barbell flat pressing.",
+        equipment: ["smith-machine", "bench"],
+        difficulty: "Beginner",
+        movementPattern: "incline press",
+        bestFor: ["upper-chest hypertrophy", "stable incline pressing", "machine-based push days"],
+        setupChecklist: [
+            "Bench angle is set before loading.",
+            "Smith hooks and safeties are easy to reach.",
+            "Touch point stays on the upper chest.",
+        ],
+        freeWeightAlternatives: ["Incline Barbell Press", "Incline DB Press", "Dumbbell Bench Press"],
+        minimalEquipmentAlternatives: ["Push-ups", "Floor Press"],
+        homeGymFriendly: false,
+    },
+    {
         id: "e-floor-press",
         name: "Floor Press",
         category: "Push",
