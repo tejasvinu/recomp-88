@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from "react";
-import { ArrowLeftRight, Download, Plus, Save, Trash2, X } from "lucide-react";
+import { ArrowLeftRight, ChevronDown, ChevronUp, Download, Plus, Save, Trash2, X } from "lucide-react";
 import { cloneWorkoutTemplate, createTemplateSet, sanitizeExerciseLinks } from "../data";
 import {
     findExerciseLibraryEntry,
@@ -113,8 +113,90 @@ export default function WorkoutEditorModal({
 }: WorkoutEditorModalProps) {
     const [draft, setDraft] = useState<WorkoutTemplate>(() => cloneWorkoutTemplate(workoutTemplate));
     const [selectedDayIndex, setSelectedDayIndex] = useState(0);
+    const [showManageDays, setShowManageDays] = useState(false);
 
     useModalEscape(onClose);
+
+    const moveDay = (index: number, direction: "up" | "down") => {
+        const nextIndex = direction === "up" ? index - 1 : index + 1;
+        if (nextIndex < 0 || nextIndex >= draft.length) return;
+        const nextDraft = [...draft];
+        const temp = nextDraft[index];
+        nextDraft[index] = nextDraft[nextIndex];
+        nextDraft[nextIndex] = temp;
+
+        const sequenced = nextDraft.map((day, i) => ({
+            ...day,
+            dayNumber: i + 1,
+        }));
+        setDraft(sequenced);
+        if (selectedDayIndex === index) {
+            setSelectedDayIndex(nextIndex);
+        } else if (selectedDayIndex === nextIndex) {
+            setSelectedDayIndex(index);
+        }
+    };
+
+    const duplicateDay = (index: number) => {
+        const dayToClone = draft[index];
+        const newDayId = makeId("day");
+        const clonedExercises = dayToClone.exercises.map((ex, exIdx) => {
+            const newExId = makeId(`${newDayId}-exercise-${exIdx}`);
+            return {
+                ...ex,
+                id: newExId,
+                sets: ex.sets.map((set, setIdx) => ({
+                    ...set,
+                    id: makeId(`${newExId}-set-${setIdx}`),
+                })),
+            };
+        });
+        const newDay = {
+            ...dayToClone,
+            id: newDayId,
+            title: `${dayToClone.title} (Copy)`,
+            exercises: clonedExercises,
+        };
+        const nextDraft = [...draft];
+        nextDraft.splice(index + 1, 0, newDay);
+        const sequenced = nextDraft.map((day, i) => ({
+            ...day,
+            dayNumber: i + 1,
+        }));
+        setDraft(sequenced);
+        setSelectedDayIndex(index + 1);
+    };
+
+    const deleteDay = (index: number) => {
+        if (draft.length <= 1) return;
+        const nextDraft = draft.filter((_, i) => i !== index);
+        const sequenced = nextDraft.map((day, i) => ({
+            ...day,
+            dayNumber: i + 1,
+        }));
+        setDraft(sequenced);
+        setSelectedDayIndex(Math.min(selectedDayIndex, sequenced.length - 1));
+    };
+
+    const addDay = () => {
+        const newDayId = makeId("day");
+        const newDay = {
+            id: newDayId,
+            dayNumber: draft.length + 1,
+            title: `Day ${draft.length + 1}`,
+            name: "New Day",
+            exercises: [
+                {
+                    id: makeId(`${newDayId}-exercise`),
+                    name: "Bench Press",
+                    type: "strength" as const,
+                    sets: [createTemplateSet(makeId("set"), "8-12")],
+                }
+            ]
+        };
+        setDraft([...draft, newDay]);
+        setSelectedDayIndex(draft.length);
+    };
 
     const activeDay = draft[selectedDayIndex];
     const exerciseLibraryOptions = useMemo(
@@ -198,6 +280,23 @@ export default function WorkoutEditorModal({
                 exercises: sanitizeExerciseLinks(
                     day.exercises.filter((exercise) => exercise.id !== exerciseId)
                 ),
+            };
+        });
+    };
+
+    const moveExercise = (index: number, direction: "up" | "down") => {
+        updateDay((day) => {
+            const nextExercises = [...day.exercises];
+            const targetIndex = direction === "up" ? index - 1 : index + 1;
+            if (targetIndex < 0 || targetIndex >= nextExercises.length) return day;
+
+            const temp = nextExercises[index];
+            nextExercises[index] = nextExercises[targetIndex];
+            nextExercises[targetIndex] = temp;
+
+            return {
+                ...day,
+                exercises: sanitizeExerciseLinks(nextExercises),
             };
         });
     };
@@ -337,9 +436,18 @@ export default function WorkoutEditorModal({
 
                 <div className="p-5 flex flex-col gap-5 overflow-y-auto max-h-[78vh] overscroll-contain">
                     <div>
-                        <p className="text-[10px] text-neutral-500 font-black uppercase tracking-widest mb-3">
-                            Days
-                        </p>
+                        <div className="flex items-center justify-between gap-4 mb-3">
+                            <p className="text-[10px] text-neutral-500 font-black uppercase tracking-widest">
+                                Days
+                            </p>
+                            <button
+                                type="button"
+                                onClick={() => setShowManageDays(true)}
+                                className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/8 text-neutral-300 text-[10px] font-black uppercase tracking-widest hover:bg-white/8 transition-all"
+                            >
+                                Manage Days
+                            </button>
+                        </div>
                         <div className="flex gap-2 overflow-x-auto scrollbar-none">
                             {draft.map((day, index) => (
                                 <button
@@ -582,20 +690,50 @@ export default function WorkoutEditorModal({
                                                     </div>
                                                 </div>
 
-                                                <button
-                                                    type="button"
-                                                    onClick={() => removeExercise(exercise.id)}
-                                                    disabled={activeDay.exercises.length === 1}
-                                                    className={cn(
-                                                        "w-9 h-9 rounded-xl border flex items-center justify-center transition-all",
-                                                        activeDay.exercises.length === 1
-                                                            ? "bg-white/4 border-white/6 text-neutral-700 cursor-not-allowed"
-                                                            : "bg-red-400/8 border-red-400/20 text-red-400 hover:bg-red-400/14"
-                                                    )}
-                                                    aria-label={`Remove ${exercise.name}`}
-                                                >
-                                                    <Trash2 size={14} />
-                                                </button>
+                                                <div className="flex items-center gap-1.5">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => moveExercise(exerciseIndex, "up")}
+                                                        disabled={exerciseIndex === 0}
+                                                        className={cn(
+                                                            "w-9 h-9 rounded-xl border flex items-center justify-center transition-all",
+                                                            exerciseIndex === 0
+                                                                ? "bg-white/2 border-white/4 text-neutral-800 cursor-not-allowed"
+                                                                : "bg-white/5 border-white/8 text-neutral-400 hover:text-white hover:bg-white/10"
+                                                        )}
+                                                        aria-label="Move Up"
+                                                    >
+                                                        <ChevronUp size={14} />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => moveExercise(exerciseIndex, "down")}
+                                                        disabled={exerciseIndex === activeDay.exercises.length - 1}
+                                                        className={cn(
+                                                            "w-9 h-9 rounded-xl border flex items-center justify-center transition-all",
+                                                            exerciseIndex === activeDay.exercises.length - 1
+                                                                ? "bg-white/2 border-white/4 text-neutral-800 cursor-not-allowed"
+                                                                : "bg-white/5 border-white/8 text-neutral-400 hover:text-white hover:bg-white/10"
+                                                        )}
+                                                        aria-label="Move Down"
+                                                    >
+                                                        <ChevronDown size={14} />
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeExercise(exercise.id)}
+                                                        disabled={activeDay.exercises.length === 1}
+                                                        className={cn(
+                                                            "w-9 h-9 rounded-xl border flex items-center justify-center transition-all",
+                                                            activeDay.exercises.length === 1
+                                                                ? "bg-white/4 border-white/6 text-neutral-700 cursor-not-allowed"
+                                                                : "bg-red-400/8 border-red-400/20 text-red-400 hover:bg-red-400/14"
+                                                        )}
+                                                        aria-label={`Remove ${exercise.name}`}
+                                                    >
+                                                        <Trash2 size={14} />
+                                                    </button>
+                                                </div>
                                             </div>
 
                                             <div className="grid grid-cols-1 md:grid-cols-[1.2fr_180px] gap-3">
@@ -948,6 +1086,90 @@ export default function WorkoutEditorModal({
                     </div>
                 </div>
             </div>
+            {showManageDays && (
+                <div
+                    className="fixed inset-0 z-90 flex items-center justify-center p-4"
+                    onClick={() => setShowManageDays(false)}
+                >
+                    <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
+                    <div
+                        className="relative z-10 w-full max-w-md bg-[#111111] border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="border-b border-white/6 p-4 flex items-center justify-between">
+                            <h3 className="text-sm font-black text-white uppercase tracking-wider">
+                                Manage Days
+                            </h3>
+                            <button
+                                type="button"
+                                onClick={() => setShowManageDays(false)}
+                                className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-neutral-400 hover:text-white"
+                            >
+                                <X size={14} />
+                            </button>
+                        </div>
+                        <div className="p-4 overflow-y-auto flex-1 flex flex-col gap-2.5">
+                            {draft.map((day, index) => (
+                                <div
+                                    key={day.id}
+                                    className="flex items-center justify-between gap-3 bg-white/3 border border-white/6 rounded-xl p-3"
+                                >
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-xs font-black text-white">
+                                            Day {day.dayNumber}: {day.name || "Focus"}
+                                        </p>
+                                        <p className="text-[10px] text-neutral-500 truncate mt-0.5">
+                                            {day.title} · {day.exercises.length} exercises
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center gap-1 shrink-0">
+                                        <button
+                                            type="button"
+                                            onClick={() => moveDay(index, "up")}
+                                            disabled={index === 0}
+                                            className="w-8 h-8 rounded-lg bg-white/5 border border-white/8 text-neutral-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+                                        >
+                                            <ChevronUp size={14} />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => moveDay(index, "down")}
+                                            disabled={index === draft.length - 1}
+                                            className="w-8 h-8 rounded-lg bg-white/5 border border-white/8 text-neutral-400 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+                                        >
+                                            <ChevronDown size={14} />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => duplicateDay(index)}
+                                            className="w-8 h-8 rounded-lg bg-lime-400/10 border border-lime-400/20 text-lime-400 hover:bg-lime-400/20 flex items-center justify-center"
+                                            title="Duplicate Day"
+                                        >
+                                            <Plus size={14} />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => deleteDay(index)}
+                                            disabled={draft.length <= 1}
+                                            className="w-8 h-8 rounded-lg bg-red-400/10 border border-red-400/20 text-red-400 hover:bg-red-400/20 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+                                            title="Delete Day"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                            <button
+                                type="button"
+                                onClick={addDay}
+                                className="w-full py-3 rounded-xl border border-dashed border-white/10 hover:border-lime-400/30 text-[11px] font-black uppercase tracking-widest text-neutral-400 hover:text-lime-400 transition-all flex items-center justify-center gap-1.5 mt-2"
+                            >
+                                <Plus size={14} /> Add New Day
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

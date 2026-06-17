@@ -1,19 +1,19 @@
 'use client';
 
 import type React from 'react';
-import { Dumbbell, BookOpen, BarChart3, UserCircle2, HeartPulse, Trophy } from 'lucide-react';
+import { Home, Dumbbell, BookOpen, BarChart3, UserCircle2, HeartPulse } from 'lucide-react';
 import { cn } from '../utils';
 
 import { useAppStore } from '../store/appStore';
 
-export type TabId = 'workout' | 'stretching' | 'wiki' | 'charts' | 'records' | 'profile';
+export type TabId = 'dashboard' | 'workout' | 'stretching' | 'wiki' | 'charts' | 'profile';
 
 const TABS: Array<{ id: TabId; label: string; icon: React.ElementType }> = [
+    { id: 'dashboard', label: 'Home', icon: Home },
     { id: 'workout', label: 'Tracker', icon: Dumbbell },
     { id: 'stretching', label: 'Recovery', icon: HeartPulse },
     { id: 'wiki', label: 'Wiki', icon: BookOpen },
     { id: 'charts', label: 'Progress', icon: BarChart3 },
-    { id: 'records', label: 'Records', icon: Trophy },
     { id: 'profile', label: 'Profile', icon: UserCircle2 },
 ];
 

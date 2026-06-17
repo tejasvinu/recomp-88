@@ -29,7 +29,7 @@ import type {
   ExerciseWiki,
   WorkoutSession,
 } from "./types";
-import { getClosestBodyWeight, resolveWeight, toLocalDateKey } from "./utils";
+import { cn, getClosestBodyWeight, resolveWeight, toLocalDateKey } from "./utils";
 import {
   findWikiEntry,
   isFreeWeightFriendly,
@@ -45,6 +45,7 @@ import {
 // ─── New sub-components ────────────────────────────────────────────────────
 import AppHeader from "./components/AppHeader";
 import BottomNav from "./components/BottomNav";
+import DashboardTab from "./components/DashboardTab";
 
 // ─── Existing components ──────────────────────────────────────────────────
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -200,6 +201,7 @@ function AppMain() {
   const [showAddPastSession, setShowAddPastSession] = useState(false);
   const [showPlateCalc, setShowPlateCalc] = useState(false);
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
+  const [progressSubView, setProgressSubView] = useState<"charts" | "records">("charts");
 
   // ─── Computed ─────────────────────────────────────────────────────────
   const progressPercent = useMemo(() => {
@@ -944,6 +946,10 @@ function AppMain() {
         {/* ══ Content ══════════════════════════════════════════════════════ */}
         <main className="flex-1 p-4">
           <ErrorBoundary>
+            <div className={activeTab === "dashboard" ? "block" : "hidden"}>
+              <DashboardTab onStartStretching={handleStartStretching} />
+            </div>
+
             <div className={activeTab === "workout" ? "block" : "hidden"}>
               <WorkoutTab
                 activeDay={activeDay}
@@ -985,30 +991,57 @@ function AppMain() {
             </div>
 
             <div className={activeTab === "charts" ? "block" : "hidden"}>
-              <Suspense fallback={<Spinner />}>
-                <ChartsView
-                  workoutTemplate={safeWorkoutTemplate}
-                  progress={progress}
-                  sessions={sessions}
-                  customExercises={customExercises}
-                  onOpenExercise={openExerciseInfo}
-                  onDeleteSession={deleteSession}
-                  bodyWeightEntries={bodyWeightEntries}
-                  onLogBodyWeight={logBodyWeight}
-                  weightUnit={weightUnit}
-                />
-              </Suspense>
-            </div>
+              <div className="flex bg-white/4 rounded-xl p-1 border border-white/7 mb-4 gap-1">
+                <button
+                  type="button"
+                  onClick={() => setProgressSubView("charts")}
+                  className={cn(
+                    "flex-1 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all",
+                    progressSubView === "charts"
+                      ? "bg-lime-400 text-neutral-950"
+                      : "text-neutral-500 hover:text-neutral-300"
+                  )}
+                >
+                  Progression
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setProgressSubView("records")}
+                  className={cn(
+                    "flex-1 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all",
+                    progressSubView === "records"
+                      ? "bg-lime-400 text-neutral-950"
+                      : "text-neutral-500 hover:text-neutral-300"
+                  )}
+                >
+                  Personal Records
+                </button>
+              </div>
 
-            <div className={activeTab === "records" ? "block" : "hidden"}>
-              <Suspense fallback={<Spinner />}>
-                <ExerciseRecordsView
-                  sessions={sessions}
-                  bodyWeightEntries={bodyWeightEntries}
-                  weightUnit={weightUnit}
-                  onOpenExercise={openExerciseInfo}
-                />
-              </Suspense>
+              {progressSubView === "charts" ? (
+                <Suspense fallback={<Spinner />}>
+                  <ChartsView
+                    workoutTemplate={safeWorkoutTemplate}
+                    progress={progress}
+                    sessions={sessions}
+                    customExercises={customExercises}
+                    onOpenExercise={openExerciseInfo}
+                    onDeleteSession={deleteSession}
+                    bodyWeightEntries={bodyWeightEntries}
+                    onLogBodyWeight={logBodyWeight}
+                    weightUnit={weightUnit}
+                  />
+                </Suspense>
+              ) : (
+                <Suspense fallback={<Spinner />}>
+                  <ExerciseRecordsView
+                    sessions={sessions}
+                    bodyWeightEntries={bodyWeightEntries}
+                    weightUnit={weightUnit}
+                    onOpenExercise={openExerciseInfo}
+                  />
+                </Suspense>
+              )}
             </div>
 
             <div className={activeTab === "profile" ? "block" : "hidden"}>
