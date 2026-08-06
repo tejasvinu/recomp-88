@@ -54,6 +54,7 @@ import RecoveryTab from "./components/RecoveryTab";
 import RestTimerToast from "./components/RestTimerToast";
 import DayCompleteOverlay from "./components/DayCompleteOverlay";
 import GlobalModals from "./components/GlobalModals";
+import JustShowUpModal from "./components/JustShowUpModal";
 import ToastContainer from "./components/ui/ToastContainer";
 import InstallPrompt from "./components/InstallPrompt";
 
@@ -178,6 +179,7 @@ function AppMain() {
     getSyncBase,
     syncStatus,
     lastSyncedAt,
+    switchedAccount,
   } = useCloudSync();
 
   const cloudBootstrapped = useRef(false);
@@ -201,6 +203,7 @@ function AppMain() {
   const [showAddPastSession, setShowAddPastSession] = useState(false);
   const [showPlateCalc, setShowPlateCalc] = useState(false);
   const [showFinishConfirm, setShowFinishConfirm] = useState(false);
+  const [showJustShowUp, setShowJustShowUp] = useState(false);
   const [progressSubView, setProgressSubView] = useState<"charts" | "records">("charts");
 
   // ─── Computed ─────────────────────────────────────────────────────────
@@ -303,75 +306,90 @@ function AppMain() {
     [applySnapshot]
   );
 
-  const pullAndMergeCloudData = useCallback(async (silent = true) => {
-    if (!isLoggedIn) return null;
-    const syncBase = getSyncBase();
-    try {
-      const data = await fetchCloudData();
-      if (!data) return null;
+  const pullAndMergeCloudData = useCallback(
+    async (silent = true, options?: { clean?: boolean }) => {
+      if (!isLoggedIn) return null;
+      const clean = options?.clean === true;
+      const syncBase = getSyncBase();
+      try {
+        const data = await fetchCloudData();
+        if (!data) return null;
 
-      const localSnapshot = currentSnapshotRef.current;
-      const preferCloudOnConflict = hasRemoteChangesSinceBase(syncBase, data.lastSyncedAt);
-      const mergeSummary = data.lastSyncedAt != null
-        ? preferCloudOnConflict
-          ? "Overlapping data was merged using the server copy (the cloud had newer changes than your last sync on this device)."
-          : "Overlapping data was merged using this device's copy (your changes were newer than the last cloud update)."
-        : null;
+        const localSnapshot = currentSnapshotRef.current;
+        const preferCloudOnConflict = hasRemoteChangesSinceBase(syncBase, data.lastSyncedAt);
+        const mergeSummary = data.lastSyncedAt != null
+          ? preferCloudOnConflict
+            ? "Overlapping data was merged using the server copy (the cloud had newer changes than your last sync on this device)."
+            : "Overlapping data was merged using this device's copy (your changes were newer than the last cloud update)."
+          : null;
 
-      const remoteWorkoutTemplate = normalizeWorkoutTemplate(data.workoutTemplate);
-      const nextWorkoutTemplate =
-        remoteWorkoutTemplate && (preferCloudOnConflict || !syncBase)
-          ? remoteWorkoutTemplate
-          : localSnapshot.workoutTemplate;
+        const remoteWorkoutTemplate = normalizeWorkoutTemplate(data.workoutTemplate);
+        const cloudWorkoutTemplate = remoteWorkoutTemplate ?? localSnapshot.workoutTemplate;
+        const cloudSnapshot: AppDataSnapshot = {
+          workoutTemplate: cloudWorkoutTemplate,
+          progress: pruneProgressForWorkoutTemplate(data.progress ?? {}, cloudWorkoutTemplate),
+          sessions: data.sessions ?? [],
+          bodyWeightEntries: data.bodyWeightEntries ?? [],
+          exerciseNotes: pruneExerciseNotesForWorkoutTemplate(data.exerciseNotes ?? {}, cloudWorkoutTemplate),
+          settings: resolveSnapshotSettings(data.settings ?? {}, localSnapshot.settings),
+          customExercises: data.customExercises ?? [],
+        };
 
-      const mergedSnapshot: AppDataSnapshot = {
-        workoutTemplate: nextWorkoutTemplate,
-        progress: pruneProgressForWorkoutTemplate(
-          mergeWorkoutProgressWithPreference(localSnapshot.progress, data.progress ?? {}, preferCloudOnConflict),
-          nextWorkoutTemplate
-        ),
-        sessions: mergeSessionHistory(localSnapshot.sessions, data.sessions ?? [], preferCloudOnConflict),
-        bodyWeightEntries: mergeBodyWeightEntries(localSnapshot.bodyWeightEntries, data.bodyWeightEntries ?? [], preferCloudOnConflict),
-        exerciseNotes: pruneExerciseNotesForWorkoutTemplate(
-          mergeExerciseNotes(localSnapshot.exerciseNotes, data.exerciseNotes ?? {}, preferCloudOnConflict),
-          nextWorkoutTemplate
-        ),
-        settings: resolveSnapshotSettings(
-          mergeSettings(localSnapshot.settings, data.settings ?? {}, preferCloudOnConflict),
-          localSnapshot.settings
-        ),
-        customExercises: mergeById(localSnapshot.customExercises, data.customExercises ?? [], preferCloudOnConflict),
-      };
+        // Account switch (shared device): this device has data from a different
+        // account. Do NOT merge it into the newly signed-in account — take the
+        // cloud as authoritative so one user's local data never leaks into
+        // another user's account.
+        if (clean) {
+          cancelScheduledPush();
+          applyCloudSnapshot(cloudSnapshot);
+          if (!silent) showToast("Cloud data loaded for this account");
+          return { mergedSnapshot: cloudSnapshot, mergeSummary: null };
+        }
 
-      const cloudWorkoutTemplate = remoteWorkoutTemplate ?? localSnapshot.workoutTemplate;
-      const cloudSnapshot: AppDataSnapshot = {
-        workoutTemplate: cloudWorkoutTemplate,
-        progress: pruneProgressForWorkoutTemplate(data.progress ?? {}, cloudWorkoutTemplate),
-        sessions: data.sessions ?? [],
-        bodyWeightEntries: data.bodyWeightEntries ?? [],
-        exerciseNotes: pruneExerciseNotesForWorkoutTemplate(data.exerciseNotes ?? {}, cloudWorkoutTemplate),
-        settings: resolveSnapshotSettings(data.settings ?? {}, localSnapshot.settings),
-        customExercises: data.customExercises ?? [],
-      };
+        const nextWorkoutTemplate =
+          remoteWorkoutTemplate && (preferCloudOnConflict || !syncBase)
+            ? remoteWorkoutTemplate
+            : localSnapshot.workoutTemplate;
 
-      cancelScheduledPush();
-      applyCloudSnapshot(mergedSnapshot);
+        const mergedSnapshot: AppDataSnapshot = {
+          workoutTemplate: nextWorkoutTemplate,
+          progress: pruneProgressForWorkoutTemplate(
+            mergeWorkoutProgressWithPreference(localSnapshot.progress, data.progress ?? {}, preferCloudOnConflict),
+            nextWorkoutTemplate
+          ),
+          sessions: mergeSessionHistory(localSnapshot.sessions, data.sessions ?? [], preferCloudOnConflict),
+          bodyWeightEntries: mergeBodyWeightEntries(localSnapshot.bodyWeightEntries, data.bodyWeightEntries ?? [], preferCloudOnConflict),
+          exerciseNotes: pruneExerciseNotesForWorkoutTemplate(
+            mergeExerciseNotes(localSnapshot.exerciseNotes, data.exerciseNotes ?? {}, preferCloudOnConflict),
+            nextWorkoutTemplate
+          ),
+          settings: resolveSnapshotSettings(
+            mergeSettings(localSnapshot.settings, data.settings ?? {}, preferCloudOnConflict),
+            localSnapshot.settings
+          ),
+          customExercises: mergeById(localSnapshot.customExercises, data.customExercises ?? [], preferCloudOnConflict),
+        };
 
-      const needsUpload = stableStringify(mergedSnapshot) !== stableStringify(cloudSnapshot);
-      if (needsUpload) {
-        const pushed = await pushToCloud(mergedSnapshot);
-        if (!silent) showToast(pushed ? "Cloud sync complete" : "Cloud sync failed", pushed ? undefined : "error");
-      } else if (!silent) {
-        showToast("Cloud merge complete");
+        cancelScheduledPush();
+        applyCloudSnapshot(mergedSnapshot);
+
+        const needsUpload = stableStringify(mergedSnapshot) !== stableStringify(cloudSnapshot);
+        if (needsUpload) {
+          const pushed = await pushToCloud(mergedSnapshot);
+          if (!silent) showToast(pushed ? "Cloud sync complete" : "Cloud sync failed", pushed ? undefined : "error");
+        } else if (!silent) {
+          showToast("Cloud merge complete");
+        }
+
+        if (mergeSummary) setLastMergeSummary(mergeSummary);
+        return { mergedSnapshot, mergeSummary };
+      } catch {
+        if (!silent) showToast("Cloud sync failed", "error");
+        return null;
       }
-
-      if (mergeSummary) setLastMergeSummary(mergeSummary);
-      return { mergedSnapshot, mergeSummary };
-    } catch {
-      if (!silent) showToast("Cloud sync failed", "error");
-      return null;
-    }
-  }, [applyCloudSnapshot, cancelScheduledPush, fetchCloudData, getSyncBase, isLoggedIn, pushToCloud, resolveSnapshotSettings, showToast]);
+    },
+    [applyCloudSnapshot, cancelScheduledPush, fetchCloudData, getSyncBase, isLoggedIn, pushToCloud, resolveSnapshotSettings, showToast]
+  );
 
   // Bootstrap cloud data on login
   useEffect(() => {
@@ -379,9 +397,9 @@ function AppMain() {
     if (cloudBootstrapped.current) return;
     cloudBootstrapped.current = true;
     let cancelled = false;
-    pullAndMergeCloudData(true).finally(() => { if (!cancelled) setCanPushCloud(true); });
+    pullAndMergeCloudData(true, { clean: switchedAccount }).finally(() => { if (!cancelled) setCanPushCloud(true); });
     return () => { cancelled = true; };
-  }, [isLoggedIn, pullAndMergeCloudData]);
+  }, [isLoggedIn, pullAndMergeCloudData, switchedAccount]);
 
   // Auto-push on data change
   useEffect(() => {
@@ -744,6 +762,14 @@ function AppMain() {
     setShowAddPastSession(false);
   }, [setSessions, showToast]);
 
+  // "Just Show Up" — record a lightweight, low-pressure session. It counts toward
+  // the streak/consistency but stays out of per-day PRs & last-session presets.
+  const handleCompleteJustShowUp = useCallback((session: WorkoutSession) => {
+    setSessions((prev) => [...prev, session]);
+    setShowJustShowUp(false);
+    showToast("Showed up — counted it! 💪", "success");
+  }, [setSessions, showToast]);
+
   const logBodyWeight = useCallback((weight: number) => {
     const today = toLocalDateKey();
     setBodyWeightEntries((prev) => {
@@ -947,7 +973,7 @@ function AppMain() {
         <main className="flex-1 p-4">
           <ErrorBoundary>
             <div className={activeTab === "dashboard" ? "block" : "hidden"}>
-              <DashboardTab onStartStretching={handleStartStretching} />
+              <DashboardTab onStartStretching={handleStartStretching} onOpenJustShowUp={() => setShowJustShowUp(true)} />
             </div>
 
             <div className={activeTab === "workout" ? "block" : "hidden"}>
@@ -974,6 +1000,7 @@ function AppMain() {
                 onShowFinishConfirm={() => setShowFinishConfirm(true)}
                 onClearCheckmarks={clearCheckmarks}
                 onStartStretching={handleStartStretching}
+                onOpenJustShowUp={() => setShowJustShowUp(true)}
               />
             </div>
 
@@ -1110,6 +1137,15 @@ function AppMain() {
         onCloseExerciseDetail={() => setModalEntry(null)}
         onClosePlateCalc={() => setShowPlateCalc(false)}
       />
+
+      {showJustShowUp && (
+        <JustShowUpModal
+          dayName={activeDay?.name ?? ""}
+          exercises={activeDay?.exercises ?? []}
+          onComplete={handleCompleteJustShowUp}
+          onClose={() => setShowJustShowUp(false)}
+        />
+      )}
     </div>
   );
 }

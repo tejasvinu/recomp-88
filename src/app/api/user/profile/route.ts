@@ -32,8 +32,24 @@ export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
     const allowed: Record<string, unknown> = {};
-    if (typeof body.name === "string" && body.name.trim()) allowed.name = body.name.trim();
-    if (typeof body.image === "string") allowed.image = body.image;
+    if (typeof body.name === "string" && body.name.trim()) {
+      const name = body.name.trim();
+      if (name.length > 80) {
+        return NextResponse.json({ error: "Name is too long" }, { status: 400 });
+      }
+      allowed.name = name;
+    }
+    if (typeof body.image === "string") {
+      const image = body.image.trim();
+      // Allow clearing the avatar (empty string) or a sensible https image URL.
+      if (image !== "" && !/^https:\/\/[^\s]+$/i.test(image)) {
+        return NextResponse.json({ error: "Image must be a valid https URL" }, { status: 400 });
+      }
+      if (image.length > 1000) {
+        return NextResponse.json({ error: "Image URL is too long" }, { status: 400 });
+      }
+      allowed.image = image;
+    }
     if (body.weightUnit === "kg" || body.weightUnit === "lbs") allowed.weightUnit = body.weightUnit;
 
     if (Object.keys(allowed).length === 0) {

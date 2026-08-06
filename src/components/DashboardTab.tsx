@@ -34,9 +34,10 @@ const cardVariants: Variants = {
 
 interface DashboardTabProps {
     onStartStretching?: (programId: string) => void;
+    onOpenJustShowUp?: () => void;
 }
 
-export default function DashboardTab({ onStartStretching }: DashboardTabProps) {
+export default function DashboardTab({ onStartStretching, onOpenJustShowUp }: DashboardTabProps) {
     const progress = useAppStore((s) => s.progress);
     const sessions = useAppStore((s) => s.sessions);
     const bodyWeightEntries = useAppStore((s) => s.bodyWeightEntries);
@@ -227,6 +228,29 @@ export default function DashboardTab({ onStartStretching }: DashboardTabProps) {
                     <span>This Week</span>
                 </div>
             </motion.div>
+
+            {/* 2.5 Just Show Up CTA — a low-barrier way back when the routine feels heavy */}
+            <motion.button
+                variants={cardVariants}
+                onClick={onOpenJustShowUp}
+                className="group text-left bg-neutral-900/50 border border-lime-400/20 rounded-2xl p-4 shadow-lg relative overflow-hidden active:scale-[0.99] transition-transform cursor-pointer"
+            >
+                <div className="absolute top-0 right-0 w-28 h-28 bg-lime-400/10 rounded-full blur-[36px] pointer-events-none" />
+                <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 bg-lime-400/12 border border-lime-400/25 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                        <Play size={20} className="text-lime-400 fill-lime-400/25" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-black text-white tracking-wide leading-snug">
+                            Just Show Up
+                        </p>
+                        <p className="text-[10px] text-neutral-500 mt-0.5 leading-relaxed">
+                            A 15-minute, no-pressure session. It still counts toward your streak.
+                        </p>
+                    </div>
+                    <ArrowRight size={16} className="text-lime-400 shrink-0 group-hover:translate-x-0.5 transition-transform" />
+                </div>
+            </motion.button>
 
             {/* 3. Next Up Card */}
             {activeDay && (

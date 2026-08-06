@@ -3,7 +3,25 @@ import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import bcrypt from "bcryptjs";
 import { connectDB } from "@/lib/mongodb";
+import { getClientIp, signInLimiter } from "@/lib/rateLimit";
 import User from "@/models/User";
+
+// ─── AUTH_SECRET hardening ───────────────────────────────────────────────
+// Fail fast so a weak/predictable JWT secret is never accepted in production.
+const isBuildPhase = process.env.NEXT_PHASE === "phase-production-build";
+if (!process.env.AUTH_SECRET) {
+  throw new Error("AUTH_SECRET is required. Add it to your environment variables.");
+}
+const trimmedSecret = process.env.AUTH_SECRET.trim();
+const weakSecret =
+  trimmedSecret.length < 16 ||
+  /^(replace-me|changeme|your-secret|example|secret|s3cret)$/i.test(trimmedSecret) ||
+  /^(replace-me-|changeme-|your-secret-|example-)/i.test(trimmedSecret);
+if (weakSecret && process.env.NODE_ENV === "production" && !isBuildPhase) {
+  throw new Error(
+    "AUTH_SECRET is too weak or a placeholder. Generate a strong one with: openssl rand -base64 32"
+  );
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: process.env.AUTH_SECRET,
@@ -26,8 +44,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, request) {
         if (!credentials?.email || !credentials?.password) return null;
+
+        // Rate-limit credential attempts per (IP + email) to blunt brute force.
+        const headers =
+          request && typeof request === "object" && "headers" in request
+            ? (request.headers as Headers | undefined)
+            : undefined;
+        const key = `${getClientIp(headers)}:${(
+          credentials.email as string
+        ).toLowerCase()}`;
+        if (!signInLimiter.isAllowed(key)) return null;
+
         try {
           const db = await connectDB();
           if (!db) return null;
@@ -54,15 +83,30 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const db = await connectDB();
           if (!db) return false; // Prevent sign-in to avoid orphaned tokens and future CastErrors
           const existing = await User.findOne({ email: user.email!.toLowerCase() });
-          if (!existing) {
+          if (existing) {
+            // Security: never silently bind a Google identity onto an existing
+            // account that was created with credentials unless that account has
+            // already opted into Google. This prevents cross-provider account
+            // merging without the owner's consent.
+            const providers = existing.providers ?? [];
+            const linkedGoogle = providers.includes("google");
+            const credentialsOnly =
+              !!existing.password && providers.length === 0;
+            if (credentialsOnly && !linkedGoogle) return false;
+
+            if (!linkedGoogle) {
+              providers.push("google");
+              existing.providers = providers;
+            }
+            if (user.image && !existing.image) existing.image = user.image;
+            await existing.save();
+          } else {
             await User.create({
               name: user.name ?? "User",
               email: user.email!.toLowerCase(),
               image: user.image ?? undefined,
+              providers: ["google"],
             });
-          } else if (user.image && !existing.image) {
-            existing.image = user.image;
-            await existing.save();
           }
         } catch {
           return false;

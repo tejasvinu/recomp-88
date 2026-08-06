@@ -76,6 +76,16 @@ export function useCloudSync() {
 
   const isLoggedIn = !!session?.user;
 
+  // Detect whether this device had previously synced with a *different* account.
+  // When true, we must NOT auto-merge this device's local data into the newly
+  // signed-in account (privacy: prevents leaking one user's local data into
+  // another account on a shared device).
+  const persistedAccountId = useMemo(() => {
+    const metadata = readLocalStorageValue<unknown>(CLOUD_SYNC_METADATA_KEY, null);
+    return isPersistedCloudSyncMetadata(metadata) ? metadata.accountId : null;
+  }, []);
+  const switchedAccount = persistedAccountId !== null && persistedAccountId !== accountId;
+
   useEffect(() => {
     lastSyncedAtRef.current = lastSyncedAt;
   }, [lastSyncedAt]);
@@ -229,5 +239,6 @@ export function useCloudSync() {
     getSyncBase,
     syncStatus,
     lastSyncedAt,
+    switchedAccount,
   };
 }

@@ -7,6 +7,7 @@ export interface IUser extends Document {
   password?: string; // hashed, optional for OAuth users
   image?: string;
   weightUnit: "kg" | "lbs";
+  providers: string[]; // e.g. ["credentials"], ["google"], ["credentials","google"]
   createdAt: Date;
   updatedAt: Date;
 }
@@ -18,6 +19,7 @@ const UserSchema = new Schema<IUser>(
     password: { type: String }, // bcrypt hashed - omitted for OAuth users
     image: { type: String },
     weightUnit: { type: String, enum: ["kg", "lbs"], default: "kg" },
+    providers: { type: [String], default: [] },
   },
   { timestamps: true }
 );

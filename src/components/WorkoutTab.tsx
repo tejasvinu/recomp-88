@@ -3,7 +3,7 @@
 import { useMemo, useState, useSyncExternalStore } from "react";
 import type { DayRoutine, ExerciseLinkType, WorkoutProgress } from "../types";
 import { cn } from "../utils";
-import { RotateCcw, Save, Timer } from "lucide-react";
+import { RotateCcw, Save, Timer, Zap } from "lucide-react";
 import ExerciseCard from "./ExerciseCard";
 import { useSwipeNavigation } from "../hooks/useSwipeNavigation";
 
@@ -34,6 +34,7 @@ interface WorkoutTabProps {
     onShowFinishConfirm: () => void;
     onClearCheckmarks: () => void;
     onStartStretching?: (programId: string) => void;
+    onOpenJustShowUp?: () => void;
 }
 
 export default function WorkoutTab({
@@ -59,6 +60,7 @@ export default function WorkoutTab({
     onShowFinishConfirm,
     onClearCheckmarks,
     onStartStretching,
+    onOpenJustShowUp,
 }: WorkoutTabProps) {
     const [expandedNoteId, setExpandedNoteId] = useState<string | null>(null);
     const isMounted = useSyncExternalStore(
@@ -255,6 +257,15 @@ export default function WorkoutTab({
 
             {/* End-of-workout actions */}
             <div className="mt-6 mb-4 space-y-3">
+                {isMounted && (
+                    <button
+                        onClick={onOpenJustShowUp}
+                        className="w-full active:scale-[0.98] flex items-center justify-center gap-2.5 py-4 rounded-2xl font-black text-[13px] tracking-[0.2em] uppercase transition-all border bg-lime-400/10 hover:bg-lime-400/20 border-lime-400/25 text-lime-400 shadow-[0_0_20px_rgba(163,230,53,0.1)]"
+                    >
+                        <Zap size={18} />
+                        Just Show Up — 15 min
+                    </button>
+                )}
                 {isMounted && activeDay.preWorkoutStretchId && (
                     <button
                         onClick={() => onStartStretching?.(activeDay.preWorkoutStretchId!)}

@@ -380,6 +380,14 @@ export const sanitizeCustomExercises = (value: unknown): ExerciseWiki[] =>
         const secondary = toStringArray(muscles.secondary);
         const difficulty = normalizeDifficulty(entryValue.difficulty);
 
+        // Only accept a canonical 11-char YouTube video ID to keep the embed
+        // src pinned to the youtube.com host with a benign path.
+        const rawYoutubeId = toTrimmedString(entryValue.youtubeId);
+        const youtubeId =
+          rawYoutubeId && /^[A-Za-z0-9_-]{11}$/.test(rawYoutubeId)
+            ? rawYoutubeId
+            : undefined;
+
         return [
           {
             id,
@@ -394,7 +402,7 @@ export const sanitizeCustomExercises = (value: unknown): ExerciseWiki[] =>
             commonMistakes: toStringArray(entryValue.commonMistakes),
             alternatives: toStringArray(entryValue.alternatives),
             notes,
-            youtubeId: toTrimmedString(entryValue.youtubeId) ?? undefined,
+            youtubeId,
             equipment: normalizeExerciseEquipment(entryValue.equipment),
             difficulty: difficulty ?? undefined,
             movementPattern: toTrimmedString(entryValue.movementPattern) ?? undefined,
