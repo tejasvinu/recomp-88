@@ -149,7 +149,7 @@ export default function JustShowUpModal({
                             >
                                 Just Show Up
                             </h3>
-                            <p className="text-[11px] text-neutral-500 font-medium mt-0.5">
+                            <p className="text-caption text-neutral-500 font-medium mt-0.5">
                                 15 minutes is enough. It counts.
                             </p>
                         </div>
@@ -165,7 +165,7 @@ export default function JustShowUpModal({
 
                 {/* Scrollable middle */}
                 <div className="flex-1 overflow-y-auto space-y-4 pr-0.5">
-                    <p className="text-[12px] text-neutral-400 leading-relaxed">
+                    <p className="text-small text-neutral-400 leading-relaxed">
                         No PRs. No pressure. Just get in and move for a little while —{" "}
                         <span className="text-accent-400 font-bold">anything counts today.</span>{" "}
                         {dayName && (
@@ -179,7 +179,7 @@ export default function JustShowUpModal({
                     {/* Quick plan */}
                     {plan.length === 0 ? (
                         <div className="rounded-2xl border border-white/8 bg-white/4 p-4">
-                            <p className="text-[12px] text-neutral-300">
+                            <p className="text-small text-neutral-300">
                                 Today&apos;s routine has no sets to trim — so showing up as-is is a
                                 complete win. Skip to the countdown and move anyway!
                             </p>
@@ -191,7 +191,7 @@ export default function JustShowUpModal({
                                     key={ex.id}
                                     className="rounded-2xl border border-white/6 bg-white/3 p-3"
                                 >
-                                    <p className="text-[12px] font-black text-white tracking-wide mb-2">
+                                    <p className="text-small font-black text-white tracking-wide mb-2">
                                         {exIdx + 1}. {ex.name}
                                     </p>
                                     <div className="flex flex-wrap gap-2">
@@ -203,7 +203,7 @@ export default function JustShowUpModal({
                                                     key={s.id}
                                                     onClick={() => toggleSet(ex.id, s.id)}
                                                     className={cn(
-                                                        "flex items-center gap-1.5 px-3 py-2 rounded-xl border text-[12px] font-bold transition-all active:scale-95 min-w-[64px] justify-center",
+                                                        "flex items-center gap-1.5 px-3 py-2 rounded-xl border text-small font-bold transition-all active:scale-95 min-w-[64px] justify-center",
                                                         done
                                                             ? "bg-accent-400/15 border-accent-400/40 text-accent-400"
                                                             : "bg-white/4 border-white/8 text-neutral-400 hover:bg-white/8"
@@ -226,7 +226,7 @@ export default function JustShowUpModal({
                                     </div>
                                 </div>
                             ))}
-                            <p className="text-[10px] text-neutral-600 px-1">
+                            <p className="text-mini text-neutral-600 px-1">
                                 Tick a set when you finish it — or don&apos;t. Showing up is the whole
                                 point.
                             </p>
@@ -254,7 +254,7 @@ export default function JustShowUpModal({
                                 <span className="text-3xl font-mono font-bold text-white tabular-nums leading-none">
                                     {timerStatic}
                                 </span>
-                                <span className="text-[9px] uppercase tracking-widest font-black text-neutral-500 mt-1">
+                                <span className="text-micro uppercase tracking-widest font-black text-neutral-500 mt-1">
                                     window
                                 </span>
                             </div>
@@ -264,7 +264,7 @@ export default function JustShowUpModal({
                             {running ? (
                                 <button
                                     onClick={() => setRunning(false)}
-                                    className="flex-1 py-2.5 rounded-xl border border-white/8 bg-white/5 text-white font-bold text-[12px] hover:bg-white/10 transition-all active:scale-95 flex items-center justify-center gap-1.5"
+                                    className="flex-1 py-2.5 rounded-xl border border-white/8 bg-white/5 text-white font-bold text-small hover:bg-white/10 transition-all active:scale-95 flex items-center justify-center gap-1.5"
                                 >
                                     <Pause size={14} /> Pause
                                 </button>
@@ -273,7 +273,7 @@ export default function JustShowUpModal({
                                     onClick={() =>
                                         setRemaining((prev) => (prev === 0 ? TARGET_SECONDS : prev))
                                     }
-                                    className="flex-1 py-2.5 rounded-xl border border-white/8 bg-white/5 text-white font-bold text-[12px] hover:bg-white/10 transition-all active:scale-95 flex items-center justify-center gap-1.5"
+                                    className="flex-1 py-2.5 rounded-xl border border-white/8 bg-white/5 text-white font-bold text-small hover:bg-white/10 transition-all active:scale-95 flex items-center justify-center gap-1.5"
                                 >
                                     <Play size={14} /> {remaining === TARGET_SECONDS ? "Start" : "Resume"}
                                 </button>
@@ -294,7 +294,7 @@ export default function JustShowUpModal({
                     {/* Progress bar */}
                     {totalSets > 0 && (
                         <div>
-                            <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-1.5">
+                            <div className="flex items-center justify-between text-mini font-black uppercase tracking-widest text-neutral-500 mb-1.5">
                                 <span className="flex items-center gap-1">
                                     <Zap size={11} className="text-accent-400" />
                                     Keep it rolling
@@ -317,19 +317,19 @@ export default function JustShowUpModal({
                 <div className="flex gap-3 mt-4 shrink-0">
                     <button
                         onClick={onClose}
-                        className="flex-1 py-3 rounded-xl border border-white/8 bg-white/4 text-neutral-400 font-bold text-[13px] hover:bg-white/8 hover:text-white transition-all active:scale-95"
+                        className="flex-1 py-3 rounded-xl border border-white/8 bg-white/4 text-neutral-400 font-bold text-body hover:bg-white/8 hover:text-white transition-all active:scale-95"
                     >
                         Not today
                     </button>
                     <button
                         onClick={handleComplete}
-                        className="flex-[2] py-3 rounded-xl border border-accent-400/30 bg-accent-400/15 text-accent-400 font-black text-[13px] hover:bg-accent-400/25 transition-all active:scale-95 flex items-center justify-center gap-2 shadow-[0_0_18px_color-mix(in_oklab,_var(--color-accent-400)_12%,_transparent)]"
+                        className="flex-[2] py-3 rounded-xl border border-accent-400/30 bg-accent-400/15 text-accent-400 font-black text-body hover:bg-accent-400/25 transition-all active:scale-95 flex items-center justify-center gap-2 shadow-[0_0_18px_color-mix(in_oklab,_var(--color-accent-400)_12%,_transparent)]"
                     >
                         <PartyPopper size={15} />
                         Count it — I showed up
                     </button>
                 </div>
-                <p className="text-center text-[9px] text-neutral-700 mt-3 font-medium shrink-0">
+                <p className="text-center text-micro text-neutral-700 mt-3 font-medium shrink-0">
                     Saves a lightweight session that keeps your streak alive without touching your
                     real workout plan.
                 </p>

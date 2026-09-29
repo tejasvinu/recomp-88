@@ -97,7 +97,7 @@ export default function InstallPrompt() {
 
                     <button
                         onClick={handleInstallClick}
-                        className="px-3 py-1.5 h-8 bg-accent-400 text-neutral-950 font-bold text-[11px] uppercase tracking-wider rounded-lg hover:bg-accent-300 active:scale-95 transition-all shadow-[0_0_15px_color-mix(in_oklab,_var(--color-accent-400)_30%,_transparent)]"
+                        className="px-3 py-1.5 h-8 bg-accent-400 text-neutral-950 font-bold text-caption uppercase tracking-wider rounded-lg hover:bg-accent-300 active:scale-95 transition-all shadow-[0_0_15px_color-mix(in_oklab,_var(--color-accent-400)_30%,_transparent)]"
                     >
                         Install
                     </button>

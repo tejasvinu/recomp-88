@@ -408,7 +408,7 @@ export default function WorkoutEditorModal({
                     <div className="w-10 h-1 bg-white/12 rounded-full mx-auto mb-4 sm:hidden" />
                     <div className="flex items-start justify-between gap-4">
                         <div>
-                            <p className="text-[10px] text-accent-400 font-black uppercase tracking-[0.2em] mb-2">
+                            <p className="text-mini text-accent-400 font-black uppercase tracking-[0.2em] mb-2">
                                 Configurable Program
                             </p>
                             <h2
@@ -417,7 +417,7 @@ export default function WorkoutEditorModal({
                             >
                                 Edit Workout Template
                             </h2>
-                            <p className="text-[11px] text-neutral-500 font-medium mt-1.5 max-w-lg">
+                            <p className="text-caption text-neutral-500 font-medium mt-1.5 max-w-lg">
                                 Update the shipped routine, keep your custom version in sync, and
                                 reset back to the default plan any time from settings.
                             </p>
@@ -437,13 +437,13 @@ export default function WorkoutEditorModal({
                 <div className="p-5 flex flex-col gap-5 overflow-y-auto max-h-[78vh] overscroll-contain">
                     <div>
                         <div className="flex items-center justify-between gap-4 mb-3">
-                            <p className="text-[10px] text-neutral-500 font-black uppercase tracking-widest">
+                            <p className="text-mini text-neutral-500 font-black uppercase tracking-widest">
                                 Days
                             </p>
                             <button
                                 type="button"
                                 onClick={() => setShowManageDays(true)}
-                                className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/8 text-neutral-300 text-[10px] font-black uppercase tracking-widest hover:bg-white/8 transition-all"
+                                className="px-3 py-1.5 rounded-lg bg-white/5 border border-white/8 text-neutral-300 text-mini font-black uppercase tracking-widest hover:bg-white/8 transition-all"
                             >
                                 Manage Days
                             </button>
@@ -455,7 +455,7 @@ export default function WorkoutEditorModal({
                                     type="button"
                                     onClick={() => setSelectedDayIndex(index)}
                                     className={cn(
-                                        "shrink-0 px-3.5 py-2 rounded-xl border text-[11px] font-bold uppercase tracking-widest transition-all",
+                                        "shrink-0 px-3.5 py-2 rounded-xl border text-caption font-bold uppercase tracking-widest transition-all",
                                         selectedDayIndex === index
                                             ? "bg-accent-400/15 border-accent-400/30 text-accent-400"
                                             : "bg-white/4 border-white/7 text-neutral-500 hover:bg-white/7 hover:text-neutral-300"
@@ -470,10 +470,10 @@ export default function WorkoutEditorModal({
                     <div className="bg-white/3 border border-white/7 rounded-2xl p-4">
                         <div className="flex items-center justify-between gap-4 mb-4">
                             <div>
-                                <p className="text-[10px] text-neutral-500 font-black uppercase tracking-widest">
+                                <p className="text-mini text-neutral-500 font-black uppercase tracking-widest">
                                     Day Details
                                 </p>
-                                <p className="text-[13px] text-white font-bold mt-1">
+                                <p className="text-body text-white font-bold mt-1">
                                     Day {activeDay.dayNumber}
                                 </p>
                             </div>
@@ -481,7 +481,7 @@ export default function WorkoutEditorModal({
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <label className="flex flex-col gap-1.5">
-                                <span className="text-[10px] text-neutral-500 font-black uppercase tracking-widest">
+                                <span className="text-mini text-neutral-500 font-black uppercase tracking-widest">
                                     Title
                                 </span>
                                 <input
@@ -498,7 +498,7 @@ export default function WorkoutEditorModal({
                             </label>
 
                             <label className="flex flex-col gap-1.5">
-                                <span className="text-[10px] text-neutral-500 font-black uppercase tracking-widest">
+                                <span className="text-mini text-neutral-500 font-black uppercase tracking-widest">
                                     Focus Name
                                 </span>
                                 <input
@@ -515,7 +515,7 @@ export default function WorkoutEditorModal({
                             </label>
 
                             <label className="flex flex-col gap-1.5 md:col-span-1">
-                                <span className="text-[10px] text-neutral-500 font-black uppercase tracking-widest">
+                                <span className="text-mini text-neutral-500 font-black uppercase tracking-widest">
                                     Pre-Workout Protocol
                                 </span>
                                 <DarkSelect
@@ -538,7 +538,7 @@ export default function WorkoutEditorModal({
                             </label>
 
                             <label className="flex flex-col gap-1.5 md:col-span-1">
-                                <span className="text-[10px] text-neutral-500 font-black uppercase tracking-widest">
+                                <span className="text-mini text-neutral-500 font-black uppercase tracking-widest">
                                     Post-Workout Protocol
                                 </span>
                                 <DarkSelect
@@ -566,7 +566,7 @@ export default function WorkoutEditorModal({
                             </label>
 
                             <label className="flex flex-col gap-1.5 md:col-span-1">
-                                <span className="text-[10px] text-warn-500/80 font-black uppercase tracking-widest">
+                                <span className="text-mini text-warn-500/80 font-black uppercase tracking-widest">
                                     Session Primer (Warm-Up)
                                 </span>
                                 <DarkSelect
@@ -590,7 +590,7 @@ export default function WorkoutEditorModal({
                             </label>
 
                             <label className="flex flex-col gap-1.5 md:col-span-1">
-                                <span className="text-[10px] text-rose-500/80 font-black uppercase tracking-widest">
+                                <span className="text-mini text-rose-500/80 font-black uppercase tracking-widest">
                                     Session Finisher (Burnout)
                                 </span>
                                 <DarkSelect
@@ -618,10 +618,10 @@ export default function WorkoutEditorModal({
                     <div>
                         <div className="flex items-center justify-between gap-4 mb-3">
                             <div>
-                                <p className="text-[10px] text-neutral-500 font-black uppercase tracking-widest">
+                                <p className="text-mini text-neutral-500 font-black uppercase tracking-widest">
                                     Exercises
                                 </p>
-                                <p className="text-[11px] text-neutral-600 font-medium mt-1">
+                                <p className="text-caption text-neutral-600 font-medium mt-1">
                                     Manual edits keep the slot stable. Quick swaps create a fresh
                                     exercise slot so notes, PRs, and set history do not mix across
                                     different movements.
@@ -636,13 +636,13 @@ export default function WorkoutEditorModal({
                                         triggerLabelMode="placeholder"
                                         placeholder="Add from full library..."
                                         options={exerciseLibraryOptions}
-                                        className="border-accent-400/20 bg-accent-400/8 text-[11px] uppercase tracking-widest"
+                                        className="border-accent-400/20 bg-accent-400/8 text-caption uppercase tracking-widest"
                                     />
                                 </div>
                                 <button
                                     type="button"
                                     onClick={addExercise}
-                                    className="shrink-0 flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/8 text-neutral-300 text-[11px] font-black uppercase tracking-widest hover:bg-white/8 hover:text-white transition-all"
+                                    className="shrink-0 flex items-center justify-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/8 text-neutral-300 text-caption font-black uppercase tracking-widest hover:bg-white/8 hover:text-white transition-all"
                                 >
                                     <Plus size={13} />
                                     Blank
@@ -668,17 +668,17 @@ export default function WorkoutEditorModal({
                                         <div className="bg-white/3 border border-white/7 rounded-2xl p-4">
                                             <div className="flex items-center justify-between gap-4 mb-4">
                                                 <div>
-                                                    <p className="text-[10px] text-neutral-500 font-black uppercase tracking-widest">
+                                                    <p className="text-mini text-neutral-500 font-black uppercase tracking-widest">
                                                         Exercise {exerciseIndex + 1}
                                                     </p>
                                                     <div className="flex flex-wrap items-center gap-2 mt-1">
-                                                        <p className="text-[12px] text-neutral-300 font-medium">
+                                                        <p className="text-small text-neutral-300 font-medium">
                                                             {exercise.id}
                                                         </p>
                                                         {currentLinkType && (
                                                             <span
                                                                 className={cn(
-                                                                    "px-2 py-0.5 rounded-full border text-[9px] font-black uppercase tracking-[0.16em]",
+                                                                    "px-2 py-0.5 rounded-full border text-micro font-black uppercase tracking-[0.16em]",
                                                                     currentLinkType === "superset"
                                                                         ? "border-accent-400/20 bg-accent-400/10 text-accent-400"
                                                                         : "border-info-400/20 bg-info-400/10 text-info-400"
@@ -739,7 +739,7 @@ export default function WorkoutEditorModal({
                                             <div className="grid grid-cols-1 md:grid-cols-[1.2fr_180px] gap-3">
                                                 <label className="flex flex-col gap-1.5">
                                                     <div className="flex items-center justify-between gap-2">
-                                                        <span className="text-[10px] text-neutral-500 font-black uppercase tracking-widest">
+                                                        <span className="text-mini text-neutral-500 font-black uppercase tracking-widest">
                                                             Exercise Name
                                                         </span>
                                                         {exercise.name && !findWikiEntry(exercise.name) && !customExercises.find(ex => ex.name === exercise.name) && (
@@ -756,7 +756,7 @@ export default function WorkoutEditorModal({
                                                                     alternatives: [],
                                                                     notes: '',
                                                                 })}
-                                                                className="text-[9px] text-accent-400 font-black uppercase tracking-widest hover:text-accent-300 transition-colors"
+                                                                className="text-micro text-accent-400 font-black uppercase tracking-widest hover:text-accent-300 transition-colors"
                                                             >
                                                                 + Save to Library
                                                             </button>
@@ -776,7 +776,7 @@ export default function WorkoutEditorModal({
                                                 </label>
 
                                                 <label className="flex flex-col gap-1.5">
-                                                    <span className="text-[10px] text-neutral-500 font-black uppercase tracking-widest">
+                                                    <span className="text-mini text-neutral-500 font-black uppercase tracking-widest">
                                                         Type
                                                     </span>
                                                     <DarkSelect
@@ -805,22 +805,22 @@ export default function WorkoutEditorModal({
                                                     </div>
                                                     <div className="min-w-0 flex-1">
                                                         <div className="flex flex-wrap items-center gap-2">
-                                                            <p className="text-[11px] font-black uppercase tracking-[0.16em] text-white">
+                                                            <p className="text-caption font-black uppercase tracking-[0.16em] text-white">
                                                                 Alternative Swaps
                                                             </p>
                                                             {swapOptions.category && (
-                                                                <span className="px-2 py-0.5 rounded-full border border-accent-400/20 bg-accent-400/10 text-[9px] font-black uppercase tracking-[0.16em] text-accent-400">
+                                                                <span className="px-2 py-0.5 rounded-full border border-accent-400/20 bg-accent-400/10 text-micro font-black uppercase tracking-[0.16em] text-accent-400">
                                                                     {swapOptions.category}
                                                                 </span>
                                                             )}
                                                             {swapOptions.currentEntry &&
                                                                 isHomeGymFriendly(swapOptions.currentEntry) && (
-                                                                    <span className="px-2 py-0.5 rounded-full border border-info-400/20 bg-info-400/10 text-[9px] font-black uppercase tracking-[0.16em] text-info-400">
+                                                                    <span className="px-2 py-0.5 rounded-full border border-info-400/20 bg-info-400/10 text-micro font-black uppercase tracking-[0.16em] text-info-400">
                                                                         Home Gym Friendly
                                                                     </span>
                                                                 )}
                                                         </div>
-                                                        <p className="text-[10px] text-neutral-500 font-medium mt-1.5 leading-relaxed">
+                                                        <p className="text-mini text-neutral-500 font-medium mt-1.5 leading-relaxed">
                                                             Quick picks prioritize equipment variants and
                                                             proven swaps. The library below is no longer
                                                             limited by the current day&apos;s focus.
@@ -840,7 +840,7 @@ export default function WorkoutEditorModal({
                                                                         alternativeName
                                                                     )
                                                                 }
-                                                                className="px-3 py-1.5 rounded-xl bg-black/25 border border-white/8 text-[10px] font-black uppercase tracking-[0.14em] text-neutral-200 hover:border-accent-400/25 hover:bg-accent-400/10 hover:text-accent-400 transition-all"
+                                                                className="px-3 py-1.5 rounded-xl bg-black/25 border border-white/8 text-mini font-black uppercase tracking-[0.14em] text-neutral-200 hover:border-accent-400/25 hover:bg-accent-400/10 hover:text-accent-400 transition-all"
                                                             >
                                                                 {alternativeName}
                                                             </button>
@@ -849,7 +849,7 @@ export default function WorkoutEditorModal({
                                                 )}
 
                                                 <label className="flex flex-col gap-1.5 mt-3">
-                                                    <span className="text-[10px] text-neutral-500 font-black uppercase tracking-widest">
+                                                    <span className="text-mini text-neutral-500 font-black uppercase tracking-widest">
                                                         Exercise Library
                                                     </span>
                                                     <DarkSelect
@@ -876,7 +876,7 @@ export default function WorkoutEditorModal({
                                             </div>
 
                                             <label className="flex flex-col gap-1.5 mt-3">
-                                                <span className="text-[10px] text-neutral-500 font-black uppercase tracking-widest">
+                                                <span className="text-mini text-neutral-500 font-black uppercase tracking-widest">
                                                     Details
                                                 </span>
                                                 <input
@@ -898,14 +898,14 @@ export default function WorkoutEditorModal({
 
                                             <div className="mt-4">
                                                 <div className="flex items-center justify-between gap-4 mb-2.5">
-                                                    <p className="text-[10px] text-neutral-500 font-black uppercase tracking-widest">
+                                                    <p className="text-mini text-neutral-500 font-black uppercase tracking-widest">
                                                         Sets
                                                     </p>
 
                                                     <button
                                                         type="button"
                                                         onClick={() => addSet(exercise.id, exercise.type)}
-                                                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/8 text-[10px] font-black uppercase tracking-widest text-neutral-300 hover:bg-white/8 transition-all"
+                                                        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/5 border border-white/8 text-mini font-black uppercase tracking-widest text-neutral-300 hover:bg-white/8 transition-all"
                                                     >
                                                         <Plus size={11} />
                                                         Add Set
@@ -918,7 +918,7 @@ export default function WorkoutEditorModal({
                                                             key={set.id}
                                                             className="grid grid-cols-[auto_1fr_auto] gap-2 items-center bg-black/20 border border-white/6 rounded-xl px-3 py-2.5"
                                                         >
-                                                            <span className="text-[10px] font-black uppercase tracking-widest text-neutral-500">
+                                                            <span className="text-mini font-black uppercase tracking-widest text-neutral-500">
                                                                 Set {setIndex + 1}
                                                             </span>
 
@@ -968,17 +968,17 @@ export default function WorkoutEditorModal({
                                                 <div className="relative ml-10 rounded-2xl border border-white/7 bg-black/20 px-3.5 py-3">
                                                     <div className="flex flex-wrap items-center justify-between gap-2">
                                                         <div>
-                                                            <p className="text-[10px] text-neutral-500 font-black uppercase tracking-widest">
+                                                            <p className="text-mini text-neutral-500 font-black uppercase tracking-widest">
                                                                 Link to Next Exercise
                                                             </p>
-                                                            <p className="text-[11px] text-neutral-300 font-medium mt-1">
+                                                            <p className="text-caption text-neutral-300 font-medium mt-1">
                                                                 {exercise.name} → {nextExercise.name}
                                                             </p>
                                                         </div>
                                                         {exercise.linkToNext && (
                                                             <span
                                                                 className={cn(
-                                                                    "px-2 py-0.5 rounded-full border text-[9px] font-black uppercase tracking-[0.16em]",
+                                                                    "px-2 py-0.5 rounded-full border text-micro font-black uppercase tracking-[0.16em]",
                                                                     exercise.linkToNext === "superset"
                                                                         ? "border-accent-400/20 bg-accent-400/10 text-accent-400"
                                                                         : "border-info-400/20 bg-info-400/10 text-info-400"
@@ -1000,7 +1000,7 @@ export default function WorkoutEditorModal({
                                                                 )
                                                             }
                                                             className={cn(
-                                                                "px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-[0.16em] transition-all",
+                                                                "px-3 py-1.5 rounded-xl border text-mini font-black uppercase tracking-[0.16em] transition-all",
                                                                 exercise.linkToNext === "superset"
                                                                     ? "border-accent-400/25 bg-accent-400/12 text-accent-400"
                                                                     : "border-white/8 bg-white/4 text-neutral-300 hover:border-accent-400/20 hover:bg-accent-400/10 hover:text-accent-400"
@@ -1019,7 +1019,7 @@ export default function WorkoutEditorModal({
                                                                 )
                                                             }
                                                             className={cn(
-                                                                "px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-[0.16em] transition-all",
+                                                                "px-3 py-1.5 rounded-xl border text-mini font-black uppercase tracking-[0.16em] transition-all",
                                                                 exercise.linkToNext === "circuit"
                                                                     ? "border-info-400/25 bg-info-400/12 text-info-400"
                                                                     : "border-white/8 bg-white/4 text-neutral-300 hover:border-info-400/20 hover:bg-info-400/10 hover:text-info-400"
@@ -1031,13 +1031,13 @@ export default function WorkoutEditorModal({
                                                             <button
                                                                 type="button"
                                                                 onClick={() => setExerciseLink(exerciseIndex, undefined)}
-                                                                className="px-3 py-1.5 rounded-xl border border-white/8 bg-white/3 text-[10px] font-black uppercase tracking-[0.16em] text-neutral-400 hover:bg-white/6 hover:text-white transition-all"
+                                                                className="px-3 py-1.5 rounded-xl border border-white/8 bg-white/3 text-mini font-black uppercase tracking-[0.16em] text-neutral-400 hover:bg-white/6 hover:text-white transition-all"
                                                             >
                                                                 Clear Link
                                                             </button>
                                                         )}
                                                     </div>
-                                                    <p className="text-[10px] text-neutral-500 font-medium mt-2.5 leading-relaxed">
+                                                    <p className="text-mini text-neutral-500 font-medium mt-2.5 leading-relaxed">
                                                         Links stay adjacent. Matching links can chain
                                                         into longer circuits or supersets without extra setup.
                                                     </p>
@@ -1052,7 +1052,7 @@ export default function WorkoutEditorModal({
                 </div>
 
                 <div className="border-t border-white/6 px-5 py-4 bg-black/20 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-                    <p className="text-[10px] text-neutral-600 font-medium uppercase tracking-widest">
+                    <p className="text-mini text-neutral-600 font-medium uppercase tracking-widest">
                         Changes save locally first, then sync to the cloud when signed in.
                     </p>
 
@@ -1060,7 +1060,7 @@ export default function WorkoutEditorModal({
                         <button
                             type="button"
                             onClick={handleExport}
-                            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-white/8 bg-white/4 text-neutral-300 text-[11px] font-black uppercase tracking-widest hover:bg-white/7 transition-all"
+                            className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-white/8 bg-white/4 text-neutral-300 text-caption font-black uppercase tracking-widest hover:bg-white/7 transition-all"
                             title="Export Current Program"
                         >
                             <Download size={13} />
@@ -1070,7 +1070,7 @@ export default function WorkoutEditorModal({
                         <button
                             type="button"
                             onClick={onClose}
-                            className="px-4 py-2.5 rounded-xl border border-white/8 bg-white/4 text-neutral-300 text-[11px] font-black uppercase tracking-widest hover:bg-white/7 transition-all"
+                            className="px-4 py-2.5 rounded-xl border border-white/8 bg-white/4 text-neutral-300 text-caption font-black uppercase tracking-widest hover:bg-white/7 transition-all"
                         >
                             Cancel
                         </button>
@@ -1078,7 +1078,7 @@ export default function WorkoutEditorModal({
                         <button
                             type="button"
                             onClick={() => onSave(draft)}
-                            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-accent-400/25 bg-accent-400/12 text-accent-400 text-[11px] font-black uppercase tracking-widest hover:bg-accent-400/20 transition-all"
+                            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-accent-400/25 bg-accent-400/12 text-accent-400 text-caption font-black uppercase tracking-widest hover:bg-accent-400/20 transition-all"
                         >
                             <Save size={13} />
                             Save Workout
@@ -1118,7 +1118,7 @@ export default function WorkoutEditorModal({
                                         <p className="text-xs font-black text-white">
                                             Day {day.dayNumber}: {day.name || "Focus"}
                                         </p>
-                                        <p className="text-[10px] text-neutral-500 truncate mt-0.5">
+                                        <p className="text-mini text-neutral-500 truncate mt-0.5">
                                             {day.title} · {day.exercises.length} exercises
                                         </p>
                                     </div>
@@ -1162,7 +1162,7 @@ export default function WorkoutEditorModal({
                             <button
                                 type="button"
                                 onClick={addDay}
-                                className="w-full py-3 rounded-xl border border-dashed border-white/10 hover:border-accent-400/30 text-[11px] font-black uppercase tracking-widest text-neutral-400 hover:text-accent-400 transition-all flex items-center justify-center gap-1.5 mt-2"
+                                className="w-full py-3 rounded-xl border border-dashed border-white/10 hover:border-accent-400/30 text-caption font-black uppercase tracking-widest text-neutral-400 hover:text-accent-400 transition-all flex items-center justify-center gap-1.5 mt-2"
                             >
                                 <Plus size={14} /> Add New Day
                             </button>

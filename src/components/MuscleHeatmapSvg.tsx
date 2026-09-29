@@ -95,7 +95,7 @@ export default function MuscleHeatmapSvg({ activeSide, regionsById }: MuscleHeat
                 x="100"
                 y="354"
                 textAnchor="middle"
-                className="fill-neutral-500 text-[10px] font-bold uppercase tracking-[0.22em]"
+                className="fill-neutral-500 text-mini font-bold uppercase tracking-[0.22em]"
             >
                 {activeSide} view
             </text>

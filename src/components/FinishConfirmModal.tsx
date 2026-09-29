@@ -53,11 +53,11 @@ export default function FinishConfirmModal({
                         >
                             {dayName}
                         </h3>
-                        <p className="text-[13px] text-neutral-400 font-medium mt-1">
+                        <p className="text-body text-neutral-400 font-medium mt-1">
                             Save this session to history and clear checkmarks?
                         </p>
                         {elapsedSeconds > 0 && (
-                            <p className="text-[11px] text-neutral-600 font-medium mt-2">
+                            <p className="text-caption text-neutral-600 font-medium mt-2">
                                 Duration:{" "}
                                 <span className="text-accent-400 font-mono">{formatTime(elapsedSeconds)}</span>
                             </p>
@@ -67,14 +67,14 @@ export default function FinishConfirmModal({
                         <button
                             onClick={onCancel}
                             disabled={isSaving}
-                            className="flex-1 py-3 rounded-xl border border-white/8 bg-white/4 text-neutral-400 font-bold text-[13px] hover:bg-white/8 hover:text-white transition-all disabled:opacity-50"
+                            className="flex-1 py-3 rounded-xl border border-white/8 bg-white/4 text-neutral-400 font-bold text-body hover:bg-white/8 hover:text-white transition-all disabled:opacity-50"
                         >
                             Cancel
                         </button>
                         <button
                             onClick={handleConfirm}
                             disabled={isSaving}
-                            className="flex-1 py-3 rounded-xl border border-accent-400/30 bg-accent-400/15 text-accent-400 font-black text-[13px] hover:bg-accent-400/25 transition-all disabled:opacity-50"
+                            className="flex-1 py-3 rounded-xl border border-accent-400/30 bg-accent-400/15 text-accent-400 font-black text-body hover:bg-accent-400/25 transition-all disabled:opacity-50"
                         >
                             {isSaving ? "Saving..." : "Save Workout"}
                         </button>

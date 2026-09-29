@@ -134,7 +134,7 @@ export default function WorkoutTab({
             {isMounted && activeDay.primerId && (
                 <button
                     onClick={() => onStartStretching?.(activeDay.primerId!)}
-                    className="w-full active:scale-[0.98] flex items-center justify-center gap-2.5 py-4 rounded-2xl font-black text-[13px] tracking-[0.2em] uppercase transition-all border bg-warn-500/15 hover:bg-warn-500/25 border-warn-500/40 text-warn-500 shadow-[0_0_20px_color-mix(in_oklab,_var(--color-warn-500)_15%,_transparent)] mt-1 mb-2"
+                    className="w-full active:scale-[0.98] flex items-center justify-center gap-2.5 py-4 rounded-2xl font-black text-body tracking-[0.2em] uppercase transition-all border bg-warn-500/15 hover:bg-warn-500/25 border-warn-500/40 text-warn-500 shadow-[0_0_20px_color-mix(in_oklab,_var(--color-warn-500)_15%,_transparent)] mt-1 mb-2"
                 >
                     <Timer size={18} />
                     Start Session Primer
@@ -186,7 +186,7 @@ export default function WorkoutTab({
                             <div className="flex items-center gap-2">
                                 <span
                                     className={cn(
-                                        "px-2.5 py-1 rounded-full border text-[9px] font-black uppercase tracking-[0.18em]",
+                                        "px-2.5 py-1 rounded-full border text-micro font-black uppercase tracking-[0.18em]",
                                         segment.linkType === "superset"
                                             ? "bg-accent-400/12 border-accent-400/25 text-accent-400"
                                             : "bg-info-400/12 border-info-400/25 text-info-400"
@@ -194,11 +194,11 @@ export default function WorkoutTab({
                                 >
                                     {segment.linkType}
                                 </span>
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-500">
+                                <span className="text-mini font-bold uppercase tracking-widest text-neutral-500">
                                     {segment.exercises.length} linked exercises
                                 </span>
                             </div>
-                            <p className="text-[10px] text-neutral-500 font-medium">
+                            <p className="text-mini text-neutral-500 font-medium">
                                 {segment.linkType === "superset"
                                     ? "Alternate between these blocks before moving on."
                                     : "Run these in sequence as one circuit flow."}
@@ -211,7 +211,7 @@ export default function WorkoutTab({
                                     <div className="flex items-center gap-2 px-1.5 pb-2">
                                         <span
                                             className={cn(
-                                                "w-6 h-6 rounded-lg border flex items-center justify-center text-[10px] font-black",
+                                                "w-6 h-6 rounded-lg border flex items-center justify-center text-mini font-black",
                                                 segment.linkType === "superset"
                                                     ? "border-accent-400/25 bg-accent-400/10 text-accent-400"
                                                     : "border-info-400/25 bg-info-400/10 text-info-400"
@@ -219,7 +219,7 @@ export default function WorkoutTab({
                                         >
                                             {localIndex + 1}
                                         </span>
-                                        <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-neutral-500">
+                                        <p className="text-mini font-bold uppercase tracking-[0.18em] text-neutral-500">
                                             {segment.linkType === "superset"
                                                 ? "Superset Slot"
                                                 : "Circuit Slot"}
@@ -260,7 +260,7 @@ export default function WorkoutTab({
                 {isMounted && (
                     <button
                         onClick={onOpenJustShowUp}
-                        className="w-full active:scale-[0.98] flex items-center justify-center gap-2.5 py-4 rounded-2xl font-black text-[13px] tracking-[0.2em] uppercase transition-all border bg-accent-400/10 hover:bg-accent-400/20 border-accent-400/25 text-accent-400 shadow-[0_0_20px_color-mix(in_oklab,_var(--color-accent-400)_10%,_transparent)]"
+                        className="w-full active:scale-[0.98] flex items-center justify-center gap-2.5 py-4 rounded-2xl font-black text-body tracking-[0.2em] uppercase transition-all border bg-accent-400/10 hover:bg-accent-400/20 border-accent-400/25 text-accent-400 shadow-[0_0_20px_color-mix(in_oklab,_var(--color-accent-400)_10%,_transparent)]"
                     >
                         <Zap size={18} />
                         Just Show Up — 15 min
@@ -269,7 +269,7 @@ export default function WorkoutTab({
                 {isMounted && activeDay.preWorkoutStretchId && (
                     <button
                         onClick={() => onStartStretching?.(activeDay.preWorkoutStretchId!)}
-                        className="w-full active:scale-[0.98] flex items-center justify-center gap-2.5 py-4 rounded-2xl font-bold text-[12px] tracking-[0.18em] uppercase transition-all border bg-warn-400/5 hover:bg-warn-400/10 border-warn-400/15 text-white"
+                        className="w-full active:scale-[0.98] flex items-center justify-center gap-2.5 py-4 rounded-2xl font-bold text-small tracking-[0.18em] uppercase transition-all border bg-warn-400/5 hover:bg-warn-400/10 border-warn-400/15 text-white"
                     >
                         <Timer size={15} className="text-warn-400" />
                         Start Pre-Workout Warmup
@@ -278,7 +278,7 @@ export default function WorkoutTab({
                 {isMounted && activeDay.finisherId && (
                     <button
                         onClick={() => onStartStretching?.(activeDay.finisherId!)}
-                        className="w-full active:scale-[0.98] flex items-center justify-center gap-2.5 py-4 rounded-2xl font-black text-[13px] tracking-[0.2em] uppercase transition-all border bg-rose-500/15 hover:bg-rose-500/25 border-rose-500/40 text-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.15)]"
+                        className="w-full active:scale-[0.98] flex items-center justify-center gap-2.5 py-4 rounded-2xl font-black text-body tracking-[0.2em] uppercase transition-all border bg-rose-500/15 hover:bg-rose-500/25 border-rose-500/40 text-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.15)]"
                     >
                         <Timer size={18} />
                         Start Session Finisher
@@ -287,7 +287,7 @@ export default function WorkoutTab({
                 {isMounted && (activeDay.postWorkoutStretchId || activeDay.stretchingProgramId) && (
                     <button
                         onClick={() => onStartStretching?.((activeDay.postWorkoutStretchId || activeDay.stretchingProgramId)!)}
-                        className="w-full active:scale-[0.98] flex items-center justify-center gap-2.5 py-4 rounded-2xl font-bold text-[12px] tracking-[0.18em] uppercase transition-all border bg-white/5 hover:bg-white/8 border-white/10 text-white"
+                        className="w-full active:scale-[0.98] flex items-center justify-center gap-2.5 py-4 rounded-2xl font-bold text-small tracking-[0.18em] uppercase transition-all border bg-white/5 hover:bg-white/8 border-white/10 text-white"
                     >
                         <Timer size={15} className="text-accent-400" />
                         Start Post-Workout Recovery
@@ -296,7 +296,7 @@ export default function WorkoutTab({
                 <button
                     onClick={onShowFinishConfirm}
                     className={cn(
-                        "w-full active:scale-[0.98] flex items-center justify-center gap-2.5 py-4 rounded-2xl font-bold text-[12px] tracking-[0.18em] uppercase transition-all border",
+                        "w-full active:scale-[0.98] flex items-center justify-center gap-2.5 py-4 rounded-2xl font-bold text-small tracking-[0.18em] uppercase transition-all border",
                         progressPercent === 100
                             ? "bg-accent-400/15 hover:bg-accent-400/22 border-accent-400/40 text-accent-400"
                             : "bg-white/4 hover:bg-white/7 border-white/9 text-white"
@@ -305,17 +305,17 @@ export default function WorkoutTab({
                     <Save size={15} className="text-accent-400" />
                     Save Workout
                 </button>
-                <p className="text-center text-[10px] text-neutral-600 mt-2.5 px-6 font-medium leading-relaxed">
+                <p className="text-center text-mini text-neutral-600 mt-2.5 px-6 font-medium leading-relaxed">
                     Saves this session to history, then clears checkmarks while keeping planned weights and reps.
                 </p>
                 <button
                     onClick={onClearCheckmarks}
-                    className="w-full active:scale-[0.98] flex items-center justify-center gap-2.5 py-3 rounded-2xl font-bold text-[11px] tracking-[0.16em] uppercase transition-all border bg-white/3 hover:bg-white/6 border-white/8 text-neutral-500"
+                    className="w-full active:scale-[0.98] flex items-center justify-center gap-2.5 py-3 rounded-2xl font-bold text-caption tracking-[0.16em] uppercase transition-all border bg-white/3 hover:bg-white/6 border-white/8 text-neutral-500"
                 >
                     <RotateCcw size={14} />
                     Clear Unsaved Checkmarks
                 </button>
-                <p className="text-center text-[9px] text-neutral-700 px-6 font-medium leading-relaxed">
+                <p className="text-center text-micro text-neutral-700 px-6 font-medium leading-relaxed">
                     Use only when you want to restart today&apos;s checkmarks without saving a session.
                 </p>
             </div>

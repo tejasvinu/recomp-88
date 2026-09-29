@@ -32,14 +32,14 @@ export default function ToastContainer({ toasts, onDismiss }: ToastContainerProp
                             toast.type === "success" ? "bg-accent-400" : "bg-danger-400"
                         )}
                     />
-                    <span className="text-[13px] font-semibold flex-1">{toast.message}</span>
+                    <span className="text-body font-semibold flex-1">{toast.message}</span>
                     {toast.undoAction && (
                         <button
                             onClick={() => {
                                 toast.undoAction?.();
                                 onDismiss(toast.id);
                             }}
-                            className="flex items-center gap-1 text-[11px] font-bold text-accent-400 hover:text-accent-300 transition-colors uppercase tracking-wider shrink-0"
+                            className="flex items-center gap-1 text-caption font-bold text-accent-400 hover:text-accent-300 transition-colors uppercase tracking-wider shrink-0"
                         >
                             <Undo2 size={12} />
                             Undo

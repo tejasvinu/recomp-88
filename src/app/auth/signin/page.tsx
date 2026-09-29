@@ -130,7 +130,7 @@ export default function AuthPage() {
 
               <div className="flex items-center gap-3 mb-4">
                 <div className="flex-1 h-px bg-white/8" />
-                <span className="text-[11px] text-neutral-600 uppercase tracking-widest">or</span>
+                <span className="text-caption text-neutral-600 uppercase tracking-widest">or</span>
                 <div className="flex-1 h-px bg-white/8" />
               </div>
             </>

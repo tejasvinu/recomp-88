@@ -72,7 +72,7 @@ export default memo(function ExerciseCard({
         <div className="bg-neutral-900/50 border border-white/6 p-4 rounded-2xl flex flex-col gap-3 shadow-lg">
             {/* Exercise Header */}
             <div className="flex items-start gap-3">
-                <span className="shrink-0 w-6 h-6 rounded-lg bg-white/5 border border-white/8 flex items-center justify-center text-[10px] font-mono font-bold text-neutral-500 mt-0.5">
+                <span className="shrink-0 w-6 h-6 rounded-lg bg-white/5 border border-white/8 flex items-center justify-center text-mini font-mono font-bold text-neutral-500 mt-0.5">
                     {exIdx + 1}
                 </span>
                 <div className="flex-1 min-w-0">
@@ -124,7 +124,7 @@ export default memo(function ExerciseCard({
                         {exercise.type !== "other" && (
                             <span
                                 className={cn(
-                                    "text-[9px] uppercase font-black tracking-widest px-2 py-0.5 rounded-md border",
+                                    "text-micro uppercase font-black tracking-widest px-2 py-0.5 rounded-md border",
                                     exercise.type === "strength"
                                         ? "text-orange-400 bg-orange-500/10 border-orange-500/20"
                                         : "text-info-400 bg-info-500/10 border-info-500/20"
@@ -134,7 +134,7 @@ export default memo(function ExerciseCard({
                             </span>
                         )}
                         {exercise.details && (
-                            <span className="text-[9px] uppercase font-bold tracking-wider text-neutral-400 bg-white/5 px-2 py-0.5 rounded-md border border-white/8">
+                            <span className="text-micro uppercase font-bold tracking-wider text-neutral-400 bg-white/5 px-2 py-0.5 rounded-md border border-white/8">
                                 {exercise.details}
                             </span>
                         )}
@@ -142,7 +142,7 @@ export default memo(function ExerciseCard({
                             <button
                                 onClick={() => onBwFill(exercise.id)}
                                 className={cn(
-                                    "text-[9px] uppercase font-black tracking-widest px-2 py-0.5 rounded-md border transition-all",
+                                    "text-micro uppercase font-black tracking-widest px-2 py-0.5 rounded-md border transition-all",
                                     isBwActive
                                         ? "text-accent-400 bg-accent-400/10 border-accent-400/25"
                                         : "text-neutral-600 bg-white/3 border-white/6 hover:text-neutral-400 hover:bg-white/6"
@@ -159,7 +159,7 @@ export default memo(function ExerciseCard({
 
             {/* Column Headers */}
             {exercise.type !== "other" && (
-                <div className="grid grid-cols-[20px_1fr_1fr_44px] gap-2 px-1 text-[9px] font-bold text-neutral-600 uppercase tracking-[0.15em] text-center">
+                <div className="grid grid-cols-[20px_1fr_1fr_44px] gap-2 px-1 text-micro font-bold text-neutral-600 uppercase tracking-[0.15em] text-center">
                     <div className="text-left">#</div>
                     <div>{isBwActive ? "load" : weightUnit}</div>
                     <div>reps</div>
@@ -201,7 +201,7 @@ export default memo(function ExerciseCard({
                             <button
                                 type="button"
                                 onClick={() => onRemoveExtraSet(dayId, exercise.id, set.id)}
-                                className="self-end flex items-center gap-1.5 px-2 py-1 rounded-lg border border-danger-400/15 bg-danger-400/6 text-[9px] font-black uppercase tracking-widest text-danger-300/80 hover:bg-danger-400/12 hover:text-danger-300 transition-all"
+                                className="self-end flex items-center gap-1.5 px-2 py-1 rounded-lg border border-danger-400/15 bg-danger-400/6 text-micro font-black uppercase tracking-widest text-danger-300/80 hover:bg-danger-400/12 hover:text-danger-300 transition-all"
                                 aria-label={`Remove extra set ${extraSetNumber}`}
                             >
                                 <Trash2 size={10} />
@@ -219,7 +219,7 @@ export default memo(function ExerciseCard({
                         onClick={() => onAddExtraSet(dayId, exercise.id)}
                         disabled={!plannedSetsComplete}
                         className={cn(
-                            "w-full active:scale-[0.98] flex items-center justify-center gap-2 py-2.5 rounded-xl border text-[10px] font-black uppercase tracking-[0.16em] transition-all",
+                            "w-full active:scale-[0.98] flex items-center justify-center gap-2 py-2.5 rounded-xl border text-mini font-black uppercase tracking-[0.16em] transition-all",
                             plannedSetsComplete
                                 ? "bg-accent-400/10 border-accent-400/25 text-accent-400 hover:bg-accent-400/16"
                                 : "bg-white/3 border-white/6 text-neutral-600 cursor-not-allowed"
@@ -228,7 +228,7 @@ export default memo(function ExerciseCard({
                         <Plus size={12} />
                         {plannedSetsComplete ? "Add Extra Set" : "Complete Planned Sets First"}
                     </button>
-                    <p className="text-[9px] text-neutral-600 font-medium mt-1.5 px-1 text-center uppercase tracking-wider">
+                    <p className="text-micro text-neutral-600 font-medium mt-1.5 px-1 text-center uppercase tracking-wider">
                         {extraSetCount > 0
                             ? `${extraSetCount} extra set${extraSetCount === 1 ? "" : "s"} in this session`
                             : "Extra sets copy your last load and save only to this session"}
@@ -244,10 +244,10 @@ export default memo(function ExerciseCard({
                         onChange={(e) => onNoteChange(exercise.id, e.target.value)}
                         placeholder="Add notes for this exercise… (cues, feel, adjustments)"
                         rows={3}
-                        className="w-full bg-white/4 border border-white/7 rounded-xl p-3 text-[12px] text-neutral-200 placeholder-neutral-600 outline-none focus:ring-1 focus:ring-accent-400/30 focus:border-accent-400/20 resize-none font-medium leading-relaxed transition-all"
+                        className="w-full bg-white/4 border border-white/7 rounded-xl p-3 text-small text-neutral-200 placeholder-neutral-600 outline-none focus:ring-1 focus:ring-accent-400/30 focus:border-accent-400/20 resize-none font-medium leading-relaxed transition-all"
                         aria-label={`Notes for ${exercise.name}`}
                     />
-                    <p className="text-[9px] text-neutral-700 font-medium mt-1.5 px-1 uppercase tracking-wider">
+                    <p className="text-micro text-neutral-700 font-medium mt-1.5 px-1 uppercase tracking-wider">
                         Saved automatically
                     </p>
                 </div>

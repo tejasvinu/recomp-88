@@ -234,7 +234,7 @@ export default function ExerciseDetailModal({ entry, onClose }: ExerciseDetailMo
               )}
 
               <div className="min-w-0">
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-accent-400">
+                <p className="text-mini font-black uppercase tracking-[0.18em] text-accent-400">
                   {currentEntry.category}
                   {currentEntry.movementPattern
                     ? ` · ${currentEntry.movementPattern}`
@@ -246,7 +246,7 @@ export default function ExerciseDetailModal({ entry, onClose }: ExerciseDetailMo
                 >
                   {currentEntry.name}
                 </h2>
-                <p className="mt-1 text-[12px] font-medium leading-relaxed text-neutral-400 sm:text-[13px]">
+                <p className="mt-1 text-small font-medium leading-relaxed text-neutral-400 sm:text-body">
                   {currentEntry.muscles.primary.join(" · ")}
                 </p>
               </div>
@@ -317,7 +317,7 @@ function ExerciseDetailContent({
           <div className="flex flex-wrap gap-2">
             <span
               className={cn(
-                "rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em]",
+                "rounded-full border px-2.5 py-1 text-mini font-black uppercase tracking-[0.14em]",
                 CATEGORY_BADGES[entry.category] ||
                   "border-neutral-700 bg-neutral-800 text-neutral-300"
               )}
@@ -343,7 +343,7 @@ function ExerciseDetailContent({
                 {entry.muscles.primary.join(" · ")}
               </p>
               {entry.muscles.secondary.length > 0 && (
-                <p className="mt-1 text-[12px] leading-relaxed text-neutral-500">
+                <p className="mt-1 text-small leading-relaxed text-neutral-500">
                   Also hits {entry.muscles.secondary.join(" · ")}
                 </p>
               )}
@@ -353,7 +353,7 @@ function ExerciseDetailContent({
               <p className="text-[14px] font-semibold capitalize leading-snug text-white">
                 {entry.movementPattern ?? entry.category}
               </p>
-              <p className="mt-1 text-[12px] leading-relaxed text-neutral-500">
+              <p className="mt-1 text-small leading-relaxed text-neutral-500">
                 Use this as your anchor when picking cues and swaps.
               </p>
             </InfoBlock>
@@ -364,13 +364,13 @@ function ExerciseDetailContent({
                   {bestForItems.map((item) => (
                     <span
                       key={item}
-                      className="rounded-full border border-white/10 bg-white/6 px-2.5 py-1 text-[11px] font-semibold capitalize text-neutral-200"
+                      className="rounded-full border border-white/10 bg-white/6 px-2.5 py-1 text-caption font-semibold capitalize text-neutral-200"
                     >
                       {item}
                     </span>
                   ))}
                   {bestForOverflow > 0 && (
-                    <span className="rounded-full border border-white/10 bg-white/4 px-2.5 py-1 text-[11px] font-semibold text-neutral-500">
+                    <span className="rounded-full border border-white/10 bg-white/4 px-2.5 py-1 text-caption font-semibold text-neutral-500">
                       +{bestForOverflow} more
                     </span>
                   )}
@@ -383,7 +383,7 @@ function ExerciseDetailContent({
                 {equipmentItems.map((item) => (
                   <span
                     key={item}
-                    className="rounded-full border border-white/10 bg-black/25 px-2.5 py-1 text-[11px] font-semibold capitalize text-neutral-300"
+                    className="rounded-full border border-white/10 bg-black/25 px-2.5 py-1 text-caption font-semibold capitalize text-neutral-300"
                   >
                     {formatEquipmentLabel(item)}
                   </span>
@@ -409,7 +409,7 @@ function ExerciseDetailContent({
                   key={checkItem}
                   className="flex items-start gap-3 rounded-xl border border-white/6 bg-black/20 p-3"
                 >
-                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl border border-accent-400/20 bg-accent-400/10 text-[11px] font-black text-accent-400">
+                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl border border-accent-400/20 bg-accent-400/10 text-caption font-black text-accent-400">
                     {index + 1}
                   </span>
                   <span className="text-sm font-medium leading-relaxed text-neutral-200">
@@ -437,7 +437,7 @@ function ExerciseDetailContent({
                   key={`${entry.id}-cue-${index}`}
                   className="flex items-start gap-3 rounded-xl border border-white/6 bg-black/20 p-3"
                 >
-                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-info-400/20 bg-info-400/10 text-[11px] font-black text-info-400">
+                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-info-400/20 bg-info-400/10 text-caption font-black text-info-400">
                     {index + 1}
                   </span>
                   <span className="text-sm font-medium leading-relaxed text-neutral-200">
@@ -495,10 +495,10 @@ function ExerciseDetailContent({
               {accessFriendlyAlternatives.length > 0 && (
                 <div className="space-y-3">
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-accent-400">
+                    <p className="text-mini font-black uppercase tracking-[0.18em] text-accent-400">
                       Access-Friendly Picks
                     </p>
-                    <p className="mt-1 text-[12px] leading-relaxed text-neutral-500">
+                    <p className="mt-1 text-small leading-relaxed text-neutral-500">
                       These are the cleanest free-weight or home-gym swaps. Tap one to load its setup and cues.
                     </p>
                   </div>
@@ -518,10 +518,10 @@ function ExerciseDetailContent({
               {otherResolvedAlternatives.length > 0 && (
                 <div className="space-y-2.5">
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-neutral-500">
+                    <p className="text-mini font-black uppercase tracking-[0.18em] text-neutral-500">
                       More Swaps In The Library
                     </p>
-                    <p className="mt-1 text-[12px] leading-relaxed text-neutral-500">
+                    <p className="mt-1 text-small leading-relaxed text-neutral-500">
                       Still valid, but not as access-friendly as the picks above.
                     </p>
                   </div>
@@ -532,7 +532,7 @@ function ExerciseDetailContent({
                         key={alternative.id}
                         type="button"
                         onClick={() => onSelectAlternative(alternative)}
-                        className="group inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/6 px-3 py-2 text-left text-[12px] font-semibold text-neutral-200 transition-all hover:border-white/15 hover:bg-white/10 hover:text-white"
+                        className="group inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/6 px-3 py-2 text-left text-small font-semibold text-neutral-200 transition-all hover:border-white/15 hover:bg-white/10 hover:text-white"
                       >
                         <span>{alternative.name}</span>
                         <ArrowUpRight
@@ -548,10 +548,10 @@ function ExerciseDetailContent({
               {unresolvedAlternativeNames.length > 0 && (
                 <div className="space-y-2.5">
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-neutral-500">
+                    <p className="text-mini font-black uppercase tracking-[0.18em] text-neutral-500">
                       More Ideas
                     </p>
-                    <p className="mt-1 text-[12px] leading-relaxed text-neutral-500">
+                    <p className="mt-1 text-small leading-relaxed text-neutral-500">
                       These names are kept as references, but they do not have full in-app drill sheets yet.
                     </p>
                   </div>
@@ -560,7 +560,7 @@ function ExerciseDetailContent({
                     {unresolvedAlternativeNames.map((name) => (
                       <span
                         key={name}
-                        className="rounded-full border border-white/8 bg-white/4 px-3 py-2 text-[12px] font-semibold text-neutral-400"
+                        className="rounded-full border border-white/8 bg-white/4 px-3 py-2 text-small font-semibold text-neutral-400"
                       >
                         {name}
                       </span>
@@ -614,7 +614,7 @@ function ExerciseDetailContent({
                   <div className="absolute inset-0 bg-linear-to-t from-black/85 via-black/40 to-black/10" />
                   <div className="absolute inset-0 flex items-end justify-between gap-3 p-4">
                     <div className="min-w-0">
-                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-accent-400">
+                      <p className="text-mini font-black uppercase tracking-[0.18em] text-accent-400">
                         Tutorial Video
                       </p>
                       <p className="mt-1 text-sm font-semibold text-white">
@@ -660,7 +660,7 @@ function ExerciseDetailContent({
             <div className="rounded-xl border border-warn-400/20 bg-warn-400/6 p-4">
               <div className="mb-2 flex items-center gap-2">
                 <Zap size={12} className="text-warn-300" />
-                <span className="text-[10px] font-black uppercase tracking-[0.18em] text-warn-300">
+                <span className="text-mini font-black uppercase tracking-[0.18em] text-warn-300">
                   Programming Note
                 </span>
               </div>
@@ -721,10 +721,10 @@ function DisclosureSection({
             {icon}
           </span>
           <div className="min-w-0">
-            <p className="text-[13px] font-black uppercase tracking-[0.08em] text-white sm:text-[14px]">
+            <p className="text-body font-black uppercase tracking-[0.08em] text-white sm:text-[14px]">
               {title}
             </p>
-            <p className="mt-1 text-[11px] leading-relaxed text-neutral-500 sm:text-[12px]">
+            <p className="mt-1 text-caption leading-relaxed text-neutral-500 sm:text-small">
               {summary}
             </p>
           </div>
@@ -766,7 +766,7 @@ function InfoBlock({
 }) {
   return (
     <div className="rounded-2xl border border-white/6 bg-black/20 p-3.5">
-      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-neutral-500">
+      <p className="text-mini font-black uppercase tracking-[0.18em] text-neutral-500">
         {label}
       </p>
       <div className="mt-2">{children}</div>
@@ -784,7 +784,7 @@ function DetailPill({
   return (
     <span
       className={cn(
-        "rounded-full border border-white/10 bg-white/6 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em] text-white",
+        "rounded-full border border-white/10 bg-white/6 px-2.5 py-1 text-mini font-black uppercase tracking-[0.14em] text-white",
         className
       )}
     >
@@ -816,7 +816,7 @@ function AlternativeCard({
           <p className="text-sm font-bold leading-snug text-white transition-colors group-hover:text-accent-300">
             {entry.name}
           </p>
-          <p className="mt-1 text-[12px] font-medium capitalize leading-relaxed text-neutral-500">
+          <p className="mt-1 text-small font-medium capitalize leading-relaxed text-neutral-500">
             {entry.movementPattern ?? entry.category}
           </p>
         </div>
@@ -832,7 +832,7 @@ function AlternativeCard({
           <span
             key={`${entry.id}-${badge}`}
             className={cn(
-              "rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em]",
+              "rounded-full border px-2.5 py-1 text-mini font-black uppercase tracking-[0.14em]",
               badge === "Free Weight"
                 ? "border-accent-400/20 bg-accent-400/10 text-accent-400"
                 : "border-info-400/20 bg-info-400/10 text-info-400"
@@ -845,7 +845,7 @@ function AlternativeCard({
         {(entry.equipment ?? []).slice(0, 2).map((item) => (
           <span
             key={`${entry.id}-${item}`}
-            className="rounded-full border border-white/10 bg-black/25 px-2.5 py-1 text-[10px] font-semibold capitalize text-neutral-300"
+            className="rounded-full border border-white/10 bg-black/25 px-2.5 py-1 text-mini font-semibold capitalize text-neutral-300"
           >
             {formatEquipmentLabel(item)}
           </span>

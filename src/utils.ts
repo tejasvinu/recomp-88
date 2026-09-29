@@ -1,7 +1,13 @@
 import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { extendTailwindMerge } from "tailwind-merge";
 
 import type { BodyWeightEntry } from "./types";
+
+// Teach tailwind-merge the custom type scale from globals.css, otherwise it reads
+// `text-mini` as a text colour and drops it when a colour class follows.
+const twMerge = extendTailwindMerge({
+    extend: { theme: { text: ["nano", "micro", "mini", "caption", "small", "body"] } },
+});
 
 export function cn(...inputs: ClassValue[]) {
     return twMerge(clsx(inputs));

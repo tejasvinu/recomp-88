@@ -129,7 +129,7 @@ export default function PlateCalculator({ onClose, weightUnit }: PlateCalculator
 
           {/* Target weight input */}
           <div>
-            <label className="text-[10px] font-black uppercase tracking-widest text-neutral-500 block mb-2">
+            <label className="text-mini font-black uppercase tracking-widest text-neutral-500 block mb-2">
               Target Weight
             </label>
             <div className="relative">
@@ -143,7 +143,7 @@ export default function PlateCalculator({ onClose, weightUnit }: PlateCalculator
                 autoFocus
                 className="w-full bg-white/5 border border-white/8 rounded-xl py-3.5 pl-4 pr-14 text-2xl font-mono font-bold text-white placeholder-neutral-700 outline-none focus:ring-1 focus:ring-accent-400/40 focus:border-accent-400/30 transition-all"
               />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[12px] font-bold text-neutral-500 uppercase tracking-widest">
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-small font-bold text-neutral-500 uppercase tracking-widest">
                 {weightUnit}
               </span>
             </div>
@@ -151,7 +151,7 @@ export default function PlateCalculator({ onClose, weightUnit }: PlateCalculator
 
           {/* Bar weight selector */}
           <div>
-            <label className="text-[10px] font-black uppercase tracking-widest text-neutral-500 block mb-2">
+            <label className="text-mini font-black uppercase tracking-widest text-neutral-500 block mb-2">
               Bar Weight
             </label>
             <div className="flex gap-2">
@@ -169,7 +169,7 @@ export default function PlateCalculator({ onClose, weightUnit }: PlateCalculator
                   <p className="text-[14px] font-black">{opt.label}</p>
                   <p
                     className={cn(
-                      "text-[9px] font-bold uppercase tracking-wider",
+                      "text-micro font-bold uppercase tracking-wider",
                       barWeight === opt.value ? "text-neutral-700" : "text-neutral-600"
                     )}
                   >
@@ -186,7 +186,7 @@ export default function PlateCalculator({ onClose, weightUnit }: PlateCalculator
               <button
                 onClick={() => setMode("plates")}
                 className={cn(
-                  "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all",
+                  "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-caption font-black uppercase tracking-widest transition-all",
                   mode === "plates"
                     ? "bg-accent-400 text-neutral-950"
                     : "text-neutral-500 hover:text-neutral-300"
@@ -198,7 +198,7 @@ export default function PlateCalculator({ onClose, weightUnit }: PlateCalculator
               <button
                 onClick={() => setMode("warmup")}
                 className={cn(
-                  "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all",
+                  "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-caption font-black uppercase tracking-widest transition-all",
                   mode === "warmup"
                     ? "bg-accent-400 text-neutral-950"
                     : "text-neutral-500 hover:text-neutral-300"
@@ -215,7 +215,7 @@ export default function PlateCalculator({ onClose, weightUnit }: PlateCalculator
             <>
               {target > 0 && target <= barWeight && (
                 <div className="bg-white/3 border border-white/6 rounded-xl p-4 text-center">
-                  <p className="text-[12px] text-neutral-400 font-medium">
+                  <p className="text-small text-neutral-400 font-medium">
                     Target must be greater than bar weight ({barWeight}{weightUnit})
                   </p>
                 </div>
@@ -231,7 +231,7 @@ export default function PlateCalculator({ onClose, weightUnit }: PlateCalculator
                     )}
                   >
                     <div>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-neutral-500">
+                      <p className="text-mini font-black uppercase tracking-widest text-neutral-500">
                         Achievable
                       </p>
                       <p
@@ -241,18 +241,18 @@ export default function PlateCalculator({ onClose, weightUnit }: PlateCalculator
                         )}
                       >
                         {achievable}
-                        <span className="text-[11px] text-neutral-500 ml-1 font-bold uppercase tracking-widest">
+                        <span className="text-caption text-neutral-500 ml-1 font-bold uppercase tracking-widest">
                           {weightUnit}
                         </span>
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-neutral-500">
+                      <p className="text-mini font-black uppercase tracking-widest text-neutral-500">
                         Per Side
                       </p>
                       <p className="text-xl font-mono font-bold text-white tabular-nums mt-0.5">
                         {Math.round(plates.reduce((a, p) => a + p, 0) * 10) / 10}
-                        <span className="text-[11px] text-neutral-500 ml-1 font-bold uppercase tracking-widest">
+                        <span className="text-caption text-neutral-500 ml-1 font-bold uppercase tracking-widest">
                           {weightUnit}
                         </span>
                       </p>
@@ -261,11 +261,11 @@ export default function PlateCalculator({ onClose, weightUnit }: PlateCalculator
 
                   {/* Plates per side list */}
                   <div className="bg-white/3 border border-white/6 rounded-xl p-4">
-                    <p className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-3">
+                    <p className="text-mini font-black uppercase tracking-widest text-neutral-500 mb-3">
                       Plates Per Side
                     </p>
                     {plates.length === 0 ? (
-                      <p className="text-[12px] text-neutral-500 text-center py-1 font-medium">
+                      <p className="text-small text-neutral-500 text-center py-1 font-medium">
                         Bar only — no plates needed
                       </p>
                     ) : (
@@ -276,7 +276,7 @@ export default function PlateCalculator({ onClose, weightUnit }: PlateCalculator
                             <div
                               key={i}
                               className={cn(
-                                "h-8 flex items-center justify-center rounded-lg border font-mono font-black text-[11px] px-2.5 min-w-10",
+                                "h-8 flex items-center justify-center rounded-lg border font-mono font-black text-caption px-2.5 min-w-10",
                                 style.bg, style.border, style.text
                               )}
                             >
@@ -291,7 +291,7 @@ export default function PlateCalculator({ onClose, weightUnit }: PlateCalculator
                   {/* Barbell visualization */}
                   {plates.length > 0 && (
                     <div className="bg-white/3 border border-white/6 rounded-xl p-4 overflow-hidden">
-                      <p className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-4">
+                      <p className="text-mini font-black uppercase tracking-widest text-neutral-500 mb-4">
                         Barbell View
                       </p>
                       <div className="flex items-center justify-center gap-0">
@@ -333,7 +333,7 @@ export default function PlateCalculator({ onClose, weightUnit }: PlateCalculator
                           return (
                             <div key={p} className="flex items-center gap-1.5">
                               <div className={cn("w-2.5 h-2.5 rounded-sm border", style.bg, style.border)} />
-                              <span className="text-[9px] font-mono font-bold text-neutral-500">
+                              <span className="text-micro font-mono font-bold text-neutral-500">
                                 {p}{weightUnit}
                               </span>
                             </div>
@@ -347,7 +347,7 @@ export default function PlateCalculator({ onClose, weightUnit }: PlateCalculator
 
               {target === 0 && (
                 <div className="bg-white/2 border border-dashed border-white/8 rounded-xl p-6 text-center">
-                  <p className="text-[12px] text-neutral-500 font-medium leading-relaxed">
+                  <p className="text-small text-neutral-500 font-medium leading-relaxed">
                     Enter a target weight above to see which plates to load
                   </p>
                 </div>
@@ -358,7 +358,7 @@ export default function PlateCalculator({ onClose, weightUnit }: PlateCalculator
           {/* ── WARM-UP PYRAMID MODE ── */}
           {mode === "warmup" && target > barWeight && (
             <div className="flex flex-col gap-2">
-              <p className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-1 flex items-center gap-2">
+              <p className="text-mini font-black uppercase tracking-widest text-neutral-500 mb-1 flex items-center gap-2">
                 <Flame size={11} className="text-accent-400" />
                 Warm-Up Pyramid · Working: {target}{weightUnit}
               </p>
@@ -379,7 +379,7 @@ export default function PlateCalculator({ onClose, weightUnit }: PlateCalculator
                       <div className="flex items-center gap-2">
                         <span
                           className={cn(
-                            "text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border",
+                            "text-mini font-black uppercase tracking-widest px-2 py-0.5 rounded-md border",
                             isWorkingSet
                               ? "text-accent-400 bg-accent-400/10 border-accent-400/25"
                               : "text-neutral-500 bg-white/4 border-white/8"
@@ -389,21 +389,21 @@ export default function PlateCalculator({ onClose, weightUnit }: PlateCalculator
                         </span>
                         <span
                           className={cn(
-                            "text-[11px] font-mono font-bold",
+                            "text-caption font-mono font-bold",
                             isWorkingSet ? "text-accent-400" : "text-white"
                           )}
                         >
                           {achievableWeight}{weightUnit}
                         </span>
                         {stepWeight !== achievableWeight && (
-                          <span className="text-[9px] text-neutral-600 font-medium">
+                          <span className="text-micro text-neutral-600 font-medium">
                             (target {stepWeight}{weightUnit})
                           </span>
                         )}
                       </div>
                       <span
                         className={cn(
-                          "text-[11px] font-black font-mono",
+                          "text-caption font-black font-mono",
                           isWorkingSet ? "text-accent-400" : "text-neutral-400"
                         )}
                       >
@@ -419,7 +419,7 @@ export default function PlateCalculator({ onClose, weightUnit }: PlateCalculator
                             <div
                               key={i}
                               className={cn(
-                                "h-6 flex items-center justify-center rounded-md border font-mono font-black text-[10px] px-2 min-w-8",
+                                "h-6 flex items-center justify-center rounded-md border font-mono font-black text-mini px-2 min-w-8",
                                 style.bg, style.border, style.text
                               )}
                             >
@@ -429,13 +429,13 @@ export default function PlateCalculator({ onClose, weightUnit }: PlateCalculator
                         })}
                       </div>
                     ) : (
-                      <p className="text-[10px] text-neutral-600 font-medium">Bar only</p>
+                      <p className="text-mini text-neutral-600 font-medium">Bar only</p>
                     )}
                   </div>
                 );
               })}
 
-              <p className="text-[10px] text-neutral-600 text-center font-medium mt-1">
+              <p className="text-mini text-neutral-600 text-center font-medium mt-1">
                 Plates shown per side · weights rounded to nearest {interval}{weightUnit}
               </p>
             </div>

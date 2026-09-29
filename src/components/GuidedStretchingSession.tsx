@@ -268,11 +268,11 @@ export default function GuidedStretchingSession({ program, onClose, soundEnabled
             {/* Header */}
             <div className="p-6 flex items-center justify-between">
                 <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-accent-400 mb-1">{program.name}</p>
+                    <p className="text-mini font-black uppercase tracking-[0.2em] text-accent-400 mb-1">{program.name}</p>
                     <h1 className="text-xl font-black uppercase tracking-tight flex items-center gap-2">
                         {isBreak ? "Next Up" : currentStretch.name}
                         {!isBreak && sides > 1 && (
-                            <span className="text-[10px] font-mono font-bold uppercase tracking-[0.18em] text-neutral-500">
+                            <span className="text-mini font-mono font-bold uppercase tracking-[0.18em] text-neutral-500">
                                 Side {sideIndex + 1} of {sides}
                             </span>
                         )}
@@ -324,7 +324,7 @@ export default function GuidedStretchingSession({ program, onClose, soundEnabled
                             <span className={cn("text-3xl sm:text-4xl font-black tabular-nums tracking-tighter leading-none mt-1", isBreak ? "text-warn-400" : "text-white")}>
                                 {timeLeft}
                             </span>
-                            <span className="text-[8px] font-black uppercase tracking-widest text-neutral-500 mt-0.5 hidden sm:block">Sec</span>
+                            <span className="text-nano font-black uppercase tracking-widest text-neutral-500 mt-0.5 hidden sm:block">Sec</span>
                         </div>
                     </div>
 
@@ -354,13 +354,13 @@ export default function GuidedStretchingSession({ program, onClose, soundEnabled
                                 <div className="text-left bg-neutral-900/50 backdrop-blur-sm border border-white/10 rounded-2xl p-5 shadow-xl space-y-5">
                                     {currentStretch.instructions && currentStretch.instructions.length > 0 && (
                                         <div>
-                                            <h3 className="text-[10px] uppercase font-black tracking-[0.2em] text-accent-400 mb-3 ml-2 flex items-center gap-2">
+                                            <h3 className="text-mini uppercase font-black tracking-[0.2em] text-accent-400 mb-3 ml-2 flex items-center gap-2">
                                                 <span className="w-1 h-1 rounded-full bg-accent-400 animate-pulse"></span>
                                                 Instructions
                                             </h3>
                                             <ul className="space-y-2">
                                                 {currentStretch.instructions.map((inst, i) => (
-                                                    <li key={i} className="text-[11px] text-neutral-300 flex items-start gap-3">
+                                                    <li key={i} className="text-caption text-neutral-300 flex items-start gap-3">
                                                         <span className="text-accent-400/50 font-mono mt-0.5 shrink-0">{i + 1}.</span> 
                                                         <span className="leading-snug">{inst}</span>
                                                     </li>
@@ -371,13 +371,13 @@ export default function GuidedStretchingSession({ program, onClose, soundEnabled
 
                                     {currentStretch.cues && currentStretch.cues.length > 0 && (
                                         <div className={cn(currentStretch.instructions?.length ? "pt-4 border-t border-white/5" : "")}>
-                                            <h3 className="text-[10px] uppercase font-black tracking-[0.2em] text-info-400 mb-3 ml-2 flex items-center gap-2">
+                                            <h3 className="text-mini uppercase font-black tracking-[0.2em] text-info-400 mb-3 ml-2 flex items-center gap-2">
                                                 <span className="w-1 h-1 rounded-full bg-info-400"></span>
                                                 Pointers
                                             </h3>
                                             <ul className="space-y-2.5">
                                                 {currentStretch.cues.map((cue, i) => (
-                                                    <li key={i} className="text-[11px] text-neutral-400 flex items-start gap-3">
+                                                    <li key={i} className="text-caption text-neutral-400 flex items-start gap-3">
                                                         <span className="text-info-400/50 font-mono mt-0.5 shrink-0 text-lg leading-[0.5] mt-1.5">·</span> 
                                                         <span className="leading-snug block">{cue}</span>
                                                     </li>
@@ -388,13 +388,13 @@ export default function GuidedStretchingSession({ program, onClose, soundEnabled
 
                                     {currentStretch.commonMistakes && currentStretch.commonMistakes.length > 0 && (
                                         <div className={cn((currentStretch.instructions?.length || currentStretch.cues?.length) ? "pt-4 border-t border-white/5" : "")}>
-                                            <h3 className="text-[10px] uppercase font-black tracking-[0.2em] text-danger-400 mb-3 ml-2 flex items-center gap-2">
+                                            <h3 className="text-mini uppercase font-black tracking-[0.2em] text-danger-400 mb-3 ml-2 flex items-center gap-2">
                                                 <span className="w-1 h-1 rounded-full bg-danger-400 shadow-[0_0_8px_color-mix(in_oklab,_var(--color-danger-400)_60%,_transparent)]"></span>
                                                 Things to Notice
                                             </h3>
                                             <ul className="space-y-2">
                                                 {currentStretch.commonMistakes.map((mistake, i) => (
-                                                    <li key={i} className="text-[10px] font-medium text-neutral-400 flex items-start gap-2.5 bg-danger-400/5 border border-danger-400/10 p-2.5 rounded-lg">
+                                                    <li key={i} className="text-mini font-medium text-neutral-400 flex items-start gap-2.5 bg-danger-400/5 border border-danger-400/10 p-2.5 rounded-lg">
                                                         <span className="text-danger-400/80 font-mono shrink-0">!</span> 
                                                         <span className="leading-snug text-neutral-300">{mistake}</span>
                                                     </li>

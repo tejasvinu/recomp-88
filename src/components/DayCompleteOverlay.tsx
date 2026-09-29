@@ -30,7 +30,7 @@ export default function DayCompleteOverlay({ show, dayName }: DayCompleteOverlay
                 </div>
                 <div className="text-center">
                     <p className="text-3xl font-black text-white uppercase tracking-widest">Day Done</p>
-                    <p className="text-[13px] text-accent-400 font-bold uppercase tracking-widest mt-1">
+                    <p className="text-body text-accent-400 font-bold uppercase tracking-widest mt-1">
                         {dayName}
                     </p>
                 </div>

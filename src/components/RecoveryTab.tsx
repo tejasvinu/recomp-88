@@ -183,7 +183,7 @@ export default function StretchingTab({
                                     <HeartPulse size={26} />
                                 </div>
                                 <div className="min-w-0 flex-1 pt-1">
-                                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-accent-400/90 mb-1">
+                                    <p className="text-caption font-black uppercase tracking-[0.2em] text-accent-400/90 mb-1">
                                         Mobility & stretching
                                     </p>
                                     <h3 className="text-xl font-black text-white tracking-tight">
@@ -193,7 +193,7 @@ export default function StretchingTab({
                                         Static stretches and slow flows for after training, tight days, or general flexibility.
                                     </p>
                                     <div className="mt-4 flex items-center gap-2">
-                                        <span className="px-2.5 py-1 rounded-full bg-accent-400/10 border border-accent-400/20 text-[11px] font-bold text-accent-300">
+                                        <span className="px-2.5 py-1 rounded-full bg-accent-400/10 border border-accent-400/20 text-caption font-bold text-accent-300">
                                             {StretchPrograms.length} routines
                                         </span>
                                     </div>
@@ -221,7 +221,7 @@ export default function StretchingTab({
                                     <Dumbbell size={26} className="-rotate-12 group-hover:rotate-0 transition-transform duration-500" />
                                 </div>
                                 <div className="min-w-0 flex-1 pt-1">
-                                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-warn-400/90 mb-1">
+                                    <p className="text-caption font-black uppercase tracking-[0.2em] text-warn-400/90 mb-1">
                                         Training extras
                                     </p>
                                     <h3 className="text-xl font-black text-white tracking-tight">
@@ -231,10 +231,10 @@ export default function StretchingTab({
                                         Short, higher-effort blocks meant around your main lifts — not replacement stretching.
                                     </p>
                                     <div className="mt-4 flex items-center gap-2">
-                                        <span className="px-2.5 py-1 rounded-full bg-warn-400/10 border border-warn-400/20 text-[11px] font-bold text-warn-300">
+                                        <span className="px-2.5 py-1 rounded-full bg-warn-400/10 border border-warn-400/20 text-caption font-bold text-warn-300">
                                             {PrimerPrograms.length} primers
                                         </span>
-                                        <span className="px-2.5 py-1 rounded-full bg-rose-400/10 border border-rose-400/20 text-[11px] font-bold text-rose-300">
+                                        <span className="px-2.5 py-1 rounded-full bg-rose-400/10 border border-rose-400/20 text-caption font-bold text-rose-300">
                                             {FinisherPrograms.length} finishers
                                         </span>
                                     </div>
@@ -262,7 +262,7 @@ export default function StretchingTab({
                                 setSearchMobility('');
                                 setExpandedMobilityId(null);
                             }}
-                            className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-zinc-500 hover:text-zinc-300 mb-5 transition-colors"
+                            className="flex items-center gap-2 text-caption font-bold uppercase tracking-[0.14em] text-zinc-500 hover:text-zinc-300 mb-5 transition-colors"
                         >
                             <ArrowLeft size={14} />
                             Back to Recovery
@@ -341,7 +341,7 @@ export default function StretchingTab({
                                 setZone('choose');
                                 setSearchTraining('');
                             }}
-                            className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-zinc-500 hover:text-zinc-300 mb-5 transition-colors"
+                            className="flex items-center gap-2 text-caption font-bold uppercase tracking-[0.14em] text-zinc-500 hover:text-zinc-300 mb-5 transition-colors"
                         >
                             <ArrowLeft size={14} />
                             Back to Recovery
@@ -378,7 +378,7 @@ export default function StretchingTab({
                                 <h3 className="text-xs font-black uppercase tracking-[0.2em] text-warn-300">
                                     Primers
                                 </h3>
-                                <span className="text-[11px] text-zinc-500 font-medium">— before lifting</span>
+                                <span className="text-caption text-zinc-500 font-medium">— before lifting</span>
                             </div>
                             {filteredPrimers.length === 0 ? (
                                 <p className="text-sm text-zinc-500 py-4 px-1">No primers match that search.</p>
@@ -408,7 +408,7 @@ export default function StretchingTab({
                                 <h3 className="text-xs font-black uppercase tracking-[0.2em] text-rose-300">
                                     Finishers
                                 </h3>
-                                <span className="text-[11px] text-zinc-500 font-medium">— short burnouts</span>
+                                <span className="text-caption text-zinc-500 font-medium">— short burnouts</span>
                             </div>
                             {filteredFinishers.length === 0 ? (
                                 <p className="text-sm text-zinc-500 py-4 px-1">No finishers match that search.</p>
@@ -485,14 +485,14 @@ function MobilityProgramRow({
                         {program.name}
                     </h3>
                     <div className="flex items-center gap-2 mt-2 flex-wrap">
-                        <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-[11px] font-bold text-zinc-300">
+                        <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-caption font-bold text-zinc-300">
                             {moveCount} moves
                         </span>
-                        <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-[11px] font-bold text-zinc-300">
+                        <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-caption font-bold text-zinc-300">
                             ~{minutes} min
                         </span>
                         {program.difficulty && (
-                            <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-[11px] font-bold text-zinc-400 border border-zinc-700">
+                            <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-caption font-bold text-zinc-400 border border-zinc-700">
                                 {program.difficulty}
                             </span>
                         )}
@@ -521,7 +521,7 @@ function MobilityProgramRow({
                         type="button"
                         onClick={onToggleExpand}
                         className={cn(
-                            'flex items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-widest rounded-lg',
+                            'flex items-center justify-center gap-1 text-mini font-bold uppercase tracking-widest rounded-lg',
                             'text-zinc-400 hover:text-white py-1.5 transition-colors hover:bg-white/5',
                         )}
                     >
@@ -588,7 +588,7 @@ function TrainingProgramRow({
                 <div className="flex items-center gap-2.5 flex-wrap">
                     <span
                         className={cn(
-                            'text-[10px] font-black uppercase tracking-[0.14em] px-2 py-0.5 rounded-md border',
+                            'text-mini font-black uppercase tracking-[0.14em] px-2 py-0.5 rounded-md border',
                             isPrimer
                                 ? 'text-warn-400 border-warn-400/30 bg-warn-400/10'
                                 : 'text-rose-400 border-rose-400/30 bg-rose-400/10',

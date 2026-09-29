@@ -80,7 +80,7 @@ export default function AppHeader({
                                 )}
                                 <span
                                     className={cn(
-                                        'text-[11px] font-mono font-bold tabular-nums',
+                                        'text-caption font-mono font-bold tabular-nums',
                                         isTimerPaused ? 'text-warn-400' : 'text-accent-400',
                                     )}
                                 >
@@ -121,15 +121,15 @@ export default function AppHeader({
             {activeTab !== 'workout' && activeDay && (
                 <div className="mb-3 rounded-2xl border border-white/7 bg-white/3 px-3 py-2.5 flex items-center justify-between gap-3">
                     <div className="min-w-0">
-                        <p className="text-[9px] font-black uppercase tracking-[0.18em] text-neutral-600">
+                        <p className="text-micro font-black uppercase tracking-[0.18em] text-neutral-600">
                             Active workout
                         </p>
-                        <p className="text-[12px] font-bold text-neutral-200 truncate mt-0.5">
+                        <p className="text-small font-bold text-neutral-200 truncate mt-0.5">
                             D{activeDay.dayNumber} · {activeDay.name}
                         </p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-[11px] font-mono font-bold text-accent-400 tabular-nums">
+                        <span className="text-caption font-mono font-bold text-accent-400 tabular-nums">
                             {progressPercent}%
                         </span>
                         <button
@@ -138,7 +138,7 @@ export default function AppHeader({
                                 setActiveTab('workout');
                                 window.scrollTo({ top: 0, behavior: 'smooth' });
                             }}
-                            className="rounded-lg border border-accent-400/25 bg-accent-400/10 px-2.5 py-1.5 text-[9px] font-black uppercase tracking-widest text-accent-400 hover:bg-accent-400/16 transition-all"
+                            className="rounded-lg border border-accent-400/25 bg-accent-400/10 px-2.5 py-1.5 text-micro font-black uppercase tracking-widest text-accent-400 hover:bg-accent-400/16 transition-all"
                         >
                             Open
                         </button>
@@ -163,7 +163,7 @@ export default function AppHeader({
                                 style={{ width: `${progressPercent}%` }}
                             />
                         </div>
-                        <span className="text-[11px] font-mono font-bold text-accent-400 tabular-nums shrink-0">
+                        <span className="text-caption font-mono font-bold text-accent-400 tabular-nums shrink-0">
                             {progressPercent}%
                         </span>
                     </div>
@@ -181,7 +181,7 @@ export default function AppHeader({
                                 role="tab"
                                 aria-selected={clampedActiveDayIndex === idx}
                                 className={cn(
-                                    'snap-center shrink-0 px-3.5 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-widest transition-all duration-200 border',
+                                    'snap-center shrink-0 px-3.5 py-1.5 rounded-lg text-caption font-bold uppercase tracking-widest transition-all duration-200 border',
                                     clampedActiveDayIndex === idx
                                         ? 'bg-accent-400 text-neutral-950 border-accent-400 shadow-[0_0_12px_color-mix(in_oklab,_var(--color-accent-400)_25%,_transparent)]'
                                         : 'bg-white/4 text-neutral-500 border-white/6 hover:bg-white/8 hover:text-neutral-300',
@@ -194,11 +194,11 @@ export default function AppHeader({
 
                     {activeDay && (
                         <div className="flex items-center justify-between mt-2 gap-2">
-                            <p className="text-[11px] font-semibold text-neutral-500 uppercase tracking-widest truncate">
+                            <p className="text-caption font-semibold text-neutral-500 uppercase tracking-widest truncate">
                                 {activeDay.name}
                             </p>
                             <div className="flex items-center gap-1.5 shrink-0">
-                                <span className="text-[9px] font-bold text-neutral-700 uppercase tracking-widest hidden min-[380px]:inline">
+                                <span className="text-micro font-bold text-neutral-700 uppercase tracking-widest hidden min-[380px]:inline">
                                     tap or swipe
                                 </span>
                                 <button

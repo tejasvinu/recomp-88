@@ -147,7 +147,7 @@ export default function ChartsView({
         </div>
         <div>
           <h2 className="text-xl font-black text-white tracking-wide">Progression</h2>
-          <p className="text-[11px] text-neutral-500 font-medium uppercase tracking-widest">
+          <p className="text-caption text-neutral-500 font-medium uppercase tracking-widest">
             Volume · tonnage · rep maxes · recovery map
           </p>
         </div>
@@ -163,7 +163,7 @@ export default function ChartsView({
             type="button"
             onClick={() => setAnalyticsView(view.id)}
             className={cn(
-              "rounded-xl border px-3 py-2.5 text-[11px] font-black uppercase tracking-[0.18em] transition-all",
+              "rounded-xl border px-3 py-2.5 text-caption font-black uppercase tracking-[0.18em] transition-all",
               analyticsView === view.id
                 ? "bg-accent-400/12 border-accent-400/25 text-accent-400"
                 : "bg-white/4 border-white/7 text-neutral-500 hover:bg-white/7 hover:text-neutral-300"
@@ -188,14 +188,14 @@ export default function ChartsView({
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Scale size={15} className="text-accent-400" />
-                <h3 className="text-[12px] font-black text-white uppercase tracking-widest">
+                <h3 className="text-small font-black text-white uppercase tracking-widest">
                   Body Weight
                 </h3>
               </div>
               {todayBw && (
                 <div className="flex items-baseline gap-0.5">
                   <span className="text-lg font-mono font-bold text-accent-400 tabular-nums">{todayBw.weight}</span>
-                  <span className="text-[9px] text-neutral-500 font-bold uppercase tracking-widest ml-1">{weightUnit} today</span>
+                  <span className="text-micro text-neutral-500 font-bold uppercase tracking-widest ml-1">{weightUnit} today</span>
                 </div>
               )}
             </div>
@@ -209,7 +209,7 @@ export default function ChartsView({
                 onChange={(e) => setBwInput(e.target.value)}
                 className="flex-1 bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm font-mono font-bold text-white placeholder-neutral-600 outline-none focus:ring-1 focus:ring-accent-400/40 focus:border-accent-400/30 transition-all"
               />
-              <span className="flex items-center text-[11px] font-bold text-neutral-600 shrink-0">{weightUnit}</span>
+              <span className="flex items-center text-caption font-bold text-neutral-600 shrink-0">{weightUnit}</span>
               <button
                 onClick={() => {
                   const w = parseFloat(bwInput);
@@ -218,7 +218,7 @@ export default function ChartsView({
                     setBwInput("");
                   }
                 }}
-                className="px-4 py-2.5 rounded-xl bg-accent-400/12 border border-accent-400/25 text-accent-400 font-bold text-[12px] hover:bg-accent-400/20 transition-all active:scale-95"
+                className="px-4 py-2.5 rounded-xl bg-accent-400/12 border border-accent-400/25 text-accent-400 font-bold text-small hover:bg-accent-400/20 transition-all active:scale-95"
               >
                 Log
               </button>
@@ -270,13 +270,13 @@ export default function ChartsView({
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <Flame size={16} className="text-accent-400" />
-                <h3 className="text-[12px] font-black text-white uppercase tracking-widest">Latest Session Tonnage</h3>
+                <h3 className="text-small font-black text-white uppercase tracking-widest">Latest Session Tonnage</h3>
               </div>
               <div className="flex items-baseline gap-1">
                 <span className="text-xl font-mono font-bold text-accent-400 tabular-nums">
                   {totalWeeklyVolume.toLocaleString()}
                 </span>
-                <span className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest">{weightUnit}</span>
+                <span className="text-mini text-neutral-500 font-bold uppercase tracking-widest">{weightUnit}</span>
               </div>
             </div>
 
@@ -319,11 +319,11 @@ export default function ChartsView({
             <div className="bg-neutral-900/50 border border-white/6 rounded-2xl p-4 shadow-lg">
               <div className="flex items-center gap-2 mb-4">
                 <TrendingUp size={15} className="text-accent-400" />
-                <h3 className="text-[12px] font-black text-white uppercase tracking-widest">Week vs Week</h3>
+                <h3 className="text-small font-black text-white uppercase tracking-widest">Week vs Week</h3>
                 {weekComparison.change !== null && (
                   <div
                     className={cn(
-                      "ml-auto flex items-center gap-1 text-[11px] font-mono font-bold px-2 py-1 rounded-lg border",
+                      "ml-auto flex items-center gap-1 text-caption font-mono font-bold px-2 py-1 rounded-lg border",
                       weekComparison.change > 0
                         ? "text-accent-400 bg-accent-400/10 border-accent-400/20"
                         : weekComparison.change < 0
@@ -338,30 +338,30 @@ export default function ChartsView({
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-accent-400/8 border border-accent-400/20 rounded-xl p-3.5">
-                  <p className="text-[9px] font-black uppercase tracking-widest text-accent-400/70 mb-2">This Week</p>
+                  <p className="text-micro font-black uppercase tracking-widest text-accent-400/70 mb-2">This Week</p>
                   <p className="text-xl font-mono font-bold text-accent-400 tabular-nums leading-none">
                     {weekComparison.thisWeek.toLocaleString()}
-                    <span className="text-[9px] text-accent-400/60 font-bold uppercase tracking-widest ml-1">{weightUnit}</span>
+                    <span className="text-micro text-accent-400/60 font-bold uppercase tracking-widest ml-1">{weightUnit}</span>
                   </p>
-                  <p className="text-[10px] text-accent-400/50 font-medium mt-1.5">
+                  <p className="text-mini text-accent-400/50 font-medium mt-1.5">
                     {weekComparison.thisWeekCount} session{weekComparison.thisWeekCount !== 1 ? "s" : ""}
                   </p>
                 </div>
                 <div className="bg-white/3 border border-white/6 rounded-xl p-3.5">
-                  <p className="text-[9px] font-black uppercase tracking-widest text-neutral-500 mb-2">Last Week</p>
+                  <p className="text-micro font-black uppercase tracking-widest text-neutral-500 mb-2">Last Week</p>
                   <p className="text-xl font-mono font-bold text-white tabular-nums leading-none">
                     {weekComparison.lastWeek > 0 ? weekComparison.lastWeek.toLocaleString() : "—"}
                     {weekComparison.lastWeek > 0 && (
-                      <span className="text-[9px] text-neutral-600 font-bold uppercase tracking-widest ml-1">{weightUnit}</span>
+                      <span className="text-micro text-neutral-600 font-bold uppercase tracking-widest ml-1">{weightUnit}</span>
                     )}
                   </p>
-                  <p className="text-[10px] text-neutral-600 font-medium mt-1.5">
+                  <p className="text-mini text-neutral-600 font-medium mt-1.5">
                     {weekComparison.lastWeekCount} session{weekComparison.lastWeekCount !== 1 ? "s" : ""}
                   </p>
                 </div>
               </div>
               {weekComparison.change === null && (
-                <p className="text-[10px] text-neutral-600 font-medium mt-3 text-center">
+                <p className="text-mini text-neutral-600 font-medium mt-3 text-center">
                   Complete sessions across two weeks to see comparison
                 </p>
               )}
@@ -373,8 +373,8 @@ export default function ChartsView({
             <div className="bg-neutral-900/50 border border-white/6 rounded-2xl p-4 shadow-lg">
               <div className="flex items-center gap-2 mb-4">
                 <TrendingUp size={15} className="text-info-400" />
-                <h3 className="text-[12px] font-black text-white uppercase tracking-widest">Session Tonnage Trend</h3>
-                <span className="text-[9px] text-neutral-600 font-bold uppercase tracking-widest ml-auto">
+                <h3 className="text-small font-black text-white uppercase tracking-widest">Session Tonnage Trend</h3>
+                <span className="text-micro text-neutral-600 font-bold uppercase tracking-widest ml-auto">
                   Last {sessionTonnageTrend.length} sessions
                 </span>
               </div>
@@ -412,7 +412,7 @@ export default function ChartsView({
                       key={day.id}
                       onClick={() => setSelectedDayIdx(idx)}
                       className={cn(
-                        "snap-center shrink-0 px-3.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all duration-200 border",
+                        "snap-center shrink-0 px-3.5 py-1.5 rounded-lg text-mini font-bold uppercase tracking-widest transition-all duration-200 border",
                         selectedDayIdx === idx
                           ? "bg-accent-400 text-neutral-950 border-accent-400 shadow-[0_0_10px_color-mix(in_oklab,_var(--color-accent-400)_20%,_transparent)]"
                           : "bg-white/4 text-neutral-500 border-white/6 hover:bg-white/8 hover:text-neutral-300"
@@ -422,7 +422,7 @@ export default function ChartsView({
                     </button>
                   ))}
                 </div>
-                <p className="text-[11px] font-semibold text-neutral-500 uppercase tracking-widest mt-1.5 px-0.5">
+                <p className="text-caption font-semibold text-neutral-500 uppercase tracking-widest mt-1.5 px-0.5">
                   {activeDay.name}
                 </p>
               </div>
@@ -431,7 +431,7 @@ export default function ChartsView({
               <div className="bg-neutral-900/50 border border-white/6 rounded-2xl p-4 shadow-lg">
                 <div className="flex items-center gap-2 mb-4">
                   <Dumbbell size={15} className="text-accent-400" />
-                  <h3 className="text-[12px] font-black text-white uppercase tracking-widest">Exercise Volume</h3>
+                  <h3 className="text-small font-black text-white uppercase tracking-widest">Exercise Volume</h3>
                 </div>
 
                 {exerciseStats.some((entry) => entry.totalVolume > 0) ? (
@@ -490,8 +490,8 @@ export default function ChartsView({
                 <div className="bg-neutral-900/50 border border-white/6 rounded-2xl p-4 shadow-lg">
                   <div className="flex items-center gap-2 mb-4">
                     <Award size={15} className="text-accent-400" />
-                    <h3 className="text-[12px] font-black text-white uppercase tracking-widest">Estimated 1RM</h3>
-                    <span className="text-[9px] text-neutral-600 font-black uppercase tracking-widest ml-auto bg-white/4 px-2 py-1 rounded-md border border-white/6">Epley</span>
+                    <h3 className="text-small font-black text-white uppercase tracking-widest">Estimated 1RM</h3>
+                    <span className="text-micro text-neutral-600 font-black uppercase tracking-widest ml-auto bg-white/4 px-2 py-1 rounded-md border border-white/6">Epley</span>
                   </div>
                   <div className="flex flex-col gap-2">
                     {estimatedMaxes.map((entry) => (
@@ -509,18 +509,18 @@ export default function ChartsView({
                               </button>
                             )}
                           </div>
-                          <p className="text-[10px] text-neutral-500 font-medium mt-0.5 uppercase tracking-wider">
+                          <p className="text-mini text-neutral-500 font-medium mt-0.5 uppercase tracking-wider">
                             Best: <span className="text-neutral-300 font-mono">{entry.bestSet}</span>
                           </p>
                         </div>
                         <div className="flex items-baseline gap-0.5 shrink-0 ml-3">
                           <span className="text-[22px] font-mono font-bold text-accent-400 tabular-nums leading-none">{entry.estimated1RM}</span>
-                          <span className="text-[9px] text-neutral-500 font-bold uppercase tracking-widest ml-1">{weightUnit}</span>
+                          <span className="text-micro text-neutral-500 font-bold uppercase tracking-widest ml-1">{weightUnit}</span>
                         </div>
                       </div>
                     ))}
                   </div>
-                  <p className="text-[10px] text-neutral-600 mt-3 text-center font-medium">
+                  <p className="text-mini text-neutral-600 mt-3 text-center font-medium">
                     1RM = weight × (1 + reps ÷ 30) · reps are capped at 15 to avoid endurance-set inflation
                   </p>
                 </div>
@@ -531,12 +531,12 @@ export default function ChartsView({
                 <div className="bg-neutral-900/50 border border-white/6 rounded-2xl p-4 shadow-lg">
                   <div className="flex items-center gap-2 mb-1">
                     <TrendingUp size={15} className="text-accent-400" />
-                    <h3 className="text-[12px] font-black text-white uppercase tracking-widest">PR Tracker</h3>
-                    <span className="text-[9px] text-neutral-600 font-black uppercase tracking-widest ml-auto bg-white/4 px-2 py-1 rounded-md border border-white/6">
+                    <h3 className="text-small font-black text-white uppercase tracking-widest">PR Tracker</h3>
+                    <span className="text-micro text-neutral-600 font-black uppercase tracking-widest ml-auto bg-white/4 px-2 py-1 rounded-md border border-white/6">
                       {sessions.filter((session) => session.dayId === activeDay.id).length} sessions
                     </span>
                   </div>
-                  <p className="text-[10px] text-neutral-500 font-medium mb-4 uppercase tracking-wider">Est. 1RM over time</p>
+                  <p className="text-mini text-neutral-500 font-medium mb-4 uppercase tracking-wider">Est. 1RM over time</p>
                   <div className="h-44">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={prHistory.series} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
@@ -581,7 +581,7 @@ export default function ChartsView({
                     {prHistory.exercises.map((exercise, index) => (
                       <div key={exercise.key} className="flex items-center gap-1.5">
                         <span className="w-3 h-0.5 rounded-full shrink-0" style={{ backgroundColor: LINE_COLORS[index % LINE_COLORS.length] }} />
-                        <span className="text-[9px] font-bold text-neutral-500 uppercase tracking-wider">{exercise.label}</span>
+                        <span className="text-micro font-bold text-neutral-500 uppercase tracking-wider">{exercise.label}</span>
                       </div>
                     ))}
                   </div>
@@ -593,7 +593,7 @@ export default function ChartsView({
                 <div className="bg-neutral-900/50 border border-white/6 rounded-2xl p-4 shadow-lg">
                   <div className="flex items-center gap-2 mb-1">
                     <Award size={15} className="text-info-400" />
-                    <h3 className="text-[12px] font-black text-white uppercase tracking-widest">Actual Rep Max</h3>
+                    <h3 className="text-small font-black text-white uppercase tracking-widest">Actual Rep Max</h3>
                     <div className="ml-auto flex gap-1">
                       {([8, 10] as const).map((target) => (
                         <button
@@ -601,7 +601,7 @@ export default function ChartsView({
                           type="button"
                           onClick={() => setActualRmTarget(target as ActualRmTarget)}
                           className={cn(
-                            "px-2 py-1 rounded-md border text-[9px] font-black uppercase tracking-widest transition-all",
+                            "px-2 py-1 rounded-md border text-micro font-black uppercase tracking-widest transition-all",
                             actualRmTarget === target
                               ? "bg-info-400/12 border-info-400/25 text-info-400"
                               : "bg-white/4 border-white/8 text-neutral-500 hover:bg-white/7 hover:text-neutral-300"
@@ -612,7 +612,7 @@ export default function ChartsView({
                       ))}
                     </div>
                   </div>
-                  <p className="text-[10px] text-neutral-500 font-medium mb-4 uppercase tracking-wider">
+                  <p className="text-mini text-neutral-500 font-medium mb-4 uppercase tracking-wider">
                     Heaviest logged set with exactly {actualRmTarget} reps
                   </p>
 
@@ -662,7 +662,7 @@ export default function ChartsView({
                         {actualRepMaxHistory.exercises.map((exercise, index) => (
                           <div key={exercise.key} className="flex items-center gap-1.5">
                             <span className="w-3 h-0.5 rounded-full shrink-0" style={{ backgroundColor: LINE_COLORS[index % LINE_COLORS.length] }} />
-                            <span className="text-[9px] font-bold text-neutral-500 uppercase tracking-wider">{exercise.label}</span>
+                            <span className="text-micro font-bold text-neutral-500 uppercase tracking-wider">{exercise.label}</span>
                           </div>
                         ))}
                       </div>
@@ -675,8 +675,8 @@ export default function ChartsView({
             </>
           ) : (
             <div className="bg-white/2 border border-dashed border-white/8 rounded-2xl p-6 text-center">
-              <p className="text-[12px] font-black text-white mb-1.5 uppercase tracking-widest">No Training Days Configured</p>
-              <p className="text-[11px] text-neutral-500 font-medium leading-relaxed max-w-[280px] mx-auto">
+              <p className="text-small font-black text-white mb-1.5 uppercase tracking-widest">No Training Days Configured</p>
+              <p className="text-caption text-neutral-500 font-medium leading-relaxed max-w-[280px] mx-auto">
                 Add at least one strength or hypertrophy day in workout settings to unlock progression charts for your current program.
               </p>
             </div>
@@ -687,8 +687,8 @@ export default function ChartsView({
             <div className="bg-neutral-900/50 border border-white/6 rounded-2xl p-4 shadow-lg">
               <div className="flex items-center gap-2 mb-4">
                 <History size={15} className="text-accent-400" />
-                <h3 className="text-[12px] font-black text-white uppercase tracking-widest">Recent Sessions</h3>
-                <span className="text-[9px] text-neutral-600 font-bold ml-auto">tap to expand</span>
+                <h3 className="text-small font-black text-white uppercase tracking-widest">Recent Sessions</h3>
+                <span className="text-micro text-neutral-600 font-bold ml-auto">tap to expand</span>
               </div>
 
               <div className="flex flex-col gap-2">
@@ -715,26 +715,26 @@ export default function ChartsView({
                         className="w-full flex items-center justify-between px-3.5 py-3 text-left"
                       >
                         <div>
-                          <p className="text-[13px] font-bold text-white leading-snug">{session.dayName}</p>
+                          <p className="text-body font-bold text-white leading-snug">{session.dayName}</p>
                           <div className="flex items-center gap-2 mt-0.5">
-                            <p className="text-[10px] text-neutral-500 font-medium uppercase tracking-wider">
+                            <p className="text-mini text-neutral-500 font-medium uppercase tracking-wider">
                               {new Date(session.date).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" })}
                             </p>
                             {session.duration && (
                               <div className="flex items-center gap-1">
                                 <Clock size={9} className="text-neutral-600" />
-                                <span className="text-[9px] font-mono text-neutral-600">{formatDuration(session.duration)}</span>
+                                <span className="text-micro font-mono text-neutral-600">{formatDuration(session.duration)}</span>
                               </div>
                             )}
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="text-right">
-                            <p className="text-[13px] font-mono font-bold text-accent-400 tabular-nums">
+                            <p className="text-body font-mono font-bold text-accent-400 tabular-nums">
                               {Math.round(totalVol).toLocaleString()}{" "}
-                              <span className="text-[9px] text-neutral-500 font-bold uppercase tracking-widest">{weightUnit}</span>
+                              <span className="text-micro text-neutral-500 font-bold uppercase tracking-widest">{weightUnit}</span>
                             </p>
-                            <p className="text-[10px] text-neutral-600 font-medium mt-0.5">{session.exercises.length} exercises</p>
+                            <p className="text-mini text-neutral-600 font-medium mt-0.5">{session.exercises.length} exercises</p>
                           </div>
                           {isExpanded ? <ChevronUp size={14} className="text-neutral-500 shrink-0" /> : <ChevronDown size={14} className="text-neutral-500 shrink-0" />}
                         </div>
@@ -745,12 +745,12 @@ export default function ChartsView({
                           <div className="flex flex-col gap-2 mb-3">
                             {session.exercises.map((ex) => (
                               <div key={ex.exerciseId}>
-                                <p className="text-[11px] font-bold text-neutral-300 mb-1">{ex.name}</p>
+                                <p className="text-caption font-bold text-neutral-300 mb-1">{ex.name}</p>
                                 <div className="flex flex-wrap gap-1.5">
                                   {ex.sets.map((set, i) => (
                                     <div key={set.setId} className="bg-white/5 border border-white/8 rounded-lg px-2 py-1">
-                                      <span className="text-[10px] font-mono text-neutral-400">{i + 1}.{" "}</span>
-                                      <span className="text-[10px] font-mono font-bold text-white">
+                                      <span className="text-mini font-mono text-neutral-400">{i + 1}.{" "}</span>
+                                      <span className="text-mini font-mono font-bold text-white">
                                         {set.completed && !set.loggedWeight && !set.loggedReps ? (
                                           <span className="text-accent-400">Completed ✓</span>
                                         ) : (
@@ -772,7 +772,7 @@ export default function ChartsView({
                             <div className="flex gap-2">
                               <button
                                 onClick={() => setDeleteConfirmId(null)}
-                                className="flex-1 py-2 rounded-xl text-[11px] font-bold text-neutral-400 border border-white/8 bg-white/3 hover:bg-white/7 transition-all"
+                                className="flex-1 py-2 rounded-xl text-caption font-bold text-neutral-400 border border-white/8 bg-white/3 hover:bg-white/7 transition-all"
                               >
                                 Cancel
                               </button>
@@ -782,7 +782,7 @@ export default function ChartsView({
                                   setDeleteConfirmId(null);
                                   setExpandedSessionId(null);
                                 }}
-                                className="flex-1 py-2 rounded-xl text-[11px] font-bold text-danger-400 border border-danger-400/25 bg-danger-400/8 hover:bg-danger-400/15 transition-all"
+                                className="flex-1 py-2 rounded-xl text-caption font-bold text-danger-400 border border-danger-400/25 bg-danger-400/8 hover:bg-danger-400/15 transition-all"
                               >
                                 Delete session
                               </button>
@@ -793,7 +793,7 @@ export default function ChartsView({
                                 e.stopPropagation();
                                 setDeleteConfirmId(session.id);
                               }}
-                              className="flex items-center gap-1.5 text-[10px] font-bold text-neutral-600 hover:text-danger-400 transition-colors"
+                              className="flex items-center gap-1.5 text-mini font-bold text-neutral-600 hover:text-danger-400 transition-colors"
                             >
                               <Trash2 size={11} />
                               Delete this session
@@ -815,7 +815,7 @@ export default function ChartsView({
                 <TrendingUp size={24} className="text-neutral-600" />
               </div>
               <p className="text-[15px] font-black text-white mb-1.5 tracking-wide">No progression data yet</p>
-              <p className="text-[12px] text-neutral-500 font-medium leading-relaxed max-w-[260px] mx-auto">
+              <p className="text-small text-neutral-500 font-medium leading-relaxed max-w-[260px] mx-auto">
                 Log weights and reps in the tracker, then tap &quot;Save Workout&quot; to save your first session.
               </p>
             </div>
@@ -829,10 +829,10 @@ export default function ChartsView({
 function StatCard({ label, value, unit }: { label: string; value: string; unit: string }) {
   return (
     <div className="bg-white/4 border border-white/7 rounded-xl p-3 text-center hover:bg-white/7 transition-colors">
-      <p className="text-[9px] uppercase font-black tracking-widest text-neutral-500 mb-1.5 leading-none">{label}</p>
+      <p className="text-micro uppercase font-black tracking-widest text-neutral-500 mb-1.5 leading-none">{label}</p>
       <p className="text-[16px] font-mono font-bold text-white tabular-nums leading-none">
         {value}
-        <span className="text-[9px] text-neutral-600 font-bold uppercase tracking-widest ml-1">{unit}</span>
+        <span className="text-micro text-neutral-600 font-bold uppercase tracking-widest ml-1">{unit}</span>
       </p>
     </div>
   );
@@ -841,7 +841,7 @@ function StatCard({ label, value, unit }: { label: string; value: string; unit: 
 function EmptyState({ message }: { message: string }) {
   return (
     <div className="py-7 text-center">
-      <p className="text-[11px] text-neutral-600 font-medium">{message}</p>
+      <p className="text-caption text-neutral-600 font-medium">{message}</p>
     </div>
   );
 }
@@ -879,8 +879,8 @@ function MuscleRecoveryHeatmapCard({
     <div className="bg-neutral-900/50 border border-white/6 rounded-2xl p-4 shadow-lg">
       <div className="flex items-start justify-between gap-3 mb-4">
         <div>
-          <h3 className="text-[12px] font-black text-white uppercase tracking-widest">Muscle Recovery Heatmap</h3>
-          <p className="text-[10px] text-neutral-500 font-medium mt-1 uppercase tracking-wider">
+          <h3 className="text-small font-black text-white uppercase tracking-widest">Muscle Recovery Heatmap</h3>
+          <p className="text-mini text-neutral-500 font-medium mt-1 uppercase tracking-wider">
             Last 7 days of weighted workload in {weightUnit}
           </p>
         </div>
@@ -891,7 +891,7 @@ function MuscleRecoveryHeatmapCard({
               type="button"
               onClick={() => onChangeSide(side)}
               className={cn(
-                "px-2.5 py-1.5 rounded-lg border text-[9px] font-black uppercase tracking-[0.18em] transition-all",
+                "px-2.5 py-1.5 rounded-lg border text-micro font-black uppercase tracking-[0.18em] transition-all",
                 activeSide === side
                   ? "bg-accent-400/12 border-accent-400/25 text-accent-400"
                   : "bg-white/4 border-white/8 text-neutral-500 hover:bg-white/7 hover:text-neutral-300"
@@ -914,8 +914,8 @@ function MuscleRecoveryHeatmapCard({
             return (
               <div key={region.id} className="rounded-xl border border-white/7 bg-white/3 px-3.5 py-3">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-[12px] font-bold text-white">{region.label}</p>
-                  <span className={cn("px-2 py-0.5 rounded-full border text-[9px] font-black uppercase tracking-[0.16em]", style.chip)}>
+                  <p className="text-small font-bold text-white">{region.label}</p>
+                  <span className={cn("px-2 py-0.5 rounded-full border text-micro font-black uppercase tracking-[0.16em]", style.chip)}>
                     {region.status}
                   </span>
                 </div>
@@ -928,7 +928,7 @@ function MuscleRecoveryHeatmapCard({
                     }}
                   />
                 </div>
-                <p className="text-[10px] text-neutral-500 font-medium mt-2 leading-relaxed">
+                <p className="text-mini text-neutral-500 font-medium mt-2 leading-relaxed">
                   7d load: {Math.round(region.score).toLocaleString()} · {formatLastHitLabel(region.lastHitDays)}
                 </p>
               </div>
@@ -941,14 +941,14 @@ function MuscleRecoveryHeatmapCard({
         {(["fatigued", "recovering", "ready", "undertrained"] as const).map((status) => (
           <div
             key={status}
-            className={cn("px-2.5 py-1 rounded-full border text-[9px] font-black uppercase tracking-[0.16em]", MUSCLE_STATUS_STYLES[status].chip)}
+            className={cn("px-2.5 py-1 rounded-full border text-micro font-black uppercase tracking-[0.16em]", MUSCLE_STATUS_STYLES[status].chip)}
           >
             {status}
           </div>
         ))}
       </div>
 
-      <p className="text-[10px] text-neutral-500 font-medium leading-relaxed mt-4">
+      <p className="text-mini text-neutral-500 font-medium leading-relaxed mt-4">
         {hasTrackedLoad
           ? "Higher recent load trends hotter. As the week moves on, heavily trained regions cool into recovering and ready states."
           : "Log a few weighted sessions and this map will light up automatically."}

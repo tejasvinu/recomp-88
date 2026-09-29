@@ -20,6 +20,15 @@
   --font-sans: 'Barlow Condensed', system-ui, -apple-system, sans-serif;
   --font-mono: 'DM Mono', 'SF Mono', 'Fira Code', monospace;
 
+  /* Type scale for small UI text (font-size only; line-height inherits).
+     Keep this list in sync with the tailwind-merge config in src/utils.ts. */
+  --text-nano: 8px;
+  --text-micro: 9px;
+  --text-mini: 10px;
+  --text-caption: 11px;
+  --text-small: 12px;
+  --text-body: 13px;
+
   --color-canvas: #080808;
   --color-sheet: #0e0e0e;
   --color-raised: #111111;

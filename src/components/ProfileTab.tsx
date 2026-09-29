@@ -168,7 +168,7 @@ export default function ProfileTab({
                       {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
                     </button>
                   </div>
-                  {saveError && <p className="text-[10px] text-danger-400 mb-1">{saveError}</p>}
+                  {saveError && <p className="text-mini text-danger-400 mb-1">{saveError}</p>}
                 </>
               ) : (
                 <div className="flex items-center gap-1.5 mb-0.5">
@@ -188,11 +188,11 @@ export default function ProfileTab({
               <p className="text-xs text-neutral-500 truncate">{session.user?.email}</p>
               <div className="flex items-center gap-1 mt-1.5">
                 <div className={cn("w-1.5 h-1.5 rounded-full", syncStatus === "synced" ? "bg-accent-400" : syncStatus === "error" ? "bg-danger-400" : syncStatus === "syncing" ? "bg-accent-400 animate-pulse" : "bg-neutral-600")} />
-                <span className={cn("text-[10px] font-semibold uppercase tracking-widest", syncLabel.color)}>
+                <span className={cn("text-mini font-semibold uppercase tracking-widest", syncLabel.color)}>
                   {syncLabel.text}
                 </span>
                 {lastSyncedAt && syncStatus === "synced" && (
-                  <span className="text-[10px] text-neutral-700 ml-1">
+                  <span className="text-mini text-neutral-700 ml-1">
                     {lastSyncedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                   </span>
                 )}
@@ -236,7 +236,7 @@ export default function ProfileTab({
               </div>
               <div>
                 <p className="text-xs font-bold text-neutral-200">Cloud Backup</p>
-                <p className="text-[10px] text-neutral-600">
+                <p className="text-mini text-neutral-600">
                   {syncStatus === "syncing"
                     ? "Uploading…"
                     : syncStatus === "error"
@@ -248,7 +248,7 @@ export default function ProfileTab({
             <button
               onClick={onManualSync}
               disabled={syncStatus === "syncing"}
-              className="px-3 py-1.5 rounded-lg bg-accent-400/10 border border-accent-400/20 text-accent-400 text-[10px] font-bold uppercase tracking-widest hover:bg-accent-400/20 transition-all disabled:opacity-50"
+              className="px-3 py-1.5 rounded-lg bg-accent-400/10 border border-accent-400/20 text-accent-400 text-mini font-bold uppercase tracking-widest hover:bg-accent-400/20 transition-all disabled:opacity-50"
             >
               Sync Now
             </button>
@@ -257,7 +257,7 @@ export default function ProfileTab({
             <div className="px-4 pb-3 pt-0 border-t border-white/4">
               <div className="flex gap-2 rounded-xl bg-info-400/8 border border-info-400/15 px-3 py-2.5">
                 <Info size={14} className="text-info-400 shrink-0 mt-0.5" aria-hidden />
-                <p className="text-[11px] text-info-200/90 leading-snug flex-1">{mergeSummary}</p>
+                <p className="text-caption text-info-200/90 leading-snug flex-1">{mergeSummary}</p>
                 <button
                   type="button"
                   onClick={onDismissMergeSummary}
@@ -274,7 +274,7 @@ export default function ProfileTab({
 
       {/* ── Stats Grid ── */}
       <div>
-        <h2 className="text-[10px] font-bold uppercase tracking-widest text-neutral-600 mb-2 px-1">Stats</h2>
+        <h2 className="text-mini font-bold uppercase tracking-widest text-neutral-600 mb-2 px-1">Stats</h2>
         <div className="grid grid-cols-2 gap-2">
           {[
             { icon: Trophy, label: "Workouts", value: stats.totalWorkouts.toString(), color: "text-accent-400" },
@@ -288,7 +288,7 @@ export default function ProfileTab({
               </div>
               <div>
                 <p className={cn("text-lg font-black tabular-nums", color)}>{value}</p>
-                <p className="text-[10px] text-neutral-600 uppercase tracking-widest">{label}</p>
+                <p className="text-mini text-neutral-600 uppercase tracking-widest">{label}</p>
               </div>
             </div>
           ))}
@@ -299,13 +299,13 @@ export default function ProfileTab({
       {stats.totalWorkouts > 0 && (
         <div className="bg-neutral-900/60 border border-white/6 rounded-2xl px-4 py-3 flex items-center justify-between">
           <div>
-            <p className="text-[10px] text-neutral-600 uppercase tracking-widest mb-0.5">Total Training Time</p>
+            <p className="text-mini text-neutral-600 uppercase tracking-widest mb-0.5">Total Training Time</p>
             <p className="font-black text-white">
               {stats.hours > 0 ? `${stats.hours}h ` : ""}{stats.mins}m
             </p>
           </div>
           <div className="text-right">
-            <p className="text-[10px] text-neutral-600 uppercase tracking-widest mb-0.5">Favourite Day</p>
+            <p className="text-mini text-neutral-600 uppercase tracking-widest mb-0.5">Favourite Day</p>
             <p className="font-bold text-accent-400 text-sm">{stats.favDay}</p>
           </div>
         </div>
@@ -314,7 +314,7 @@ export default function ProfileTab({
       {/* ── Account Actions ── */}
       {isLoggedIn && (
         <div>
-          <h2 className="text-[10px] font-bold uppercase tracking-widest text-neutral-600 mb-2 px-1">Account</h2>
+          <h2 className="text-mini font-bold uppercase tracking-widest text-neutral-600 mb-2 px-1">Account</h2>
           <div className="bg-neutral-900/60 border border-white/6 rounded-2xl overflow-hidden divide-y divide-white/4">
             <button
               onClick={() => signOut({ callbackUrl: "/auth/signin" })}

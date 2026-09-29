@@ -115,7 +115,7 @@ export default function SettingsModal({
                             <h2 id="settings-title" className="text-[16px] font-black text-white tracking-wide">
                                 Settings
                             </h2>
-                            <p className="mt-0.5 text-[10px] font-medium text-neutral-600">
+                            <p className="mt-0.5 text-mini font-medium text-neutral-600">
                                 Common controls first. Backup and reset tools stay below.
                             </p>
                         </div>
@@ -132,7 +132,7 @@ export default function SettingsModal({
                 <div className="p-5 flex flex-col gap-5 overflow-y-auto max-h-[75vh] overscroll-contain">
                     {/* Rest Timer Customization */}
                     <div>
-                        <p className="text-[10px] text-neutral-500 font-black uppercase tracking-widest mb-3 flex items-center gap-2">
+                        <p className="text-mini text-neutral-500 font-black uppercase tracking-widest mb-3 flex items-center gap-2">
                             <Timer size={12} className="text-accent-400" />
                             Rest Timers
                         </p>
@@ -156,8 +156,8 @@ export default function SettingsModal({
                                     className="flex items-center justify-between bg-white/4 border border-white/7 rounded-xl px-4 py-3"
                                 >
                                     <div>
-                                        <p className="text-[13px] font-bold text-white">{label}</p>
-                                        <p className="text-[10px] text-neutral-500 font-medium mt-0.5">{desc}</p>
+                                        <p className="text-body font-bold text-white">{label}</p>
+                                        <p className="text-mini text-neutral-500 font-medium mt-0.5">{desc}</p>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <button
@@ -185,7 +185,7 @@ export default function SettingsModal({
 
                     {/* Weight Unit Toggle */}
                     <div>
-                        <p className="text-[10px] text-neutral-500 font-black uppercase tracking-widest mb-3 flex items-center gap-2">
+                        <p className="text-mini text-neutral-500 font-black uppercase tracking-widest mb-3 flex items-center gap-2">
                             <Scale size={12} className="text-accent-400" />
                             Weight Unit
                         </p>
@@ -195,7 +195,7 @@ export default function SettingsModal({
                                     key={unit}
                                     onClick={() => setWeightUnit(() => unit)}
                                     className={cn(
-                                        "flex-1 py-3 rounded-xl border font-bold text-[13px] uppercase tracking-widest transition-all",
+                                        "flex-1 py-3 rounded-xl border font-bold text-body uppercase tracking-widest transition-all",
                                         weightUnit === unit
                                             ? "bg-accent-400/15 border-accent-400/30 text-accent-400"
                                             : "bg-white/4 border-white/7 text-neutral-500 hover:bg-white/7 hover:text-neutral-300"
@@ -209,7 +209,7 @@ export default function SettingsModal({
 
                     {/* Sound Toggle */}
                     <div>
-                        <p className="text-[10px] text-neutral-500 font-black uppercase tracking-widest mb-3 flex items-center gap-2">
+                        <p className="text-mini text-neutral-500 font-black uppercase tracking-widest mb-3 flex items-center gap-2">
                             {soundEnabled ? (
                                 <Volume2 size={12} className="text-accent-400" />
                             ) : (
@@ -223,8 +223,8 @@ export default function SettingsModal({
                             aria-pressed={soundEnabled}
                         >
                             <div>
-                                <p className="text-[13px] font-bold text-white text-left">Timer end beep</p>
-                                <p className="text-[10px] text-neutral-500 font-medium mt-0.5 text-left">
+                                <p className="text-body font-bold text-white text-left">Timer end beep</p>
+                                <p className="text-mini text-neutral-500 font-medium mt-0.5 text-left">
                                     Play sound when rest timer finishes
                                 </p>
                             </div>
@@ -248,7 +248,7 @@ export default function SettingsModal({
 
                     {/* Workout Template */}
                     <div>
-                        <p className="text-[10px] text-neutral-500 font-black uppercase tracking-widest mb-3 flex items-center gap-2">
+                        <p className="text-mini text-neutral-500 font-black uppercase tracking-widest mb-3 flex items-center gap-2">
                             <Dumbbell size={12} className="text-accent-400" />
                             Workout Program
                         </p>
@@ -262,10 +262,10 @@ export default function SettingsModal({
                                     <Dumbbell size={16} className="text-accent-400" />
                                 </div>
                                 <div className="text-left">
-                                    <p className="text-[13px] font-bold text-white group-hover:text-accent-400 transition-colors">
+                                    <p className="text-body font-bold text-white group-hover:text-accent-400 transition-colors">
                                         Edit Workout
                                     </p>
-                                    <p className="text-[10px] text-neutral-500 font-medium mt-0.5">
+                                    <p className="text-mini text-neutral-500 font-medium mt-0.5">
                                         Customize the shipped {workoutDayCount}-day routine
                                     </p>
                                 </div>
@@ -279,10 +279,10 @@ export default function SettingsModal({
                                     <ArrowLeftRight size={16} className="text-info-400" />
                                 </div>
                                 <div className="text-left">
-                                    <p className="text-[13px] font-bold text-white">
+                                    <p className="text-body font-bold text-white">
                                         Apply Free-Weight Friendly Swaps
                                     </p>
-                                    <p className="text-[10px] text-neutral-500 font-medium mt-0.5">
+                                    <p className="text-mini text-neutral-500 font-medium mt-0.5">
                                         Replace machine-locked movements with accessible alternatives
                                     </p>
                                 </div>
@@ -299,10 +299,10 @@ export default function SettingsModal({
                                     />
                                 </div>
                                 <div className="text-left">
-                                    <p className="text-[13px] font-bold text-white">
+                                    <p className="text-body font-bold text-white">
                                         Revert to Default Workout
                                     </p>
-                                    <p className="text-[10px] text-neutral-500 font-medium mt-0.5">
+                                    <p className="text-mini text-neutral-500 font-medium mt-0.5">
                                         Restore the standard plan without clearing progress history
                                     </p>
                                 </div>
@@ -312,7 +312,7 @@ export default function SettingsModal({
 
                     {/* Data / Backup */}
                     <div>
-                        <p className="text-[10px] text-neutral-500 font-black uppercase tracking-widest mb-3 flex items-center gap-2">
+                        <p className="text-mini text-neutral-500 font-black uppercase tracking-widest mb-3 flex items-center gap-2">
                             <Download size={12} className="text-accent-400" />
                             Data Management
                         </p>
@@ -328,10 +328,10 @@ export default function SettingsModal({
                                     <DatabaseBackup size={16} className="text-purple-400" />
                                 </div>
                                 <div className="text-left">
-                                    <p className="text-[13px] font-bold text-white group-hover:text-purple-400 transition-colors">
+                                    <p className="text-body font-bold text-white group-hover:text-purple-400 transition-colors">
                                         Add Past Session
                                     </p>
-                                    <p className="text-[10px] text-neutral-500 font-medium mt-0.5">
+                                    <p className="text-mini text-neutral-500 font-medium mt-0.5">
                                         Backfill previous workouts with normal inputs; JSON is advanced
                                     </p>
                                 </div>
@@ -345,10 +345,10 @@ export default function SettingsModal({
                                     <Download size={16} className="text-accent-400" />
                                 </div>
                                 <div className="text-left">
-                                    <p className="text-[13px] font-bold text-white group-hover:text-accent-400 transition-colors">
+                                    <p className="text-body font-bold text-white group-hover:text-accent-400 transition-colors">
                                         Export Full Backup
                                     </p>
-                                    <p className="text-[10px] text-neutral-500 font-medium mt-0.5">
+                                    <p className="text-mini text-neutral-500 font-medium mt-0.5">
                                         Download a restorable backup of plan, sessions, notes &amp; settings
                                     </p>
                                 </div>
@@ -362,10 +362,10 @@ export default function SettingsModal({
                                     <Download size={16} className="text-info-400" />
                                 </div>
                                 <div className="text-left">
-                                    <p className="text-[13px] font-bold text-white group-hover:text-info-400 transition-colors">
+                                    <p className="text-body font-bold text-white group-hover:text-info-400 transition-colors">
                                         Export CSV
                                     </p>
-                                    <p className="text-[10px] text-neutral-500 font-medium mt-0.5">
+                                    <p className="text-mini text-neutral-500 font-medium mt-0.5">
                                         Download analytics rows for Excel or custom pivot tables
                                     </p>
                                 </div>
@@ -379,10 +379,10 @@ export default function SettingsModal({
                                     <Download size={16} className="text-orange-400" />
                                 </div>
                                 <div className="text-left">
-                                    <p className="text-[13px] font-bold text-white group-hover:text-orange-400 transition-colors">
+                                    <p className="text-body font-bold text-white group-hover:text-orange-400 transition-colors">
                                         Export Workout Plan
                                     </p>
-                                    <p className="text-[10px] text-neutral-500 font-medium mt-0.5">
+                                    <p className="text-mini text-neutral-500 font-medium mt-0.5">
                                         Download a text summary of your daily routines and exercises
                                     </p>
                                 </div>
@@ -399,8 +399,8 @@ export default function SettingsModal({
                                     />
                                 </div>
                                 <div className="text-left">
-                                    <p className="text-[13px] font-bold text-white">Restore Backup</p>
-                                    <p className="text-[10px] text-neutral-500 font-medium mt-0.5">
+                                    <p className="text-body font-bold text-white">Restore Backup</p>
+                                    <p className="text-mini text-neutral-500 font-medium mt-0.5">
                                         Advanced: import a previous Recomp 88 JSON export
                                     </p>
                                 </div>
@@ -419,7 +419,7 @@ export default function SettingsModal({
 
                 {/* Stats */}
                 <div className="bg-white/3 border border-white/6 rounded-xl px-4 py-3">
-                    <p className="text-[10px] text-neutral-500 font-medium leading-relaxed">
+                    <p className="text-mini text-neutral-500 font-medium leading-relaxed">
                         <span className="text-neutral-400 font-bold">Sessions saved:</span>{" "}
                         {sessionCount} workout{sessionCount !== 1 ? "s" : ""} logged
                     </p>
@@ -429,7 +429,7 @@ export default function SettingsModal({
                 <div className="pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] mt-2 border-t border-white/6 flex justify-center">
                     <button
                         onClick={() => setConfirmAction("clear-data")}
-                        className="bg-danger-400/10 hover:bg-danger-400/20 text-danger-400 font-bold uppercase tracking-widest text-[11px] px-6 py-3 rounded-xl border border-danger-400/20 transition-all active:scale-95"
+                        className="bg-danger-400/10 hover:bg-danger-400/20 text-danger-400 font-bold uppercase tracking-widest text-caption px-6 py-3 rounded-xl border border-danger-400/20 transition-all active:scale-95"
                     >
                         Delete All Data
                     </button>
@@ -440,21 +440,21 @@ export default function SettingsModal({
                             <p className="text-[15px] font-black text-white tracking-wide">
                                 {confirmCopy.title}
                             </p>
-                            <p className="mt-2 text-[12px] leading-relaxed text-neutral-400">
+                            <p className="mt-2 text-small leading-relaxed text-neutral-400">
                                 {confirmCopy.body}
                             </p>
                             <div className="mt-5 grid grid-cols-2 gap-2">
                                 <button
                                     type="button"
                                     onClick={() => setConfirmAction(null)}
-                                    className="rounded-xl border border-white/8 bg-white/5 py-3 text-[11px] font-black uppercase tracking-widest text-neutral-300 transition-all hover:bg-white/8"
+                                    className="rounded-xl border border-white/8 bg-white/5 py-3 text-caption font-black uppercase tracking-widest text-neutral-300 transition-all hover:bg-white/8"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="button"
                                     onClick={handleConfirmAction}
-                                    className="rounded-xl border border-danger-400/30 bg-danger-400/15 py-3 text-[11px] font-black uppercase tracking-widest text-danger-300 transition-all hover:bg-danger-400/25"
+                                    className="rounded-xl border border-danger-400/30 bg-danger-400/15 py-3 text-caption font-black uppercase tracking-widest text-danger-300 transition-all hover:bg-danger-400/25"
                                 >
                                     {confirmCopy.confirm}
                                 </button>

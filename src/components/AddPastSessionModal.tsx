@@ -339,7 +339,7 @@ export default function AddPastSessionModal({
                 <DatabaseBackup size={18} className="text-accent-400" />
                 Add Past Session
               </h2>
-              <p className="mt-1 text-[10px] font-medium text-neutral-600">
+              <p className="mt-1 text-mini font-medium text-neutral-600">
                 Manual entry is safest for backfilling. JSON import is tucked under Advanced.
               </p>
             </div>
@@ -355,7 +355,7 @@ export default function AddPastSessionModal({
             <button
               onClick={openManualMode}
               className={cn(
-                "flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all px-1",
+                "flex-1 py-2 rounded-xl text-mini font-black uppercase tracking-widest transition-all px-1",
                 mode === "manual"
                   ? "bg-accent-400/15 border border-accent-400/30 text-accent-400"
                   : "bg-white/4 border border-white/7 text-neutral-500 hover:text-neutral-300"
@@ -366,7 +366,7 @@ export default function AddPastSessionModal({
             <button
               onClick={toggleAdvancedJson}
               className={cn(
-                "flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all px-1",
+                "flex-1 py-2 rounded-xl text-mini font-black uppercase tracking-widest transition-all px-1",
                 showAdvancedJson
                   ? "bg-info-400/15 border border-info-400/30 text-info-400"
                   : "bg-white/4 border border-white/7 text-neutral-500 hover:text-neutral-300"
@@ -381,7 +381,7 @@ export default function AddPastSessionModal({
               <button
                 onClick={() => setMode("day-json")}
                 className={cn(
-                  "py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all px-1 border",
+                  "py-2 rounded-xl text-micro font-black uppercase tracking-widest transition-all px-1 border",
                   mode === "day-json"
                     ? "bg-accent-400/15 border-accent-400/30 text-accent-400"
                     : "bg-white/4 border-white/7 text-neutral-500 hover:text-neutral-300"
@@ -392,7 +392,7 @@ export default function AddPastSessionModal({
               <button
                 onClick={() => setMode("json")}
                 className={cn(
-                  "py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all px-1 border",
+                  "py-2 rounded-xl text-micro font-black uppercase tracking-widest transition-all px-1 border",
                   mode === "json"
                     ? "bg-accent-400/15 border-accent-400/30 text-accent-400"
                     : "bg-white/4 border-white/7 text-neutral-500 hover:text-neutral-300"
@@ -409,7 +409,7 @@ export default function AddPastSessionModal({
             <div className="flex flex-col gap-5 mb-5">
               <div className="flex gap-3">
                 <div className="flex-1">
-                  <label className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest mb-1.5 block">
+                  <label className="text-mini text-neutral-500 font-bold uppercase tracking-widest mb-1.5 block">
                     Date
                   </label>
                   <input
@@ -424,7 +424,7 @@ export default function AddPastSessionModal({
                   />
                 </div>
                 <div className="w-24">
-                  <label className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest mb-1.5 block">
+                  <label className="text-mini text-neutral-500 font-bold uppercase tracking-widest mb-1.5 block">
                     Mins
                   </label>
                   <input
@@ -436,13 +436,13 @@ export default function AddPastSessionModal({
                 </div>
               </div>
               {manualError && mode === "manual" && (
-                <p className="text-[10px] font-bold text-danger-400 uppercase tracking-widest">
+                <p className="text-mini font-bold text-danger-400 uppercase tracking-widest">
                   {manualError}
                 </p>
               )}
 
               <div>
-                <label className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest mb-1.5 block">
+                <label className="text-mini text-neutral-500 font-bold uppercase tracking-widest mb-1.5 block">
                   Workout Day
                 </label>
                 <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-none">
@@ -451,7 +451,7 @@ export default function AddPastSessionModal({
                       key={day.id}
                       onClick={() => setSelectedDayId(day.id)}
                       className={cn(
-                        "shrink-0 px-3 py-2 rounded-xl text-[11px] font-bold uppercase tracking-widest transition-all border",
+                        "shrink-0 px-3 py-2 rounded-xl text-caption font-bold uppercase tracking-widest transition-all border",
                         day.id === selectedDayId
                           ? "bg-white border-white text-black"
                           : "bg-white/4 border-white/8 text-neutral-400"
@@ -469,14 +469,14 @@ export default function AddPastSessionModal({
             <div className="flex flex-col gap-4 mt-2">
                 {activeDay.exercises.map((ex) => (
                   <div key={ex.id} className="bg-white/3 border border-white/5 rounded-2xl p-3.5">
-                    <h4 className="text-[13px] font-black tracking-wide text-white mb-3">
+                    <h4 className="text-body font-black tracking-wide text-white mb-3">
                       {ex.name}
                     </h4>
                     <div className="flex flex-col gap-2">
                       {ex.sets.map((set, idx) => (
                         <div key={set.id} className="flex gap-2">
                           <div className="w-8 flex items-center justify-center shrink-0">
-                            <span className="text-[11px] font-bold text-neutral-600">
+                            <span className="text-caption font-bold text-neutral-600">
                               {idx + 1}
                             </span>
                           </div>
@@ -509,13 +509,13 @@ export default function AddPastSessionModal({
           {mode === "day-json" && activeDay && (
             <div className="flex flex-col gap-3 h-full">
               <div className="flex items-center justify-between">
-                <label className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest block">
+                <label className="text-mini text-neutral-500 font-bold uppercase tracking-widest block">
                   Paste sets for {activeDay.name}
                 </label>
                 <button
                   type="button"
                   onClick={handleLoadDaySampleJson}
-                  className="flex items-center gap-1.5 text-[10px] font-bold text-info-400 bg-info-400/10 border border-info-400/20 px-2.5 py-1.5 rounded-lg transition-all hover:bg-info-400/20 active:scale-95"
+                  className="flex items-center gap-1.5 text-mini font-bold text-info-400 bg-info-400/10 border border-info-400/20 px-2.5 py-1.5 rounded-lg transition-all hover:bg-info-400/20 active:scale-95"
                 >
                   <FileJson size={12} />
                   Load Template
@@ -527,11 +527,11 @@ export default function AddPastSessionModal({
                   setDayJsonInput(e.target.value);
                   setDayJsonError("");
                 }}
-                className="w-full h-64 bg-white/5 border border-white/8 rounded-2xl p-4 text-[11px] font-mono font-medium text-white/90 outline-none focus:ring-1 focus:ring-accent-400/40 focus:border-accent-400/30 resize-none"
+                className="w-full h-64 bg-white/5 border border-white/8 rounded-2xl p-4 text-caption font-mono font-medium text-white/90 outline-none focus:ring-1 focus:ring-accent-400/40 focus:border-accent-400/30 resize-none"
                 placeholder={'{\n  "Exercise Name": [\n    {"weight": 100, "reps": 10}\n  ]\n}'}
               />
               {dayJsonError && (
-                <p className="text-[10px] font-bold text-danger-400 uppercase tracking-widest">
+                <p className="text-mini font-bold text-danger-400 uppercase tracking-widest">
                   {dayJsonError}
                 </p>
               )}
@@ -541,13 +541,13 @@ export default function AddPastSessionModal({
           {mode === "json" && (
             <div className="flex flex-col gap-3 h-full">
               <div className="flex items-center justify-between">
-                <label className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest block">
+                <label className="text-mini text-neutral-500 font-bold uppercase tracking-widest block">
                   Paste WorkoutSession JSON
                 </label>
                 <button
                   type="button"
                   onClick={handleLoadSampleJson}
-                  className="flex items-center gap-1.5 text-[10px] font-bold text-info-400 bg-info-400/10 border border-info-400/20 px-2.5 py-1.5 rounded-lg transition-all hover:bg-info-400/20 active:scale-95"
+                  className="flex items-center gap-1.5 text-mini font-bold text-info-400 bg-info-400/10 border border-info-400/20 px-2.5 py-1.5 rounded-lg transition-all hover:bg-info-400/20 active:scale-95"
                 >
                   <FileJson size={12} />
                   Load Sample
@@ -559,11 +559,11 @@ export default function AddPastSessionModal({
                   setJsonInput(e.target.value);
                   setJsonError("");
                 }}
-                className="w-full h-64 bg-white/5 border border-white/8 rounded-2xl p-4 text-[11px] font-mono font-medium text-white/90 outline-none focus:ring-1 focus:ring-accent-400/40 focus:border-accent-400/30 resize-none"
+                className="w-full h-64 bg-white/5 border border-white/8 rounded-2xl p-4 text-caption font-mono font-medium text-white/90 outline-none focus:ring-1 focus:ring-accent-400/40 focus:border-accent-400/30 resize-none"
                 placeholder={'[{\n  "id": "...",\n  "date": "...",\n  "dayId": "...",\n  "exercises": []\n}]'}
               />
               {jsonError && (
-                <p className="text-[10px] font-bold text-danger-400 uppercase tracking-widest">
+                <p className="text-mini font-bold text-danger-400 uppercase tracking-widest">
                   {jsonError}
                 </p>
               )}
@@ -574,7 +574,7 @@ export default function AddPastSessionModal({
         <div className="p-5 border-t border-white/6 shrink-0 bg-sheet">
           <button
             onClick={mode === "manual" ? handleSaveManual : mode === "day-json" ? handleSaveDayJson : handleSaveJson}
-            className="w-full flex items-center justify-center gap-2 bg-accent-400 text-neutral-950 font-black text-[13px] py-4 rounded-xl hover:bg-accent-300 transition-all shadow-[0_0_20px_color-mix(in_oklab,_var(--color-accent-400)_30%,_transparent)]"
+            className="w-full flex items-center justify-center gap-2 bg-accent-400 text-neutral-950 font-black text-body py-4 rounded-xl hover:bg-accent-300 transition-all shadow-[0_0_20px_color-mix(in_oklab,_var(--color-accent-400)_30%,_transparent)]"
           >
             <Save size={16} />
             SAVE PAST SESSION

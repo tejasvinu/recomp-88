@@ -1023,7 +1023,7 @@ function AppMain() {
                   type="button"
                   onClick={() => setProgressSubView("charts")}
                   className={cn(
-                    "flex-1 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all",
+                    "flex-1 py-2 rounded-lg text-caption font-black uppercase tracking-widest transition-all",
                     progressSubView === "charts"
                       ? "bg-accent-400 text-neutral-950"
                       : "text-neutral-500 hover:text-neutral-300"
@@ -1035,7 +1035,7 @@ function AppMain() {
                   type="button"
                   onClick={() => setProgressSubView("records")}
                   className={cn(
-                    "flex-1 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all",
+                    "flex-1 py-2 rounded-lg text-caption font-black uppercase tracking-widest transition-all",
                     progressSubView === "records"
                       ? "bg-accent-400 text-neutral-950"
                       : "text-neutral-500 hover:text-neutral-300"

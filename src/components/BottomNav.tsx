@@ -59,7 +59,7 @@ export default function BottomNav() {
                                     </div>
                                     <span
                                         className={cn(
-                                            'text-[8px] uppercase font-bold tracking-[0.1em] leading-none transition-colors truncate w-full text-center px-0.5',
+                                            'text-nano uppercase font-bold tracking-[0.1em] leading-none transition-colors truncate w-full text-center px-0.5',
                                             isActive ? 'text-accent-400' : 'text-neutral-600 group-hover:text-neutral-400',
                                         )}
                                     >

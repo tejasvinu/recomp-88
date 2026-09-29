@@ -182,7 +182,7 @@ export default function DashboardTab({ onStartStretching, onOpenJustShowUp }: Da
                 </div>
                 <div>
                     <h2 className="text-xl font-black text-white tracking-wide">Welcome back</h2>
-                    <p className="text-[11px] text-neutral-500 font-medium uppercase tracking-widest">
+                    <p className="text-caption text-neutral-500 font-medium uppercase tracking-widest">
                         Recomposition dashboard & stats
                     </p>
                 </div>
@@ -196,11 +196,11 @@ export default function DashboardTab({ onStartStretching, onOpenJustShowUp }: Da
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                         <Calendar size={15} className="text-accent-400" />
-                        <h3 className="text-[12px] font-black text-white uppercase tracking-widest">
+                        <h3 className="text-small font-black text-white uppercase tracking-widest">
                             Consistency
                         </h3>
                     </div>
-                    <div className="flex items-center gap-1 bg-accent-400/8 border border-accent-400/20 px-2.5 py-1 rounded-xl text-accent-400 font-mono font-bold text-[11px]">
+                    <div className="flex items-center gap-1 bg-accent-400/8 border border-accent-400/20 px-2.5 py-1 rounded-xl text-accent-400 font-mono font-bold text-caption">
                         <Flame size={12} className="fill-current animate-pulse" />
                         {activeStreak} Day Streak
                     </div>
@@ -223,7 +223,7 @@ export default function DashboardTab({ onStartStretching, onOpenJustShowUp }: Da
                         </div>
                     ))}
                 </div>
-                <div className="flex items-center justify-between text-[9px] text-neutral-500 font-bold uppercase tracking-widest mt-3 px-1">
+                <div className="flex items-center justify-between text-micro text-neutral-500 font-bold uppercase tracking-widest mt-3 px-1">
                     <span>12 Weeks Ago</span>
                     <span>This Week</span>
                 </div>
@@ -241,10 +241,10 @@ export default function DashboardTab({ onStartStretching, onOpenJustShowUp }: Da
                         <Play size={20} className="text-accent-400 fill-accent-400/25" />
                     </div>
                     <div className="flex-1 min-w-0">
-                        <p className="text-[13px] font-black text-white tracking-wide leading-snug">
+                        <p className="text-body font-black text-white tracking-wide leading-snug">
                             Just Show Up
                         </p>
-                        <p className="text-[10px] text-neutral-500 mt-0.5 leading-relaxed">
+                        <p className="text-mini text-neutral-500 mt-0.5 leading-relaxed">
                             A 15-minute, no-pressure session. It still counts toward your streak.
                         </p>
                     </div>
@@ -261,7 +261,7 @@ export default function DashboardTab({ onStartStretching, onOpenJustShowUp }: Da
                     {/* Background visual highlight */}
                     <div className="absolute top-0 right-0 w-32 h-32 bg-accent-400/5 rounded-full blur-[40px] pointer-events-none" />
 
-                    <p className="text-[10px] text-accent-400 font-black uppercase tracking-[0.2em] mb-1.5 flex items-center gap-1.5">
+                    <p className="text-mini text-accent-400 font-black uppercase tracking-[0.2em] mb-1.5 flex items-center gap-1.5">
                         <Activity size={10} />
                         Next Up
                     </p>
@@ -277,7 +277,7 @@ export default function DashboardTab({ onStartStretching, onOpenJustShowUp }: Da
                             {suggestedRecoveryProgram && (
                                 <button
                                     onClick={() => onStartStretching?.(suggestedRecoveryProgram.id)}
-                                    className="mt-4 flex items-center gap-2 px-4 py-2.5 bg-accent-400 text-neutral-950 font-black text-[11px] uppercase tracking-widest rounded-xl hover:bg-accent-300 active:scale-95 transition-all shadow-[0_0_15px_color-mix(in_oklab,_var(--color-accent-400)_20%,_transparent)]"
+                                    className="mt-4 flex items-center gap-2 px-4 py-2.5 bg-accent-400 text-neutral-950 font-black text-caption uppercase tracking-widest rounded-xl hover:bg-accent-300 active:scale-95 transition-all shadow-[0_0_15px_color-mix(in_oklab,_var(--color-accent-400)_20%,_transparent)]"
                                 >
                                     Start {suggestedRecoveryProgram.name}
                                     <ArrowRight size={13} />
@@ -291,7 +291,7 @@ export default function DashboardTab({ onStartStretching, onOpenJustShowUp }: Da
                                     Day {activeDay.dayNumber}: {activeDay.name}
                                 </h4>
                                 {workoutProgressState.started && (
-                                    <span className="text-[10px] font-mono text-accent-400 font-bold bg-accent-400/10 border border-accent-400/20 px-2 py-0.5 rounded-lg">
+                                    <span className="text-mini font-mono text-accent-400 font-bold bg-accent-400/10 border border-accent-400/20 px-2 py-0.5 rounded-lg">
                                         {workoutProgressState.percent}% In Progress
                                     </span>
                                 )}
@@ -313,7 +313,7 @@ export default function DashboardTab({ onStartStretching, onOpenJustShowUp }: Da
 
                             <button
                                 onClick={() => setActiveTab("workout")}
-                                className="flex items-center gap-2 px-4 py-2.5 bg-accent-400 text-neutral-950 font-black text-[11px] uppercase tracking-widest rounded-xl hover:bg-accent-300 active:scale-95 transition-all shadow-[0_0_15px_color-mix(in_oklab,_var(--color-accent-400)_20%,_transparent)]"
+                                className="flex items-center gap-2 px-4 py-2.5 bg-accent-400 text-neutral-950 font-black text-caption uppercase tracking-widest rounded-xl hover:bg-accent-300 active:scale-95 transition-all shadow-[0_0_15px_color-mix(in_oklab,_var(--color-accent-400)_20%,_transparent)]"
                             >
                                 <Play size={12} fill="currentColor" />
                                 {workoutProgressState.started ? "Resume Workout" : "Start Workout"}
@@ -332,7 +332,7 @@ export default function DashboardTab({ onStartStretching, onOpenJustShowUp }: Da
                 >
                     <div className="flex items-center gap-2 mb-4 shrink-0">
                         <HeartPulse size={15} className="text-accent-400" />
-                        <h3 className="text-[12px] font-black text-white uppercase tracking-widest">
+                        <h3 className="text-small font-black text-white uppercase tracking-widest">
                             Readiness
                         </h3>
                     </div>
@@ -367,18 +367,18 @@ export default function DashboardTab({ onStartStretching, onOpenJustShowUp }: Da
                                 <span className="text-2xl font-mono font-bold text-white leading-none mt-1">
                                     {readinessScore}
                                 </span>
-                                <span className="text-[9px] text-accent-400/70 font-black uppercase mt-0.5">%</span>
+                                <span className="text-micro text-accent-400/70 font-black uppercase mt-0.5">%</span>
                             </div>
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="text-[13px] font-bold text-white tracking-wide leading-snug">
+                            <p className="text-body font-bold text-white tracking-wide leading-snug">
                                 {readinessScore >= 85
                                     ? "Fully Recovered"
                                     : readinessScore >= 60
                                     ? "Good to Lift"
                                     : "Take it Easy"}
                             </p>
-                            <p className="text-[10px] text-neutral-500 mt-1 leading-normal">
+                            <p className="text-mini text-neutral-500 mt-1 leading-normal">
                                 Based on relative recovery states across 13 target muscle groups.
                             </p>
                         </div>
@@ -392,24 +392,24 @@ export default function DashboardTab({ onStartStretching, onOpenJustShowUp }: Da
                 >
                     <div className="flex items-center gap-2 mb-4 shrink-0">
                         <TrendingUp size={15} className="text-accent-400" />
-                        <h3 className="text-[12px] font-black text-white uppercase tracking-widest">
+                        <h3 className="text-small font-black text-white uppercase tracking-widest">
                             Weekly Summary
                         </h3>
                     </div>
 
                     <div className="grid grid-cols-2 gap-2 mt-1">
                         <div className="bg-white/3 border border-white/6 rounded-xl p-3">
-                            <p className="text-[9px] font-black uppercase tracking-widest text-neutral-500 mb-1">Volume</p>
+                            <p className="text-micro font-black uppercase tracking-widest text-neutral-500 mb-1">Volume</p>
                             <p className="text-base font-mono font-bold text-white leading-none">
                                 {analytics.totalWeeklyVolume.toLocaleString()}
-                                <span className="text-[9px] font-bold text-neutral-600 ml-1">{weightUnit}</span>
+                                <span className="text-micro font-bold text-neutral-600 ml-1">{weightUnit}</span>
                             </p>
                         </div>
                         <div className="bg-white/3 border border-white/6 rounded-xl p-3">
-                            <p className="text-[9px] font-black uppercase tracking-widest text-neutral-500 mb-1">Weight</p>
+                            <p className="text-micro font-black uppercase tracking-widest text-neutral-500 mb-1">Weight</p>
                             <p className="text-base font-mono font-bold text-white leading-none">
                                 {analytics.todayBw ? `${analytics.todayBw.weight}` : "—"}
-                                {analytics.todayBw && <span className="text-[9px] font-bold text-neutral-600 ml-1">{weightUnit}</span>}
+                                {analytics.todayBw && <span className="text-micro font-bold text-neutral-600 ml-1">{weightUnit}</span>}
                             </p>
                         </div>
                     </div>

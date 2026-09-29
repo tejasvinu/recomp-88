@@ -82,7 +82,7 @@ export default function WikiView() {
         </div>
         <div>
           <h2 className="text-xl font-black text-white tracking-wide">Exercise Wiki</h2>
-          <p className="text-[11px] text-neutral-500 font-medium uppercase tracking-widest">
+          <p className="text-caption text-neutral-500 font-medium uppercase tracking-widest">
             {WIKI_DATA.length} exercises · access-aware swaps built in
           </p>
         </div>
@@ -115,7 +115,7 @@ export default function WikiView() {
             key={cat}
             onClick={() => setActiveCategory(cat)}
             className={cn(
-              "shrink-0 px-3.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all duration-200 border whitespace-nowrap",
+              "shrink-0 px-3.5 py-1.5 rounded-lg text-mini font-bold uppercase tracking-widest transition-all duration-200 border whitespace-nowrap",
               activeCategory === cat
                 ? "bg-accent-400 text-neutral-950 border-accent-400 shadow-[0_0_10px_color-mix(in_oklab,_var(--color-accent-400)_20%,_transparent)]"
                 : "bg-white/4 text-neutral-500 border-white/6 hover:bg-white/8 hover:text-neutral-300"
@@ -132,7 +132,7 @@ export default function WikiView() {
             key={filter}
             onClick={() => setActiveAccess(filter)}
             className={cn(
-              "shrink-0 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all duration-200 border whitespace-nowrap",
+              "shrink-0 px-3 py-1.5 rounded-lg text-mini font-bold uppercase tracking-widest transition-all duration-200 border whitespace-nowrap",
               activeAccess === filter
                 ? "bg-info-400 text-neutral-950 border-info-400 shadow-[0_0_10px_color-mix(in_oklab,_var(--color-info-400)_18%,_transparent)]"
                 : "bg-white/4 text-neutral-500 border-white/6 hover:bg-white/8 hover:text-neutral-300"
@@ -156,8 +156,8 @@ export default function WikiView() {
             {/* Category heading */}
             <div className="flex items-center gap-2 px-1 mt-3">
               <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", categoryColors[category]?.dot || "bg-neutral-500")} />
-              <h3 className="text-[10px] font-black uppercase tracking-[0.18em] text-neutral-500">{category}</h3>
-              <span className="text-[9px] text-neutral-700 font-bold bg-white/4 px-1.5 py-0.5 rounded-md border border-white/5 font-mono">
+              <h3 className="text-mini font-black uppercase tracking-[0.18em] text-neutral-500">{category}</h3>
+              <span className="text-micro text-neutral-700 font-bold bg-white/4 px-1.5 py-0.5 rounded-md border border-white/5 font-mono">
                 {exercises.length}
               </span>
             </div>
@@ -175,22 +175,22 @@ export default function WikiView() {
                   <h4 className="text-[14px] font-bold text-neutral-200 group-hover:text-white transition-colors truncate leading-snug">
                     {ex.name}
                   </h4>
-                  <p className="text-[10px] text-neutral-600 font-medium mt-0.5 uppercase tracking-wider truncate">
+                  <p className="text-mini text-neutral-600 font-medium mt-0.5 uppercase tracking-wider truncate">
                     {ex.muscles.primary.join(" · ")}
                   </p>
                   <div className="flex flex-wrap gap-1.5 mt-2">
                     {isHomeGymFriendly(ex) && (
-                      <span className="text-[9px] uppercase font-black tracking-widest text-info-400 bg-info-400/10 border border-info-400/20 px-2 py-0.5 rounded-full">
+                      <span className="text-micro uppercase font-black tracking-widest text-info-400 bg-info-400/10 border border-info-400/20 px-2 py-0.5 rounded-full">
                         Home Gym
                       </span>
                     )}
                     {isFreeWeightFriendly(ex) && (
-                      <span className="text-[9px] uppercase font-black tracking-widest text-accent-400 bg-accent-400/10 border border-accent-400/20 px-2 py-0.5 rounded-full">
+                      <span className="text-micro uppercase font-black tracking-widest text-accent-400 bg-accent-400/10 border border-accent-400/20 px-2 py-0.5 rounded-full">
                         Free Weight
                       </span>
                     )}
                     {getFreeWeightAlternatives(ex).length > 0 && !isFreeWeightFriendly(ex) && (
-                      <span className="text-[9px] uppercase font-black tracking-widest text-warn-400 bg-warn-400/10 border border-warn-400/20 px-2 py-0.5 rounded-full">
+                      <span className="text-micro uppercase font-black tracking-widest text-warn-400 bg-warn-400/10 border border-warn-400/20 px-2 py-0.5 rounded-full">
                         {getFreeWeightAlternatives(ex).length} swap options
                       </span>
                     )}

@@ -89,7 +89,7 @@ export default memo(function SetRow({
                     <button
                         onClick={() => setShowSetType((prev) => !prev)}
                         className={cn(
-                            "text-[10px] font-mono font-bold text-center tabular-nums rounded px-0.5 py-0.5 transition-all border",
+                            "text-mini font-mono font-bold text-center tabular-nums rounded px-0.5 py-0.5 transition-all border",
                             setTypeInfo.color,
                             "hover:brightness-125 active:scale-90"
                         )}
@@ -110,7 +110,7 @@ export default memo(function SetRow({
                         </button>
                         <div className="relative flex-1 min-w-0 flex items-center">
                             {isBwSet && (
-                                <span className="absolute left-1.5 text-[9px] font-black text-neutral-400 uppercase tracking-widest pointer-events-none">
+                                <span className="absolute left-1.5 text-micro font-black text-neutral-400 uppercase tracking-widest pointer-events-none">
                                     BW
                                 </span>
                             )}
@@ -146,7 +146,7 @@ export default memo(function SetRow({
                                 aria-label={`Weight for set ${setIdx + 1}`}
                             />
                             {isPR && (
-                                <span className="absolute -top-2 right-0 text-[8px] font-black bg-yellow-400 text-neutral-900 px-1 py-px rounded-sm leading-tight tracking-wide pointer-events-none">
+                                <span className="absolute -top-2 right-0 text-nano font-black bg-yellow-400 text-neutral-900 px-1 py-px rounded-sm leading-tight tracking-wide pointer-events-none">
                                     PR
                                 </span>
                             )}
@@ -180,7 +180,7 @@ export default memo(function SetRow({
                 )}
 
                 {exerciseType === "other" && (
-                    <div className="text-[11px] font-semibold text-neutral-400 px-1 uppercase tracking-wider">
+                    <div className="text-caption font-semibold text-neutral-400 px-1 uppercase tracking-wider">
                         Mark complete
                     </div>
                 )}
@@ -211,7 +211,7 @@ export default memo(function SetRow({
                                 setShowSetType(false);
                             }}
                             className={cn(
-                                "flex-1 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest border transition-all active:scale-95",
+                                "flex-1 py-1.5 rounded-lg text-micro font-black uppercase tracking-widest border transition-all active:scale-95",
                                 currentSetType === type.value
                                     ? type.color
                                     : "bg-white/3 border-white/6 text-neutral-600 hover:text-neutral-300 hover:bg-white/6"
@@ -226,7 +226,7 @@ export default memo(function SetRow({
             {/* ── RPE Selector (shown after completing a set) ── */}
             {isCompleted && exerciseType !== "other" && (
                 <div className="flex items-center gap-1 px-2 pb-0.5">
-                    <span className="text-[9px] font-black uppercase tracking-widest text-neutral-600 shrink-0 mr-0.5">
+                    <span className="text-micro font-black uppercase tracking-widest text-neutral-600 shrink-0 mr-0.5">
                         RPE
                     </span>
                     {RPE_VALUES.map((rpe) => (
@@ -242,7 +242,7 @@ export default memo(function SetRow({
                                 );
                             }}
                             className={cn(
-                                "flex-1 py-1 rounded-md text-[9px] font-bold tabular-nums border transition-all active:scale-90",
+                                "flex-1 py-1 rounded-md text-micro font-bold tabular-nums border transition-all active:scale-90",
                                 currentRpe === rpe
                                     ? getRpeColor(rpe)
                                     : "bg-white/3 border-white/6 text-neutral-600 hover:text-neutral-400 hover:bg-white/5"
