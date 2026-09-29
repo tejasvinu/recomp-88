@@ -5,6 +5,12 @@ redesign work. If an item is unchecked, the change is not done.
 
 ## Tracker (Workout tab)
 
+Tracker actions come from `useWorkoutActions()` (implemented in `App.tsx`).
+Layout components never mutate workout state directly.
+
+Ergonomics floor: primary controls ≥ 44px tall, inputs use 16px text (stops
+iOS zoom on focus), no text below 9px. Check at 320px and 375px widths.
+
 ### Header
 - [ ] Day pills D1…D7 scroll horizontally; active pill is filled with the accent
 - [ ] Prev / next chevrons change day; disabled at the ends
@@ -19,13 +25,13 @@ redesign work. If an item is unchecked, the change is not done.
 - [ ] Notes button toggles a textarea; dot indicator when a note exists; saves as you type
 - [ ] History button (only when a previous session exists) loads last session weight + reps into planned sets
 - [ ] Strength / Hypertrophy chip; `details` chip when present
-- [ ] BW chip toggles every set to bodyweight and back; column header switches "kg"/"lbs" ↔ "load"
+- [ ] BW chip (in the column header, beside the unit) toggles every set to bodyweight and back; header switches "kg"/"lbs" ↔ "load"
 - [ ] "other"-type exercises show a single "Mark complete" row, no weight/reps
 
 ### Set row
 - [ ] Set number badge; tap it to open the set-type picker (Working / Warmup / Drop / Failure); badge shows W/WU/D/F colours
 - [ ] −/+ adjust weight by 2.5 kg or 5 lbs; never below 0
-- [ ] In BW mode the input shows only the offset ("+10"), stored as `BW+10` / `BW-10`; −/+ adjust the offset
+- [ ] In BW mode a "BW" badge sits above the input, which shows only the offset ("10"), stored as `BW+10` / `BW-10`; −/+ adjust the offset
 - [ ] Placeholders show last session's weight/reps, falling back to target reps
 - [ ] Focusing an input selects its contents
 - [ ] PR badge + gold border when typed weight beats the all-time best (not in BW mode)

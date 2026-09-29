@@ -23,15 +23,6 @@ interface WorkoutTabProps {
     progressPercent: number;
     weightUnit: "kg" | "lbs";
     onSetActiveDayIndex: (fn: (i: number) => number) => void;
-    onToggleSet: (dayId: string, exerciseId: string, setId: string, restType: "strength" | "hypertrophy" | "other") => void;
-    onUpdateSetData: (dayId: string, exerciseId: string, setId: string, field: "loggedWeight" | "loggedReps" | "rpe" | "setType" | "completedAt", value: string | number | undefined) => void;
-    onAdjustWeight: (exerciseId: string, setId: string, delta: number) => void;
-    onBwFill: (exerciseId: string) => void;
-    onLoadLastSession: (exerciseId: string) => void;
-    onOpenExerciseInfo: (name: string) => void;
-    onNoteChange: (exerciseId: string, note: string) => void;
-    onAddExtraSet: (dayId: string, exerciseId: string) => void;
-    onRemoveExtraSet: (dayId: string, exerciseId: string, setId: string) => void;
     onShowFinishConfirm: () => void;
     onClearCheckmarks: () => void;
     onStartStretching?: (programId: string) => void;
@@ -49,15 +40,6 @@ export default function WorkoutTab({
     progressPercent,
     weightUnit,
     onSetActiveDayIndex,
-    onToggleSet,
-    onUpdateSetData,
-    onAdjustWeight,
-    onBwFill,
-    onLoadLastSession,
-    onOpenExerciseInfo,
-    onNoteChange,
-    onAddExtraSet,
-    onRemoveExtraSet,
     onShowFinishConfirm,
     onClearCheckmarks,
     onStartStretching,
@@ -162,15 +144,6 @@ export default function WorkoutTab({
                             onToggleNote={() =>
                                 setExpandedNoteId(expandedNoteId === exercise.id ? null : exercise.id)
                             }
-                            onNoteChange={onNoteChange}
-                            onToggleSet={onToggleSet}
-                            onUpdateSetData={onUpdateSetData}
-                            onAdjustWeight={onAdjustWeight}
-                            onBwFill={onBwFill}
-                            onLoadLastSession={onLoadLastSession}
-                            onOpenExerciseInfo={onOpenExerciseInfo}
-                            onAddExtraSet={onAddExtraSet}
-                            onRemoveExtraSet={onRemoveExtraSet}
                         />
                     );
                 }
@@ -241,15 +214,6 @@ export default function WorkoutTab({
                                         onToggleNote={() =>
                                             setExpandedNoteId(expandedNoteId === exercise.id ? null : exercise.id)
                                         }
-                                        onNoteChange={onNoteChange}
-                                        onToggleSet={onToggleSet}
-                                        onUpdateSetData={onUpdateSetData}
-                                        onAdjustWeight={onAdjustWeight}
-                                        onBwFill={onBwFill}
-                                        onLoadLastSession={onLoadLastSession}
-                                        onOpenExerciseInfo={onOpenExerciseInfo}
-                                        onAddExtraSet={onAddExtraSet}
-                                        onRemoveExtraSet={onRemoveExtraSet}
                                     />
                                 </div>
                             ))}

@@ -6,7 +6,9 @@ import { cn } from "../utils";
 import { Info, FileText, History, Plus, Trash2 } from "lucide-react";
 import { findWikiEntry } from "../wikiData";
 import { getExerciseSetsWithExtras, isExtraSetState } from "../data";
-import SetRow from "./SetRow";
+import SetRow, { SET_ROW_GRID } from "./SetRow";
+import { Card, Chip, ChipButton, IconButton } from "./ui/primitives";
+import { useWorkoutActions } from "./workout/WorkoutActionsContext";
 
 interface ExerciseCardProps {
     exercise: Exercise;
@@ -19,15 +21,6 @@ interface ExerciseCardProps {
     prBestWeight: number;
     weightUnit: "kg" | "lbs";
     onToggleNote: () => void;
-    onNoteChange: (exerciseId: string, note: string) => void;
-    onToggleSet: (dayId: string, exerciseId: string, setId: string, restType: "strength" | "hypertrophy" | "other") => void;
-    onUpdateSetData: (dayId: string, exerciseId: string, setId: string, field: "loggedWeight" | "loggedReps" | "rpe" | "setType" | "completedAt", value: string | number | undefined) => void;
-    onAdjustWeight: (exerciseId: string, setId: string, delta: number) => void;
-    onBwFill: (exerciseId: string) => void;
-    onLoadLastSession: (exerciseId: string) => void;
-    onOpenExerciseInfo: (name: string) => void;
-    onAddExtraSet: (dayId: string, exerciseId: string) => void;
-    onRemoveExtraSet: (dayId: string, exerciseId: string, setId: string) => void;
 }
 
 export default memo(function ExerciseCard({
@@ -41,16 +34,8 @@ export default memo(function ExerciseCard({
     prBestWeight,
     weightUnit,
     onToggleNote,
-    onNoteChange,
-    onToggleSet,
-    onUpdateSetData,
-    onAdjustWeight,
-    onBwFill,
-    onLoadLastSession,
-    onOpenExerciseInfo,
-    onAddExtraSet,
-    onRemoveExtraSet,
 }: ExerciseCardProps) {
+    const { noteChange: onNoteChange, bwFill: onBwFill, loadLastSession: onLoadLastSession, openExerciseInfo: onOpenExerciseInfo, addExtraSet: onAddExtraSet, removeExtraSet: onRemoveExtraSet } = useWorkoutActions();
     const hasWikiEntry = !!findWikiEntry(exercise.name);
     const hasLastSession = !!lastSessionVals;
     const hasNote = !!exerciseNote?.trim();
@@ -69,99 +54,72 @@ export default memo(function ExerciseCard({
         ) && visibleSets.length > 0;
 
     return (
-        <div className="bg-neutral-900/50 border border-white/6 p-4 rounded-2xl flex flex-col gap-3 shadow-lg">
+        <Card className="p-3 min-[360px]:p-4 flex flex-col gap-3">
             {/* Exercise Header */}
             <div className="flex items-start gap-3">
-                <span className="shrink-0 w-6 h-6 rounded-lg bg-white/5 border border-white/8 flex items-center justify-center text-mini font-mono font-bold text-neutral-500 mt-0.5">
+                <span className="shrink-0 w-7 h-7 rounded-lg bg-white/5 border border-white/8 flex items-center justify-center text-caption font-mono font-bold text-neutral-500">
                     {exIdx + 1}
                 </span>
                 <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                        <h2 className="text-[15px] font-bold text-white tracking-wide truncate leading-snug">
-                            {exercise.name}
-                        </h2>
-                        {hasWikiEntry && (
-                            <button
-                                onClick={() => onOpenExerciseInfo(exercise.name)}
-                                className="shrink-0 w-6 h-6 bg-white/5 hover:bg-accent-400/15 rounded-full flex items-center justify-center transition-colors group border border-white/6 hover:border-accent-400/30"
-                                aria-label={`View info for ${exercise.name}`}
-                            >
-                                <Info
-                                    size={12}
-                                    className="text-neutral-500 group-hover:text-accent-400 transition-colors"
-                                />
-                            </button>
-                        )}
-                        {exercise.type !== "other" && (
-                            <button
-                                onClick={onToggleNote}
-                                className={cn(
-                                    "shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition-colors border relative",
-                                    isNoteOpen || hasNote
-                                        ? "bg-accent-400/15 border-accent-400/30 text-accent-400"
-                                        : "bg-white/5 border-white/6 text-neutral-500 hover:bg-accent-400/10 hover:text-accent-400/80 hover:border-accent-400/20"
-                                )}
-                                aria-label={`${isNoteOpen ? "Close" : "Open"} notes for ${exercise.name}`}
-                                aria-expanded={isNoteOpen}
-                            >
-                                <FileText size={11} />
-                                {hasNote && !isNoteOpen && (
-                                    <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-accent-400 rounded-full" />
-                                )}
-                            </button>
-                        )}
-                        {exercise.type !== "other" && hasLastSession && (
-                            <button
-                                onClick={() => onLoadLastSession(exercise.id)}
-                                className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition-colors border bg-white/5 border-white/6 text-neutral-500 hover:bg-info-400/10 hover:text-info-400 hover:border-info-400/20"
-                                aria-label={`Load last session values for ${exercise.name}`}
-                            >
-                                <History size={11} />
-                            </button>
-                        )}
-                    </div>
+                    <h2 className="text-[17px] font-bold text-white tracking-wide leading-snug">
+                        {exercise.name}
+                    </h2>
                     <div className="flex gap-1.5 mt-1.5 flex-wrap items-center">
                         {exercise.type !== "other" && (
-                            <span
-                                className={cn(
-                                    "text-micro uppercase font-black tracking-widest px-2 py-0.5 rounded-md border",
-                                    exercise.type === "strength"
-                                        ? "text-orange-400 bg-orange-500/10 border-orange-500/20"
-                                        : "text-info-400 bg-info-500/10 border-info-500/20"
-                                )}
-                            >
+                            <Chip tone={exercise.type === "strength" ? "strength" : "info"}>
                                 {exercise.type === "strength" ? "Strength" : "Hypertrophy"}
-                            </span>
+                            </Chip>
                         )}
                         {exercise.details && (
-                            <span className="text-micro uppercase font-bold tracking-wider text-neutral-400 bg-white/5 px-2 py-0.5 rounded-md border border-white/8">
-                                {exercise.details}
-                            </span>
-                        )}
-                        {exercise.type !== "other" && (
-                            <button
-                                onClick={() => onBwFill(exercise.id)}
-                                className={cn(
-                                    "text-micro uppercase font-black tracking-widest px-2 py-0.5 rounded-md border transition-all",
-                                    isBwActive
-                                        ? "text-accent-400 bg-accent-400/10 border-accent-400/25"
-                                        : "text-neutral-600 bg-white/3 border-white/6 hover:text-neutral-400 hover:bg-white/6"
-                                )}
-                                aria-label="Toggle bodyweight for all sets"
-                                aria-pressed={isBwActive}
-                            >
-                                BW
-                            </button>
+                            <Chip className="font-bold tracking-wider">{exercise.details}</Chip>
                         )}
                     </div>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                    {hasWikiEntry && (
+                        <IconButton shape="round" hover="accent" onClick={() => onOpenExerciseInfo(exercise.name)} aria-label={`View info for ${exercise.name}`}>
+                            <Info size={15} />
+                        </IconButton>
+                    )}
+                    {exercise.type !== "other" && (
+                        <IconButton
+                            shape="round"
+                            hover="accent"
+                            active={isNoteOpen || hasNote}
+                            onClick={onToggleNote}
+                            className="relative"
+                            aria-label={`${isNoteOpen ? "Close" : "Open"} notes for ${exercise.name}`}
+                            aria-expanded={isNoteOpen}
+                        >
+                            <FileText size={14} />
+                            {hasNote && !isNoteOpen && (
+                                <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-accent-400 rounded-full" />
+                            )}
+                        </IconButton>
+                    )}
+                    {exercise.type !== "other" && hasLastSession && (
+                        <IconButton shape="round" hover="info" onClick={() => onLoadLastSession(exercise.id)} aria-label={`Load last session values for ${exercise.name}`}>
+                            <History size={14} />
+                        </IconButton>
+                    )}
                 </div>
             </div>
 
             {/* Column Headers */}
             {exercise.type !== "other" && (
-                <div className="grid grid-cols-[20px_1fr_1fr_44px] gap-2 px-1 text-micro font-bold text-neutral-600 uppercase tracking-[0.15em] text-center">
+                <div className={cn("grid gap-1.5 px-1.5 items-center text-micro font-bold text-neutral-600 uppercase tracking-[0.15em] text-center", SET_ROW_GRID)}>
                     <div className="text-left">#</div>
-                    <div>{isBwActive ? "load" : weightUnit}</div>
+                    <div className="flex items-center justify-center gap-2">
+                        {isBwActive ? "load" : weightUnit}
+                        <ChipButton
+                            active={isBwActive}
+                            onClick={() => onBwFill(exercise.id)}
+                            className="px-2.5 py-1"
+                            aria-label="Toggle bodyweight for all sets"
+                        >
+                            BW
+                        </ChipButton>
+                    </div>
                     <div>reps</div>
                     <div />
                 </div>
@@ -193,15 +151,12 @@ export default memo(function ExerciseCard({
                             prBest={prBestWeight}
                             isBwSet={isBwSet}
                             weightUnit={weightUnit}
-                            onToggleSet={onToggleSet}
-                            onUpdateSetData={onUpdateSetData}
-                            onAdjustWeight={onAdjustWeight}
                         />
                         {isExtraSet && (
                             <button
                                 type="button"
                                 onClick={() => onRemoveExtraSet(dayId, exercise.id, set.id)}
-                                className="self-end flex items-center gap-1.5 px-2 py-1 rounded-lg border border-danger-400/15 bg-danger-400/6 text-micro font-black uppercase tracking-widest text-danger-300/80 hover:bg-danger-400/12 hover:text-danger-300 transition-all"
+                                className="self-end flex items-center gap-1.5 px-3 py-2 rounded-lg border border-danger-400/15 bg-danger-400/6 text-mini font-black uppercase tracking-widest text-danger-300/80 hover:bg-danger-400/12 hover:text-danger-300 transition-all"
                                 aria-label={`Remove extra set ${extraSetNumber}`}
                             >
                                 <Trash2 size={10} />
@@ -252,6 +207,6 @@ export default memo(function ExerciseCard({
                     </p>
                 </div>
             )}
-        </div>
+        </Card>
     );
 });

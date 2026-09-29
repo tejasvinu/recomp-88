@@ -176,7 +176,7 @@ export default function AppHeader({
                                 role="tab"
                                 aria-selected={clampedActiveDayIndex === idx}
                                 className={cn(
-                                    'snap-center shrink-0 px-3.5 py-1.5 rounded-lg text-caption font-bold uppercase tracking-widest transition-all duration-200 border',
+                                    'snap-center shrink-0 px-3.5 py-2 rounded-lg text-small font-bold uppercase tracking-widest transition-all duration-200 border',
                                     clampedActiveDayIndex === idx
                                         ? 'bg-accent-400 text-neutral-950 border-accent-400 shadow-[0_0_12px_color-mix(in_oklab,_var(--color-accent-400)_25%,_transparent)]'
                                         : 'bg-white/4 text-neutral-500 border-white/6 hover:bg-white/8 hover:text-neutral-300',
@@ -200,19 +200,19 @@ export default function AppHeader({
                                     type="button"
                                     onClick={() => goToDay(clampedActiveDayIndex - 1)}
                                     disabled={!canGoPrevious}
-                                    className="w-7 h-7 flex items-center justify-center rounded-lg border border-white/8 bg-white/4 text-neutral-500 hover:text-white hover:bg-white/8 transition-all disabled:opacity-30 disabled:hover:bg-white/4 disabled:hover:text-neutral-500"
+                                    className="w-9 h-9 flex items-center justify-center rounded-lg border border-white/8 bg-white/4 text-neutral-500 hover:text-white hover:bg-white/8 transition-all disabled:opacity-30 disabled:hover:bg-white/4 disabled:hover:text-neutral-500"
                                     aria-label="Previous workout day"
                                 >
-                                    <ChevronLeft size={14} />
+                                    <ChevronLeft size={16} />
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => goToDay(clampedActiveDayIndex + 1)}
                                     disabled={!canGoNext}
-                                    className="w-7 h-7 flex items-center justify-center rounded-lg border border-white/8 bg-white/4 text-neutral-500 hover:text-white hover:bg-white/8 transition-all disabled:opacity-30 disabled:hover:bg-white/4 disabled:hover:text-neutral-500"
+                                    className="w-9 h-9 flex items-center justify-center rounded-lg border border-white/8 bg-white/4 text-neutral-500 hover:text-white hover:bg-white/8 transition-all disabled:opacity-30 disabled:hover:bg-white/4 disabled:hover:text-neutral-500"
                                     aria-label="Next workout day"
                                 >
-                                    <ChevronRight size={14} />
+                                    <ChevronRight size={16} />
                                 </button>
                             </div>
                         </div>

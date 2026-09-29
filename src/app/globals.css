@@ -21,8 +21,9 @@
 
   /* Type scale for small UI text (font-size only; line-height inherits).
      Keep this list in sync with the tailwind-merge config in src/utils.ts. */
-  --text-nano: 8px;
-  --text-micro: 9px;
+  /* Floor raised from 8/9px: condensed caps below 10px are hard to read mid-set. */
+  --text-nano: 9px;
+  --text-micro: 10px;
   --text-mini: 10px;
   --text-caption: 11px;
   --text-small: 12px;

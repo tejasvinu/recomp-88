@@ -58,6 +58,7 @@ import JustShowUpModal from "./components/JustShowUpModal";
 import ToastContainer from "./components/ui/ToastContainer";
 import InstallPrompt from "./components/InstallPrompt";
 import { SegmentedControl } from "./components/ui/primitives";
+import { WorkoutActionsProvider, type WorkoutActions } from "./components/workout/WorkoutActionsContext";
 
 const WikiView = lazy(() => import("./components/WikiView"));
 const ChartsView = lazy(() => import("./components/ChartsView"));
@@ -945,6 +946,18 @@ function AppMain() {
     showToast(`Saved ${ex.name} to library`);
   }, [setCustomExercises, showToast]);
 
+  const workoutActions = useMemo<WorkoutActions>(() => ({
+    toggleSet,
+    updateSetData,
+    adjustWeight,
+    bwFill: handleBwFill,
+    loadLastSession,
+    openExerciseInfo,
+    noteChange: handleNoteChange,
+    addExtraSet,
+    removeExtraSet,
+  }), [toggleSet, updateSetData, adjustWeight, handleBwFill, loadLastSession, openExerciseInfo, handleNoteChange, addExtraSet, removeExtraSet]);
+
   // ─── Render ────────────────────────────────────────────────────────────
   return (
     <div
@@ -978,31 +991,24 @@ function AppMain() {
             </div>
 
             <div className={activeTab === "workout" ? "block" : "hidden"}>
-              <WorkoutTab
-                activeDay={activeDay}
-                activeDayIndex={clampedActiveDayIndex}
-                totalDays={safeWorkoutTemplate.length}
-                progress={progress}
-                exerciseNotes={exerciseNotes}
-                lastSessionValues={lastSessionValues}
-                allTimePRs={allTimePRs}
-                progressPercent={progressPercent}
-                weightUnit={weightUnit}
-                onSetActiveDayIndex={setActiveDayIndex}
-                onToggleSet={toggleSet}
-                onUpdateSetData={updateSetData}
-                onAdjustWeight={adjustWeight}
-                onBwFill={handleBwFill}
-                onLoadLastSession={loadLastSession}
-                onOpenExerciseInfo={openExerciseInfo}
-                onNoteChange={handleNoteChange}
-                onAddExtraSet={addExtraSet}
-                onRemoveExtraSet={removeExtraSet}
-                onShowFinishConfirm={() => setShowFinishConfirm(true)}
-                onClearCheckmarks={clearCheckmarks}
-                onStartStretching={handleStartStretching}
-                onOpenJustShowUp={() => setShowJustShowUp(true)}
-              />
+              <WorkoutActionsProvider value={workoutActions}>
+                <WorkoutTab
+                  activeDay={activeDay}
+                  activeDayIndex={clampedActiveDayIndex}
+                  totalDays={safeWorkoutTemplate.length}
+                  progress={progress}
+                  exerciseNotes={exerciseNotes}
+                  lastSessionValues={lastSessionValues}
+                  allTimePRs={allTimePRs}
+                  progressPercent={progressPercent}
+                  weightUnit={weightUnit}
+                  onSetActiveDayIndex={setActiveDayIndex}
+                  onShowFinishConfirm={() => setShowFinishConfirm(true)}
+                  onClearCheckmarks={clearCheckmarks}
+                  onStartStretching={handleStartStretching}
+                  onOpenJustShowUp={() => setShowJustShowUp(true)}
+                />
+              </WorkoutActionsProvider>
             </div>
 
             <div className={activeTab === "stretching" ? "block" : "hidden"}>

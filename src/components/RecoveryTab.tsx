@@ -141,7 +141,7 @@ export default function StretchingTab({
                     initial="initial"
                     animate="animate"
                     exit="exit"
-                    className="w-full max-w-3xl mx-auto pb-24 text-zinc-50 font-sans selection:bg-accent-400 selection:text-black px-4 sm:px-0"
+                    className="w-full max-w-3xl mx-auto pb-24 text-neutral-50 font-sans selection:bg-accent-400 selection:text-black px-4 sm:px-0"
                 >
                     <header className="pt-8 pb-8 border-b border-white/8 relative">
                         {/* Decorative background glow */}
@@ -152,7 +152,7 @@ export default function StretchingTab({
                                 <h2 className="text-3xl font-black tracking-tight text-white flex items-center gap-2">
                                     Recovery
                                 </h2>
-                                <p className="text-sm text-zinc-400 font-medium mt-2 leading-relaxed max-w-[320px]">
+                                <p className="text-sm text-neutral-400 font-medium mt-2 leading-relaxed max-w-[320px]">
                                     Optimize your body. Choose structured mobility flows or intense training extras.
                                 </p>
                             </div>
@@ -170,7 +170,7 @@ export default function StretchingTab({
                             onClick={() => setZone('mobility')}
                             className={cn(
                                 'rounded-3xl border text-left p-6 transition-all duration-300 relative overflow-hidden group',
-                                'bg-zinc-900/50 border-accent-400/20 hover:border-accent-400/40 hover:bg-zinc-900',
+                                'bg-neutral-900/50 border-accent-400/20 hover:border-accent-400/40 hover:bg-neutral-900',
                                 'shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]',
                             )}
                         >
@@ -189,7 +189,7 @@ export default function StretchingTab({
                                     <h3 className="text-xl font-black text-white tracking-tight">
                                         Holds, flows, & cooldowns
                                     </h3>
-                                    <p className="text-sm text-zinc-400 mt-2 leading-relaxed max-w-[90%]">
+                                    <p className="text-sm text-neutral-400 mt-2 leading-relaxed max-w-[90%]">
                                         Static stretches and slow flows for after training, tight days, or general flexibility.
                                     </p>
                                     <div className="mt-4 flex items-center gap-2">
@@ -208,7 +208,7 @@ export default function StretchingTab({
                             onClick={() => setZone('training')}
                             className={cn(
                                 'rounded-3xl border text-left p-6 transition-all duration-300 relative overflow-hidden group',
-                                'bg-zinc-900/50 border-warn-400/20 hover:border-warn-400/40 hover:bg-zinc-900',
+                                'bg-neutral-900/50 border-warn-400/20 hover:border-warn-400/40 hover:bg-neutral-900',
                                 'shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]',
                             )}
                         >
@@ -227,7 +227,7 @@ export default function StretchingTab({
                                     <h3 className="text-xl font-black text-white tracking-tight">
                                         Primers & finishers
                                     </h3>
-                                    <p className="text-sm text-zinc-400 mt-2 leading-relaxed max-w-[90%]">
+                                    <p className="text-sm text-neutral-400 mt-2 leading-relaxed max-w-[90%]">
                                         Short, higher-effort blocks meant around your main lifts — not replacement stretching.
                                     </p>
                                     <div className="mt-4 flex items-center gap-2">
@@ -252,7 +252,7 @@ export default function StretchingTab({
                     initial="initial"
                     animate="animate"
                     exit="exit"
-                    className="w-full max-w-3xl mx-auto pb-24 text-zinc-50 font-sans selection:bg-accent-400 selection:text-black px-4 sm:px-0"
+                    className="w-full max-w-3xl mx-auto pb-24 text-neutral-50 font-sans selection:bg-accent-400 selection:text-black px-4 sm:px-0"
                 >
                     <header className="pt-4 pb-6 border-b border-white/8 sticky top-0 bg-canvas/95 backdrop-blur-xl z-20">
                         <button
@@ -262,7 +262,7 @@ export default function StretchingTab({
                                 setSearchMobility('');
                                 setExpandedMobilityId(null);
                             }}
-                            className="flex items-center gap-2 text-caption font-bold uppercase tracking-[0.14em] text-zinc-500 hover:text-zinc-300 mb-5 transition-colors"
+                            className="flex items-center gap-2 text-caption font-bold uppercase tracking-[0.14em] text-neutral-500 hover:text-neutral-300 mb-5 transition-colors"
                         >
                             <ArrowLeft size={14} />
                             Back to Recovery
@@ -272,7 +272,7 @@ export default function StretchingTab({
                                 <h2 className="text-2xl font-black tracking-tight text-accent-300">
                                     Mobility Flows
                                 </h2>
-                                <p className="text-sm text-zinc-400 font-medium mt-1">
+                                <p className="text-sm text-neutral-400 font-medium mt-1">
                                     Stretching and slow movement — search by muscle or goal.
                                 </p>
                             </div>
@@ -283,14 +283,14 @@ export default function StretchingTab({
                         <div className="relative mt-6">
                             <Search
                                 size={18}
-                                className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none"
+                                className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none"
                             />
                             <input
                                 type="text"
                                 placeholder="Search routines, muscles, goals…"
                                 value={searchMobility}
                                 onChange={(event) => setSearchMobility(event.target.value)}
-                                className="w-full bg-zinc-900/80 border border-white/10 rounded-xl py-3.5 pl-12 pr-4 text-[15px] font-medium text-white placeholder-zinc-500 outline-none focus:ring-2 focus:ring-accent-400/30 focus:border-accent-400/40 transition-all shadow-inner"
+                                className="w-full bg-neutral-900/80 border border-white/10 rounded-xl py-3.5 pl-12 pr-4 text-[15px] font-medium text-white placeholder-neutral-500 outline-none focus:ring-2 focus:ring-accent-400/30 focus:border-accent-400/40 transition-all shadow-inner"
                             />
                         </div>
                     </header>
@@ -332,7 +332,7 @@ export default function StretchingTab({
                     initial="initial"
                     animate="animate"
                     exit="exit"
-                    className="w-full max-w-3xl mx-auto pb-24 text-zinc-50 font-sans selection:bg-warn-400 selection:text-black px-4 sm:px-0"
+                    className="w-full max-w-3xl mx-auto pb-24 text-neutral-50 font-sans selection:bg-warn-400 selection:text-black px-4 sm:px-0"
                 >
                     <header className="pt-4 pb-6 border-b border-white/8 sticky top-0 bg-canvas/95 backdrop-blur-xl z-20">
                         <button
@@ -341,7 +341,7 @@ export default function StretchingTab({
                                 setZone('choose');
                                 setSearchTraining('');
                             }}
-                            className="flex items-center gap-2 text-caption font-bold uppercase tracking-[0.14em] text-zinc-500 hover:text-zinc-300 mb-5 transition-colors"
+                            className="flex items-center gap-2 text-caption font-bold uppercase tracking-[0.14em] text-neutral-500 hover:text-neutral-300 mb-5 transition-colors"
                         >
                             <ArrowLeft size={14} />
                             Back to Recovery
@@ -351,7 +351,7 @@ export default function StretchingTab({
                                 <h2 className="text-2xl font-black tracking-tight text-white">
                                     Training Extras
                                 </h2>
-                                <p className="text-sm text-zinc-400 font-medium mt-1 max-w-[340px] leading-relaxed">
+                                <p className="text-sm text-neutral-400 font-medium mt-1 max-w-[340px] leading-relaxed">
                                     Primers go before heavy work. Finishers empty the tank after.
                                 </p>
                             </div>
@@ -359,14 +359,14 @@ export default function StretchingTab({
                         <div className="relative mt-6">
                             <Search
                                 size={18}
-                                className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 pointer-events-none"
+                                className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none"
                             />
                             <input
                                 type="text"
                                 placeholder="Search primers and finishers…"
                                 value={searchTraining}
                                 onChange={(event) => setSearchTraining(event.target.value)}
-                                className="w-full bg-zinc-900/80 border border-white/10 rounded-xl py-3.5 pl-12 pr-4 text-[15px] font-medium text-white placeholder-zinc-500 outline-none focus:ring-2 focus:ring-warn-400/30 focus:border-warn-400/40 transition-all shadow-inner"
+                                className="w-full bg-neutral-900/80 border border-white/10 rounded-xl py-3.5 pl-12 pr-4 text-[15px] font-medium text-white placeholder-neutral-500 outline-none focus:ring-2 focus:ring-warn-400/30 focus:border-warn-400/40 transition-all shadow-inner"
                             />
                         </div>
                     </header>
@@ -378,10 +378,10 @@ export default function StretchingTab({
                                 <h3 className="text-xs font-black uppercase tracking-[0.2em] text-warn-300">
                                     Primers
                                 </h3>
-                                <span className="text-caption text-zinc-500 font-medium">— before lifting</span>
+                                <span className="text-caption text-neutral-500 font-medium">— before lifting</span>
                             </div>
                             {filteredPrimers.length === 0 ? (
-                                <p className="text-sm text-zinc-500 py-4 px-1">No primers match that search.</p>
+                                <p className="text-sm text-neutral-500 py-4 px-1">No primers match that search.</p>
                             ) : (
                                 <motion.ul
                                     variants={listVariants}
@@ -408,10 +408,10 @@ export default function StretchingTab({
                                 <h3 className="text-xs font-black uppercase tracking-[0.2em] text-rose-300">
                                     Finishers
                                 </h3>
-                                <span className="text-caption text-zinc-500 font-medium">— short burnouts</span>
+                                <span className="text-caption text-neutral-500 font-medium">— short burnouts</span>
                             </div>
                             {filteredFinishers.length === 0 ? (
-                                <p className="text-sm text-zinc-500 py-4 px-1">No finishers match that search.</p>
+                                <p className="text-sm text-neutral-500 py-4 px-1">No finishers match that search.</p>
                             ) : (
                                 <motion.ul
                                     variants={listVariants}
@@ -453,12 +453,12 @@ function matchesTrainingQuery(program: StretchingProgram, query: string) {
 
 function EmptyState() {
     return (
-        <div className="border border-dashed border-white/10 rounded-2xl p-10 text-center bg-zinc-900/30">
-            <div className="w-12 h-12 rounded-full bg-zinc-800/50 flex items-center justify-center mx-auto mb-4 text-zinc-500">
+        <div className="border border-dashed border-white/10 rounded-2xl p-10 text-center bg-neutral-900/30">
+            <div className="w-12 h-12 rounded-full bg-neutral-800/50 flex items-center justify-center mx-auto mb-4 text-neutral-500">
                 <Search size={24} />
             </div>
-            <p className="text-base font-bold text-zinc-300">No routines match.</p>
-            <p className="text-sm text-zinc-500 mt-1.5">Try searching for a specific muscle group or goal.</p>
+            <p className="text-base font-bold text-neutral-300">No routines match.</p>
+            <p className="text-sm text-neutral-500 mt-1.5">Try searching for a specific muscle group or goal.</p>
         </div>
     );
 }
@@ -478,28 +478,28 @@ function MobilityProgramRow({
     const moveCount = program.stretches.length;
 
     return (
-        <div className="rounded-2xl border border-white/10 bg-zinc-900/60 overflow-hidden transition-colors hover:border-white/20">
+        <div className="rounded-2xl border border-white/10 bg-neutral-900/60 overflow-hidden transition-colors hover:border-white/20">
             <div className="p-4 sm:p-5 flex items-start gap-4">
                 <div className="min-w-0 flex-1">
                     <h3 className="text-lg font-black text-white tracking-tight leading-snug">
                         {program.name}
                     </h3>
                     <div className="flex items-center gap-2 mt-2 flex-wrap">
-                        <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-caption font-bold text-zinc-300">
+                        <span className="px-2 py-0.5 rounded-md bg-neutral-800 text-caption font-bold text-neutral-300">
                             {moveCount} moves
                         </span>
-                        <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-caption font-bold text-zinc-300">
+                        <span className="px-2 py-0.5 rounded-md bg-neutral-800 text-caption font-bold text-neutral-300">
                             ~{minutes} min
                         </span>
                         {program.difficulty && (
-                            <span className="px-2 py-0.5 rounded-md bg-zinc-800 text-caption font-bold text-zinc-400 border border-zinc-700">
+                            <span className="px-2 py-0.5 rounded-md bg-neutral-800 text-caption font-bold text-neutral-400 border border-neutral-700">
                                 {program.difficulty}
                             </span>
                         )}
                     </div>
                     {program.focusAreas && program.focusAreas.length > 0 && (
-                        <p className="text-xs text-zinc-400 mt-3 leading-relaxed line-clamp-2">
-                            <span className="font-semibold text-zinc-300">Focus: </span>
+                        <p className="text-xs text-neutral-400 mt-3 leading-relaxed line-clamp-2">
+                            <span className="font-semibold text-neutral-300">Focus: </span>
                             {program.focusAreas.slice(0, 4).join(' · ')}
                         </p>
                     )}
@@ -522,7 +522,7 @@ function MobilityProgramRow({
                         onClick={onToggleExpand}
                         className={cn(
                             'flex items-center justify-center gap-1 text-mini font-bold uppercase tracking-widest rounded-lg',
-                            'text-zinc-400 hover:text-white py-1.5 transition-colors hover:bg-white/5',
+                            'text-neutral-400 hover:text-white py-1.5 transition-colors hover:bg-white/5',
                         )}
                     >
                         {expanded ? 'Hide' : 'Moves'}
@@ -542,11 +542,11 @@ function MobilityProgramRow({
                         className="border-t border-white/5 bg-black/40 overflow-hidden"
                     >
                         <div className="px-4 py-4 sm:px-5">
-                            <ol className="space-y-2.5 m-0 p-0 list-decimal list-inside marker:text-zinc-600 text-sm text-zinc-400">
+                            <ol className="space-y-2.5 m-0 p-0 list-decimal list-inside marker:text-neutral-600 text-sm text-neutral-400">
                                 {program.stretches.map((stretch) => (
                                     <li key={stretch.id} className="pl-1">
-                                        <span className="text-zinc-200 font-medium">{stretch.name}</span>
-                                        <span className="text-zinc-500 font-mono text-xs ml-2 bg-zinc-800/50 px-1.5 py-0.5 rounded">
+                                        <span className="text-neutral-200 font-medium">{stretch.name}</span>
+                                        <span className="text-neutral-500 font-mono text-xs ml-2 bg-neutral-800/50 px-1.5 py-0.5 rounded">
                                             {stretch.duration}s
                                         </span>
                                     </li>
@@ -596,10 +596,10 @@ function TrainingProgramRow({
                     >
                         {badge}
                     </span>
-                    <span className="text-xs text-zinc-400 font-medium bg-black/20 px-2 py-0.5 rounded-md">
+                    <span className="text-xs text-neutral-400 font-medium bg-black/20 px-2 py-0.5 rounded-md">
                         {moveCount} stations
                     </span>
-                    <span className="text-xs text-zinc-400 font-medium bg-black/20 px-2 py-0.5 rounded-md">
+                    <span className="text-xs text-neutral-400 font-medium bg-black/20 px-2 py-0.5 rounded-md">
                         ~{minutes} min
                     </span>
                 </div>

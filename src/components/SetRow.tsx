@@ -4,6 +4,7 @@ import { memo, useState } from "react";
 import type { SetData, SavedSetState, SetType } from "../types";
 import { cn } from "../utils";
 import { Check, Minus, Plus } from "lucide-react";
+import { useWorkoutActions } from "./workout/WorkoutActionsContext";
 
 const SET_TYPES: { value: SetType; label: string; short: string; color: string }[] = [
     { value: "working", label: "Working", short: "W", color: "bg-accent-400/15 text-accent-400 border-accent-400/30" },
@@ -11,6 +12,9 @@ const SET_TYPES: { value: SetType; label: string; short: string; color: string }
     { value: "drop", label: "Drop", short: "D", color: "bg-warn-400/15 text-warn-400 border-warn-400/30" },
     { value: "failure", label: "Failure", short: "F", color: "bg-danger-400/15 text-danger-400 border-danger-400/30" },
 ];
+
+/** Column template shared with the header row in ExerciseCard. */
+export const SET_ROW_GRID = "grid-cols-[28px_minmax(0,1.6fr)_minmax(0,0.8fr)_44px]";
 
 const RPE_VALUES = [6, 7, 7.5, 8, 8.5, 9, 9.5, 10] as const;
 
@@ -33,9 +37,6 @@ interface SetRowProps {
     prBest: number;
     isBwSet: boolean;
     weightUnit: "kg" | "lbs";
-    onToggleSet: (dayId: string, exerciseId: string, setId: string, restType: "strength" | "hypertrophy" | "other") => void;
-    onUpdateSetData: (dayId: string, exerciseId: string, setId: string, field: "loggedWeight" | "loggedReps" | "rpe" | "setType" | "completedAt", value: string | number | undefined) => void;
-    onAdjustWeight: (exerciseId: string, setId: string, delta: number) => void;
 }
 
 export default memo(function SetRow({
@@ -50,10 +51,8 @@ export default memo(function SetRow({
     prBest,
     isBwSet,
     weightUnit,
-    onToggleSet,
-    onUpdateSetData,
-    onAdjustWeight,
 }: SetRowProps) {
+    const { toggleSet: onToggleSet, updateSetData: onUpdateSetData, adjustWeight: onAdjustWeight } = useWorkoutActions();
     const isCompleted = setProgress?.completed || false;
     const weightVal = setProgress?.loggedWeight || "";
     const weightPlaceholder = lastVals?.weight || "—";
@@ -74,9 +73,9 @@ export default memo(function SetRow({
         <div className="flex flex-col gap-0.5">
             <div
                 className={cn(
-                    "grid gap-2 items-center px-2 py-2 rounded-xl border transition-all duration-300",
+                    "grid gap-1.5 items-center px-1.5 py-2 rounded-xl border transition-all duration-300",
                     exerciseType !== "other"
-                        ? "grid-cols-[20px_1fr_1fr_44px]"
+                        ? SET_ROW_GRID
                         : "grid-cols-[1fr_44px]",
                     isCompleted
                         ? currentSetType === "warmup"
@@ -89,7 +88,7 @@ export default memo(function SetRow({
                     <button
                         onClick={() => setShowSetType((prev) => !prev)}
                         className={cn(
-                            "text-mini font-mono font-bold text-center tabular-nums rounded px-0.5 py-0.5 transition-all border",
+                            "h-8 text-caption font-mono font-bold text-center tabular-nums rounded-lg px-0.5 transition-all border",
                             setTypeInfo.color,
                             "hover:brightness-125 active:scale-90"
                         )}
@@ -103,14 +102,14 @@ export default memo(function SetRow({
                     <div className="flex items-center gap-0.5">
                         <button
                             onClick={() => onAdjustWeight(exerciseId, set.id, weightUnit === "lbs" ? -5 : -2.5)}
-                            className="shrink-0 w-5 h-8 flex items-center justify-center rounded-md bg-white/4 border border-white/7 text-neutral-500 hover:text-white hover:bg-white/10 active:scale-90 transition-all"
+                            className="shrink-0 w-6 min-[360px]:w-7 h-11 flex items-center justify-center rounded-lg bg-white/4 border border-white/7 text-neutral-400 hover:text-white hover:bg-white/10 active:scale-90 transition-all"
                             aria-label={`Decrease weight by ${weightUnit === "lbs" ? 5 : 2.5} ${weightUnit}`}
                         >
-                            <Minus size={9} />
+                            <Minus size={14} />
                         </button>
                         <div className="relative flex-1 min-w-0 flex items-center">
                             {isBwSet && (
-                                <span className="absolute left-1.5 text-micro font-black text-neutral-400 uppercase tracking-widest pointer-events-none">
+                                <span className="absolute -top-2 left-0 z-10 text-nano font-black bg-neutral-300 text-neutral-900 px-1 py-px rounded-sm leading-tight tracking-wide pointer-events-none">
                                     BW
                                 </span>
                             )}
@@ -136,27 +135,26 @@ export default memo(function SetRow({
                                 }}
                                 onFocus={(e) => e.target.select()}
                                 className={cn(
-                                    "w-full bg-white/6 border text-center font-mono font-medium outline-none rounded-lg py-2 px-1 text-sm transition-all text-white placeholder-neutral-600 focus:ring-1 focus:ring-accent-400/40 focus:bg-white/9",
+                                    "w-full h-11 bg-white/6 border text-center font-mono font-medium outline-none rounded-lg px-0.5 text-base transition-all text-white placeholder-neutral-600 focus:ring-1 focus:ring-accent-400/40 focus:bg-white/9",
                                     isPR
                                         ? "border-yellow-400/50 bg-yellow-400/5 focus:border-yellow-400/60"
                                         : "border-white/8 focus:border-accent-400/30",
                                     isCompleted && "text-accent-100/90",
-                                    isBwSet && "pl-[22px] text-left"
                                 )}
                                 aria-label={`Weight for set ${setIdx + 1}`}
                             />
                             {isPR && (
-                                <span className="absolute -top-2 right-0 text-nano font-black bg-yellow-400 text-neutral-900 px-1 py-px rounded-sm leading-tight tracking-wide pointer-events-none">
+                                <span className="absolute -top-2 right-0 z-10 text-nano font-black bg-yellow-400 text-neutral-900 px-1 py-px rounded-sm leading-tight tracking-wide pointer-events-none">
                                     PR
                                 </span>
                             )}
                         </div>
                         <button
                             onClick={() => onAdjustWeight(exerciseId, set.id, weightUnit === "lbs" ? 5 : 2.5)}
-                            className="shrink-0 w-5 h-8 flex items-center justify-center rounded-md bg-white/4 border border-white/7 text-neutral-500 hover:text-white hover:bg-white/10 active:scale-90 transition-all"
+                            className="shrink-0 w-6 min-[360px]:w-7 h-11 flex items-center justify-center rounded-lg bg-white/4 border border-white/7 text-neutral-400 hover:text-white hover:bg-white/10 active:scale-90 transition-all"
                             aria-label={`Increase weight by ${weightUnit === "lbs" ? 5 : 2.5} ${weightUnit}`}
                         >
-                            <Plus size={9} />
+                            <Plus size={14} />
                         </button>
                     </div>
                 )}
@@ -172,7 +170,7 @@ export default memo(function SetRow({
                         }
                         onFocus={(e) => e.target.select()}
                         className={cn(
-                            "w-full bg-white/6 border border-white/8 text-center font-mono font-medium outline-none rounded-lg py-2 px-2 text-sm transition-all placeholder-neutral-600 focus:ring-1 focus:ring-accent-400/40 focus:bg-white/9 focus:border-accent-400/30",
+                            "w-full h-11 bg-white/6 border border-white/8 text-center font-mono font-medium outline-none rounded-lg px-1 text-base transition-all placeholder-neutral-600 focus:ring-1 focus:ring-accent-400/40 focus:bg-white/9 focus:border-accent-400/30",
                             isCompleted ? "text-accent-400" : "text-white"
                         )}
                         aria-label={`Reps for set ${setIdx + 1}`}
@@ -188,7 +186,7 @@ export default memo(function SetRow({
                 <button
                     onClick={() => onToggleSet(dayId, exerciseId, set.id, exerciseType)}
                     className={cn(
-                        "w-11 h-9 flex items-center justify-center rounded-xl transition-all duration-200 active:scale-90 border",
+                        "w-11 h-11 flex items-center justify-center rounded-xl transition-all duration-200 active:scale-90 border",
                         isCompleted
                             ? "bg-accent-400 text-neutral-950 border-accent-400 shadow-[0_2px_12px_color-mix(in_oklab,_var(--color-accent-400)_35%,_transparent)]"
                             : "bg-white/4 text-neutral-600 border-white/7 hover:bg-white/8 hover:text-white"
@@ -196,7 +194,7 @@ export default memo(function SetRow({
                     aria-label={isCompleted ? `Unmark set ${setIdx + 1} as complete` : `Mark set ${setIdx + 1} as complete`}
                     aria-pressed={isCompleted}
                 >
-                    <Check strokeWidth={isCompleted ? 3.5 : 2} size={17} />
+                    <Check strokeWidth={isCompleted ? 3.5 : 2} size={20} />
                 </button>
             </div>
 
@@ -211,7 +209,7 @@ export default memo(function SetRow({
                                 setShowSetType(false);
                             }}
                             className={cn(
-                                "flex-1 py-1.5 rounded-lg text-micro font-black uppercase tracking-widest border transition-all active:scale-95",
+                                "flex-1 h-9 rounded-lg text-caption font-black uppercase tracking-widest border transition-all active:scale-95",
                                 currentSetType === type.value
                                     ? type.color
                                     : "bg-white/3 border-white/6 text-neutral-600 hover:text-neutral-300 hover:bg-white/6"
@@ -225,7 +223,7 @@ export default memo(function SetRow({
 
             {/* ── RPE Selector (shown after completing a set) ── */}
             {isCompleted && exerciseType !== "other" && (
-                <div className="flex items-center gap-1 px-2 pb-0.5">
+                <div className="flex items-center gap-1 px-2 pb-1">
                     <span className="text-micro font-black uppercase tracking-widest text-neutral-600 shrink-0 mr-0.5">
                         RPE
                     </span>
@@ -242,7 +240,7 @@ export default memo(function SetRow({
                                 );
                             }}
                             className={cn(
-                                "flex-1 py-1 rounded-md text-micro font-bold tabular-nums border transition-all active:scale-90",
+                                "flex-1 h-8 rounded-md text-caption font-bold tabular-nums border transition-all active:scale-90",
                                 currentRpe === rpe
                                     ? getRpeColor(rpe)
                                     : "bg-white/3 border-white/6 text-neutral-600 hover:text-neutral-400 hover:bg-white/5"
