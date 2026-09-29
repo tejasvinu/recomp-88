@@ -4,6 +4,7 @@ import { useState } from "react";
 import { X, Calculator, Flame } from "lucide-react";
 import { cn } from "../utils";
 import { useModalEscape } from "../hooks/useModalEscape";
+import { Sheet, SheetHandle } from "./ui/Sheet";
 
 interface PlateCalculatorProps {
   onClose: () => void;
@@ -97,351 +98,342 @@ export default function PlateCalculator({ onClose, weightUnit }: PlateCalculator
   });
 
   return (
-    <div
-      className="fixed inset-0 z-80 flex items-end sm:items-center justify-center"
-      onClick={onClose}
-    >
-      <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" />
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="relative z-10 w-full max-w-md bg-sheet border border-white/8 shadow-[0_0_60px_rgba(0,0,0,0.9)] rounded-t-3xl sm:rounded-2xl overflow-hidden flex flex-col animate-slide-up"
-      >
-        {/* Header */}
-        <div className="border-b border-white/6 px-5 pt-5 pb-4 shrink-0">
-          <div className="w-10 h-1 bg-white/12 rounded-full mx-auto mb-4 sm:hidden" />
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 bg-accent-400/10 border border-accent-400/20 rounded-xl flex items-center justify-center">
-                <Calculator size={16} className="text-accent-400" />
-              </div>
-              <h2 className="text-[16px] font-black text-white tracking-wide">Plate Calculator</h2>
+    <Sheet onClose={onClose} layer="z-80" className="flex flex-col">
+      {/* Header */}
+      <div className="border-b border-white/6 px-5 pt-5 pb-4 shrink-0">
+        <SheetHandle />
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-accent-400/10 border border-accent-400/20 rounded-xl flex items-center justify-center">
+              <Calculator size={16} className="text-accent-400" />
             </div>
-            <button
-              onClick={onClose}
-              className="w-8 h-8 bg-white/6 rounded-full flex items-center justify-center text-neutral-400 hover:text-white hover:bg-white/10 transition-all border border-white/7"
-            >
-              <X size={15} />
-            </button>
+            <h2 className="text-[16px] font-black text-white tracking-wide">Plate Calculator</h2>
+          </div>
+          <button
+            onClick={onClose}
+            className="w-8 h-8 bg-white/6 rounded-full flex items-center justify-center text-neutral-400 hover:text-white hover:bg-white/10 transition-all border border-white/7"
+          >
+            <X size={15} />
+          </button>
+        </div>
+      </div>
+
+      <div className="p-5 flex flex-col gap-5 overflow-y-auto max-h-[80vh] overscroll-contain pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
+
+        {/* Target weight input */}
+        <div>
+          <label className="text-mini font-black uppercase tracking-widest text-neutral-500 block mb-2">
+            Target Weight
+          </label>
+          <div className="relative">
+            <input
+              type="text"
+              inputMode="decimal"
+              placeholder="e.g. 100"
+              value={targetWeight}
+              onChange={(e) => setTargetWeight(e.target.value)}
+              onFocus={(e) => e.target.select()}
+              autoFocus
+              className="w-full bg-white/5 border border-white/8 rounded-xl py-3.5 pl-4 pr-14 text-2xl font-mono font-bold text-white placeholder-neutral-700 outline-none focus:ring-1 focus:ring-accent-400/40 focus:border-accent-400/30 transition-all"
+            />
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-small font-bold text-neutral-500 uppercase tracking-widest">
+              {weightUnit}
+            </span>
           </div>
         </div>
 
-        <div className="p-5 flex flex-col gap-5 overflow-y-auto max-h-[80vh] overscroll-contain pb-[calc(1.5rem+env(safe-area-inset-bottom))]">
-
-          {/* Target weight input */}
-          <div>
-            <label className="text-mini font-black uppercase tracking-widest text-neutral-500 block mb-2">
-              Target Weight
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                inputMode="decimal"
-                placeholder="e.g. 100"
-                value={targetWeight}
-                onChange={(e) => setTargetWeight(e.target.value)}
-                onFocus={(e) => e.target.select()}
-                autoFocus
-                className="w-full bg-white/5 border border-white/8 rounded-xl py-3.5 pl-4 pr-14 text-2xl font-mono font-bold text-white placeholder-neutral-700 outline-none focus:ring-1 focus:ring-accent-400/40 focus:border-accent-400/30 transition-all"
-              />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-small font-bold text-neutral-500 uppercase tracking-widest">
-                {weightUnit}
-              </span>
-            </div>
-          </div>
-
-          {/* Bar weight selector */}
-          <div>
-            <label className="text-mini font-black uppercase tracking-widest text-neutral-500 block mb-2">
-              Bar Weight
-            </label>
-            <div className="flex gap-2">
-              {barOptions.map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => setBarWeight(opt.value)}
+        {/* Bar weight selector */}
+        <div>
+          <label className="text-mini font-black uppercase tracking-widest text-neutral-500 block mb-2">
+            Bar Weight
+          </label>
+          <div className="flex gap-2">
+            {barOptions.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => setBarWeight(opt.value)}
+                className={cn(
+                  "flex-1 py-2.5 rounded-xl border text-center transition-all duration-200",
+                  barWeight === opt.value
+                    ? "bg-accent-400 text-neutral-950 border-accent-400 shadow-[0_0_10px_color-mix(in_oklab,_var(--color-accent-400)_20%,_transparent)]"
+                    : "bg-white/4 text-neutral-400 border-white/8 hover:bg-white/8 hover:text-neutral-200"
+                )}
+              >
+                <p className="text-[14px] font-black">{opt.label}</p>
+                <p
                   className={cn(
-                    "flex-1 py-2.5 rounded-xl border text-center transition-all duration-200",
-                    barWeight === opt.value
-                      ? "bg-accent-400 text-neutral-950 border-accent-400 shadow-[0_0_10px_color-mix(in_oklab,_var(--color-accent-400)_20%,_transparent)]"
-                      : "bg-white/4 text-neutral-400 border-white/8 hover:bg-white/8 hover:text-neutral-200"
+                    "text-micro font-bold uppercase tracking-wider",
+                    barWeight === opt.value ? "text-neutral-700" : "text-neutral-600"
                   )}
                 >
-                  <p className="text-[14px] font-black">{opt.label}</p>
-                  <p
-                    className={cn(
-                      "text-micro font-bold uppercase tracking-wider",
-                      barWeight === opt.value ? "text-neutral-700" : "text-neutral-600"
-                    )}
-                  >
-                    {opt.desc}
-                  </p>
-                </button>
-              ))}
-            </div>
+                  {opt.desc}
+                </p>
+              </button>
+            ))}
           </div>
+        </div>
 
-          {/* Mode toggle (only show when target is set) */}
-          {target > barWeight && (
-            <div className="flex bg-white/4 rounded-xl p-1 border border-white/7 gap-1">
-              <button
-                onClick={() => setMode("plates")}
-                className={cn(
-                  "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-caption font-black uppercase tracking-widest transition-all",
-                  mode === "plates"
-                    ? "bg-accent-400 text-neutral-950"
-                    : "text-neutral-500 hover:text-neutral-300"
-                )}
-              >
-                <Calculator size={12} />
-                Plates
-              </button>
-              <button
-                onClick={() => setMode("warmup")}
-                className={cn(
-                  "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-caption font-black uppercase tracking-widest transition-all",
-                  mode === "warmup"
-                    ? "bg-accent-400 text-neutral-950"
-                    : "text-neutral-500 hover:text-neutral-300"
-                )}
-              >
-                <Flame size={12} />
-                Warm-Up
-              </button>
-            </div>
-          )}
-
-          {/* ── PLATES MODE ── */}
-          {mode === "plates" && (
-            <>
-              {target > 0 && target <= barWeight && (
-                <div className="bg-white/3 border border-white/6 rounded-xl p-4 text-center">
-                  <p className="text-small text-neutral-400 font-medium">
-                    Target must be greater than bar weight ({barWeight}{weightUnit})
-                  </p>
-                </div>
+        {/* Mode toggle (only show when target is set) */}
+        {target > barWeight && (
+          <div className="flex bg-white/4 rounded-xl p-1 border border-white/7 gap-1">
+            <button
+              onClick={() => setMode("plates")}
+              className={cn(
+                "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-caption font-black uppercase tracking-widest transition-all",
+                mode === "plates"
+                  ? "bg-accent-400 text-neutral-950"
+                  : "text-neutral-500 hover:text-neutral-300"
               )}
+            >
+              <Calculator size={12} />
+              Plates
+            </button>
+            <button
+              onClick={() => setMode("warmup")}
+              className={cn(
+                "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-caption font-black uppercase tracking-widest transition-all",
+                mode === "warmup"
+                  ? "bg-accent-400 text-neutral-950"
+                  : "text-neutral-500 hover:text-neutral-300"
+              )}
+            >
+              <Flame size={12} />
+              Warm-Up
+            </button>
+          </div>
+        )}
 
-              {target > barWeight && (
-                <>
-                  {/* Total indicator */}
-                  <div
-                    className={cn(
-                      "flex items-center justify-between rounded-xl px-4 py-3 border",
-                      isExact ? "bg-accent-400/8 border-accent-400/25" : "bg-white/3 border-white/6"
-                    )}
-                  >
-                    <div>
-                      <p className="text-mini font-black uppercase tracking-widest text-neutral-500">
-                        Achievable
-                      </p>
-                      <p
-                        className={cn(
-                          "text-xl font-mono font-bold tabular-nums mt-0.5",
-                          isExact ? "text-accent-400" : "text-white"
-                        )}
-                      >
-                        {achievable}
-                        <span className="text-caption text-neutral-500 ml-1 font-bold uppercase tracking-widest">
-                          {weightUnit}
-                        </span>
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-mini font-black uppercase tracking-widest text-neutral-500">
-                        Per Side
-                      </p>
-                      <p className="text-xl font-mono font-bold text-white tabular-nums mt-0.5">
-                        {Math.round(plates.reduce((a, p) => a + p, 0) * 10) / 10}
-                        <span className="text-caption text-neutral-500 ml-1 font-bold uppercase tracking-widest">
-                          {weightUnit}
-                        </span>
-                      </p>
-                    </div>
-                  </div>
+        {/* ── PLATES MODE ── */}
+        {mode === "plates" && (
+          <>
+            {target > 0 && target <= barWeight && (
+              <div className="bg-white/3 border border-white/6 rounded-xl p-4 text-center">
+                <p className="text-small text-neutral-400 font-medium">
+                  Target must be greater than bar weight ({barWeight}{weightUnit})
+                </p>
+              </div>
+            )}
 
-                  {/* Plates per side list */}
-                  <div className="bg-white/3 border border-white/6 rounded-xl p-4">
-                    <p className="text-mini font-black uppercase tracking-widest text-neutral-500 mb-3">
-                      Plates Per Side
+            {target > barWeight && (
+              <>
+                {/* Total indicator */}
+                <div
+                  className={cn(
+                    "flex items-center justify-between rounded-xl px-4 py-3 border",
+                    isExact ? "bg-accent-400/8 border-accent-400/25" : "bg-white/3 border-white/6"
+                  )}
+                >
+                  <div>
+                    <p className="text-mini font-black uppercase tracking-widest text-neutral-500">
+                      Achievable
                     </p>
-                    {plates.length === 0 ? (
-                      <p className="text-small text-neutral-500 text-center py-1 font-medium">
-                        Bar only — no plates needed
-                      </p>
-                    ) : (
-                      <div className="flex flex-wrap gap-1.5">
+                    <p
+                      className={cn(
+                        "text-xl font-mono font-bold tabular-nums mt-0.5",
+                        isExact ? "text-accent-400" : "text-white"
+                      )}
+                    >
+                      {achievable}
+                      <span className="text-caption text-neutral-500 ml-1 font-bold uppercase tracking-widest">
+                        {weightUnit}
+                      </span>
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-mini font-black uppercase tracking-widest text-neutral-500">
+                      Per Side
+                    </p>
+                    <p className="text-xl font-mono font-bold text-white tabular-nums mt-0.5">
+                      {Math.round(plates.reduce((a, p) => a + p, 0) * 10) / 10}
+                      <span className="text-caption text-neutral-500 ml-1 font-bold uppercase tracking-widest">
+                        {weightUnit}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Plates per side list */}
+                <div className="bg-white/3 border border-white/6 rounded-xl p-4">
+                  <p className="text-mini font-black uppercase tracking-widest text-neutral-500 mb-3">
+                    Plates Per Side
+                  </p>
+                  {plates.length === 0 ? (
+                    <p className="text-small text-neutral-500 text-center py-1 font-medium">
+                      Bar only — no plates needed
+                    </p>
+                  ) : (
+                    <div className="flex flex-wrap gap-1.5">
+                      {plates.map((p, i) => {
+                        const style = PLATE_STYLES[p] ?? PLATE_STYLES[1.25];
+                        return (
+                          <div
+                            key={i}
+                            className={cn(
+                              "h-8 flex items-center justify-center rounded-lg border font-mono font-black text-caption px-2.5 min-w-10",
+                              style.bg, style.border, style.text
+                            )}
+                          >
+                            {PLATE_LABEL[p] ?? p}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Barbell visualization */}
+                {plates.length > 0 && (
+                  <div className="bg-white/3 border border-white/6 rounded-xl p-4 overflow-hidden">
+                    <p className="text-mini font-black uppercase tracking-widest text-neutral-500 mb-4">
+                      Barbell View
+                    </p>
+                    <div className="flex items-center justify-center gap-0">
+                      <div className="w-1.5 h-6 bg-neutral-400 rounded-l-sm shrink-0" />
+                      <div className="flex items-center flex-row-reverse gap-[2px]">
+                        {[...plates].reverse().map((p, i) => {
+                          const style = PLATE_STYLES[p] ?? PLATE_STYLES[1.25];
+                          return (
+                            <div
+                              key={`l-${i}`}
+                              className={cn(
+                                "w-3 rounded-sm border shrink-0",
+                                style.bg, style.border, style.heightClass
+                              )}
+                            />
+                          );
+                        })}
+                      </div>
+                      <div className="w-20 h-2 bg-neutral-500 rounded-full mx-1 shadow-inner shrink-0" />
+                      <div className="flex items-center gap-[2px]">
                         {plates.map((p, i) => {
                           const style = PLATE_STYLES[p] ?? PLATE_STYLES[1.25];
                           return (
                             <div
-                              key={i}
+                              key={`r-${i}`}
                               className={cn(
-                                "h-8 flex items-center justify-center rounded-lg border font-mono font-black text-caption px-2.5 min-w-10",
-                                style.bg, style.border, style.text
+                                "w-3 rounded-sm border shrink-0",
+                                style.bg, style.border, style.heightClass
                               )}
-                            >
-                              {PLATE_LABEL[p] ?? p}
-                            </div>
+                            />
                           );
                         })}
                       </div>
-                    )}
-                  </div>
-
-                  {/* Barbell visualization */}
-                  {plates.length > 0 && (
-                    <div className="bg-white/3 border border-white/6 rounded-xl p-4 overflow-hidden">
-                      <p className="text-mini font-black uppercase tracking-widest text-neutral-500 mb-4">
-                        Barbell View
-                      </p>
-                      <div className="flex items-center justify-center gap-0">
-                        <div className="w-1.5 h-6 bg-neutral-400 rounded-l-sm shrink-0" />
-                        <div className="flex items-center flex-row-reverse gap-[2px]">
-                          {[...plates].reverse().map((p, i) => {
-                            const style = PLATE_STYLES[p] ?? PLATE_STYLES[1.25];
-                            return (
-                              <div
-                                key={`l-${i}`}
-                                className={cn(
-                                  "w-3 rounded-sm border shrink-0",
-                                  style.bg, style.border, style.heightClass
-                                )}
-                              />
-                            );
-                          })}
-                        </div>
-                        <div className="w-20 h-2 bg-neutral-500 rounded-full mx-1 shadow-inner shrink-0" />
-                        <div className="flex items-center gap-[2px]">
-                          {plates.map((p, i) => {
-                            const style = PLATE_STYLES[p] ?? PLATE_STYLES[1.25];
-                            return (
-                              <div
-                                key={`r-${i}`}
-                                className={cn(
-                                  "w-3 rounded-sm border shrink-0",
-                                  style.bg, style.border, style.heightClass
-                                )}
-                              />
-                            );
-                          })}
-                        </div>
-                        <div className="w-1.5 h-6 bg-neutral-400 rounded-r-sm shrink-0" />
-                      </div>
-                      <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-4 justify-center">
-                        {[...new Set(plates)].map((p) => {
-                          const style = PLATE_STYLES[p] ?? PLATE_STYLES[1.25];
-                          return (
-                            <div key={p} className="flex items-center gap-1.5">
-                              <div className={cn("w-2.5 h-2.5 rounded-sm border", style.bg, style.border)} />
-                              <span className="text-micro font-mono font-bold text-neutral-500">
-                                {p}{weightUnit}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
+                      <div className="w-1.5 h-6 bg-neutral-400 rounded-r-sm shrink-0" />
                     </div>
+                    <div className="flex flex-wrap gap-x-3 gap-y-1.5 mt-4 justify-center">
+                      {[...new Set(plates)].map((p) => {
+                        const style = PLATE_STYLES[p] ?? PLATE_STYLES[1.25];
+                        return (
+                          <div key={p} className="flex items-center gap-1.5">
+                            <div className={cn("w-2.5 h-2.5 rounded-sm border", style.bg, style.border)} />
+                            <span className="text-micro font-mono font-bold text-neutral-500">
+                              {p}{weightUnit}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {target === 0 && (
+              <div className="bg-white/2 border border-dashed border-white/8 rounded-xl p-6 text-center">
+                <p className="text-small text-neutral-500 font-medium leading-relaxed">
+                  Enter a target weight above to see which plates to load
+                </p>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ── WARM-UP PYRAMID MODE ── */}
+        {mode === "warmup" && target > barWeight && (
+          <div className="flex flex-col gap-2">
+            <p className="text-mini font-black uppercase tracking-widest text-neutral-500 mb-1 flex items-center gap-2">
+              <Flame size={11} className="text-accent-400" />
+              Warm-Up Pyramid · Working: {target}{weightUnit}
+            </p>
+
+            {warmupSets.map(({ label, reps, targetWeight: stepWeight, achievableWeight, plates: stepPlates }) => {
+              const isWorkingSet = label === "100%";
+              return (
+                <div
+                  key={label}
+                  className={cn(
+                    "rounded-xl border px-4 py-3 transition-all",
+                    isWorkingSet
+                      ? "bg-accent-400/8 border-accent-400/25"
+                      : "bg-white/3 border-white/6"
                   )}
-                </>
-              )}
-
-              {target === 0 && (
-                <div className="bg-white/2 border border-dashed border-white/8 rounded-xl p-6 text-center">
-                  <p className="text-small text-neutral-500 font-medium leading-relaxed">
-                    Enter a target weight above to see which plates to load
-                  </p>
-                </div>
-              )}
-            </>
-          )}
-
-          {/* ── WARM-UP PYRAMID MODE ── */}
-          {mode === "warmup" && target > barWeight && (
-            <div className="flex flex-col gap-2">
-              <p className="text-mini font-black uppercase tracking-widest text-neutral-500 mb-1 flex items-center gap-2">
-                <Flame size={11} className="text-accent-400" />
-                Warm-Up Pyramid · Working: {target}{weightUnit}
-              </p>
-
-              {warmupSets.map(({ label, reps, targetWeight: stepWeight, achievableWeight, plates: stepPlates }) => {
-                const isWorkingSet = label === "100%";
-                return (
-                  <div
-                    key={label}
-                    className={cn(
-                      "rounded-xl border px-4 py-3 transition-all",
-                      isWorkingSet
-                        ? "bg-accent-400/8 border-accent-400/25"
-                        : "bg-white/3 border-white/6"
-                    )}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={cn(
-                            "text-mini font-black uppercase tracking-widest px-2 py-0.5 rounded-md border",
-                            isWorkingSet
-                              ? "text-accent-400 bg-accent-400/10 border-accent-400/25"
-                              : "text-neutral-500 bg-white/4 border-white/8"
-                          )}
-                        >
-                          {label}
-                        </span>
-                        <span
-                          className={cn(
-                            "text-caption font-mono font-bold",
-                            isWorkingSet ? "text-accent-400" : "text-white"
-                          )}
-                        >
-                          {achievableWeight}{weightUnit}
-                        </span>
-                        {stepWeight !== achievableWeight && (
-                          <span className="text-micro text-neutral-600 font-medium">
-                            (target {stepWeight}{weightUnit})
-                          </span>
-                        )}
-                      </div>
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
                       <span
                         className={cn(
-                          "text-caption font-black font-mono",
-                          isWorkingSet ? "text-accent-400" : "text-neutral-400"
+                          "text-mini font-black uppercase tracking-widest px-2 py-0.5 rounded-md border",
+                          isWorkingSet
+                            ? "text-accent-400 bg-accent-400/10 border-accent-400/25"
+                            : "text-neutral-500 bg-white/4 border-white/8"
                         )}
                       >
-                        ×{reps}
+                        {label}
                       </span>
+                      <span
+                        className={cn(
+                          "text-caption font-mono font-bold",
+                          isWorkingSet ? "text-accent-400" : "text-white"
+                        )}
+                      >
+                        {achievableWeight}{weightUnit}
+                      </span>
+                      {stepWeight !== achievableWeight && (
+                        <span className="text-micro text-neutral-600 font-medium">
+                          (target {stepWeight}{weightUnit})
+                        </span>
+                      )}
                     </div>
-
-                    {stepPlates.length > 0 ? (
-                      <div className="flex flex-wrap gap-1">
-                        {stepPlates.map((p, i) => {
-                          const style = PLATE_STYLES[p] ?? PLATE_STYLES[1.25];
-                          return (
-                            <div
-                              key={i}
-                              className={cn(
-                                "h-6 flex items-center justify-center rounded-md border font-mono font-black text-mini px-2 min-w-8",
-                                style.bg, style.border, style.text
-                              )}
-                            >
-                              {PLATE_LABEL[p] ?? p}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    ) : (
-                      <p className="text-mini text-neutral-600 font-medium">Bar only</p>
-                    )}
+                    <span
+                      className={cn(
+                        "text-caption font-black font-mono",
+                        isWorkingSet ? "text-accent-400" : "text-neutral-400"
+                      )}
+                    >
+                      ×{reps}
+                    </span>
                   </div>
-                );
-              })}
 
-              <p className="text-mini text-neutral-600 text-center font-medium mt-1">
-                Plates shown per side · weights rounded to nearest {interval}{weightUnit}
-              </p>
-            </div>
-          )}
-        </div>
+                  {stepPlates.length > 0 ? (
+                    <div className="flex flex-wrap gap-1">
+                      {stepPlates.map((p, i) => {
+                        const style = PLATE_STYLES[p] ?? PLATE_STYLES[1.25];
+                        return (
+                          <div
+                            key={i}
+                            className={cn(
+                              "h-6 flex items-center justify-center rounded-md border font-mono font-black text-mini px-2 min-w-8",
+                              style.bg, style.border, style.text
+                            )}
+                          >
+                            {PLATE_LABEL[p] ?? p}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <p className="text-mini text-neutral-600 font-medium">Bar only</p>
+                  )}
+                </div>
+              );
+            })}
+
+            <p className="text-mini text-neutral-600 text-center font-medium mt-1">
+              Plates shown per side · weights rounded to nearest {interval}{weightUnit}
+            </p>
+          </div>
+        )}
       </div>
-    </div>
+    </Sheet>
   );
 }

@@ -20,6 +20,7 @@ import {
 import { cn } from "../utils";
 import { THEMES, applyTheme, getStoredTheme, type ThemeId } from "../theme";
 import { useModalEscape } from "../hooks/useModalEscape";
+import { Sheet, SheetHandle } from "./ui/Sheet";
 
 const REST_STEP = 15;
 const REST_MIN = 30;
@@ -99,414 +100,402 @@ export default function SettingsModal({
     };
 
     return (
-        <div
-            className="fixed inset-0 z-70 flex items-end sm:items-center justify-center"
-            onClick={onClose}
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="settings-title"
-        >
-            <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" />
-            <div
-                onClick={(e) => e.stopPropagation()}
-                className="relative z-10 w-full max-w-md bg-sheet border border-white/8 shadow-[0_0_60px_rgba(0,0,0,0.9)] rounded-t-3xl sm:rounded-2xl overflow-hidden animate-slide-up"
-            >
-                <div className="border-b border-white/6 px-5 pt-5 pb-4">
-                    <div className="w-10 h-1 bg-white/12 rounded-full mx-auto mb-4 sm:hidden" />
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h2 id="settings-title" className="text-[16px] font-black text-white tracking-wide">
-                                Settings
-                            </h2>
-                            <p className="mt-0.5 text-mini font-medium text-neutral-600">
-                                Common controls first. Backup and reset tools stay below.
-                            </p>
-                        </div>
-                        <button
-                            onClick={onClose}
-                            className="w-8 h-8 bg-white/6 rounded-full flex items-center justify-center text-neutral-400 hover:text-white hover:bg-white/10 transition-all border border-white/7"
-                            aria-label="Close settings"
-                        >
-                            <X size={15} />
-                        </button>
-                    </div>
-                </div>
-
-                <div className="p-5 flex flex-col gap-5 overflow-y-auto max-h-[75vh] overscroll-contain">
-                    {/* Rest Timer Customization */}
+        <Sheet onClose={onClose} labelledBy="settings-title">
+            <div className="border-b border-white/6 px-5 pt-5 pb-4">
+                <SheetHandle />
+                <div className="flex items-center justify-between">
                     <div>
-                        <p className="text-mini text-neutral-500 font-black uppercase tracking-widest mb-3 flex items-center gap-2">
-                            <Timer size={12} className="text-accent-400" />
-                            Rest Timers
+                        <h2 id="settings-title" className="text-[16px] font-black text-white tracking-wide">
+                            Settings
+                        </h2>
+                        <p className="mt-0.5 text-mini font-medium text-neutral-600">
+                            Common controls first. Backup and reset tools stay below.
                         </p>
-                        <div className="flex flex-col gap-2">
-                            {[
-                                {
-                                    label: "Strength",
-                                    desc: "After strength sets",
-                                    value: strengthRestDuration,
-                                    set: setStrengthRestDuration,
-                                },
-                                {
-                                    label: "Hypertrophy",
-                                    desc: "After hypertrophy sets",
-                                    value: hypertrophyRestDuration,
-                                    set: setHypertrophyRestDuration,
-                                },
-                            ].map(({ label, desc, value, set }) => (
-                                <div
-                                    key={label}
-                                    className="flex items-center justify-between bg-white/4 border border-white/7 rounded-xl px-4 py-3"
-                                >
-                                    <div>
-                                        <p className="text-body font-bold text-white">{label}</p>
-                                        <p className="text-mini text-neutral-500 font-medium mt-0.5">{desc}</p>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <button
-                                            onClick={() => set((v) => Math.max(REST_MIN, v - REST_STEP))}
-                                            className="w-7 h-7 bg-white/6 hover:bg-white/12 rounded-lg flex items-center justify-center text-neutral-400 hover:text-white border border-white/8 transition-all active:scale-90"
-                                            aria-label={`Decrease ${label.toLowerCase()} rest by ${REST_STEP} seconds`}
-                                        >
-                                            <Minus size={12} />
-                                        </button>
-                                        <span className="text-[14px] font-mono font-bold text-accent-400 tabular-nums w-12 text-center">
-                                            {value}s
-                                        </span>
-                                        <button
-                                            onClick={() => set((v) => Math.min(REST_MAX, v + REST_STEP))}
-                                            className="w-7 h-7 bg-white/6 hover:bg-white/12 rounded-lg flex items-center justify-center text-neutral-400 hover:text-white border border-white/8 transition-all active:scale-90"
-                                            aria-label={`Increase ${label.toLowerCase()} rest by ${REST_STEP} seconds`}
-                                        >
-                                            <Plus size={12} />
-                                        </button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
                     </div>
-
-                    {/* Weight Unit Toggle */}
-                    <div>
-                        <p className="text-mini text-neutral-500 font-black uppercase tracking-widest mb-3 flex items-center gap-2">
-                            <Scale size={12} className="text-accent-400" />
-                            Weight Unit
-                        </p>
-                        <div className="flex gap-2">
-                            {(["kg", "lbs"] as const).map((unit) => (
-                                <button
-                                    key={unit}
-                                    onClick={() => setWeightUnit(() => unit)}
-                                    className={cn(
-                                        "flex-1 py-3 rounded-xl border font-bold text-body uppercase tracking-widest transition-all",
-                                        weightUnit === unit
-                                            ? "bg-accent-400/15 border-accent-400/30 text-accent-400"
-                                            : "bg-white/4 border-white/7 text-neutral-500 hover:bg-white/7 hover:text-neutral-300"
-                                    )}
-                                >
-                                    {unit}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Theme */}
-                    <div>
-                        <p className="text-mini text-neutral-500 font-black uppercase tracking-widest mb-3 flex items-center gap-2">
-                            <Palette size={12} className="text-accent-400" />
-                            Theme
-                        </p>
-                        <div className="flex gap-2" role="radiogroup" aria-label="Theme">
-                            {THEMES.map((t) => (
-                                <button
-                                    key={t.id}
-                                    role="radio"
-                                    aria-checked={theme === t.id}
-                                    onClick={() => {
-                                        setTheme(t.id);
-                                        applyTheme(t.id);
-                                    }}
-                                    className={cn(
-                                        "flex-1 flex items-center gap-3 px-3 py-3 rounded-xl border text-left transition-all",
-                                        theme === t.id
-                                            ? "bg-accent-400/15 border-accent-400/30"
-                                            : "bg-white/4 border-white/7 hover:bg-white/7"
-                                    )}
-                                >
-                                    <span
-                                        aria-hidden="true"
-                                        className="shrink-0 w-8 h-8 rounded-lg border border-white/15 overflow-hidden grid grid-cols-2"
-                                    >
-                                        <span style={{ backgroundColor: t.swatch[0] }} />
-                                        <span style={{ backgroundColor: t.swatch[1] }} />
-                                    </span>
-                                    <span className="min-w-0">
-                                        <span className={cn("block text-body font-bold", theme === t.id ? "text-accent-400" : "text-white")}>
-                                            {t.label}
-                                        </span>
-                                        <span className="block text-mini text-neutral-500 font-medium">{t.description}</span>
-                                    </span>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Sound Toggle */}
-                    <div>
-                        <p className="text-mini text-neutral-500 font-black uppercase tracking-widest mb-3 flex items-center gap-2">
-                            {soundEnabled ? (
-                                <Volume2 size={12} className="text-accent-400" />
-                            ) : (
-                                <VolumeX size={12} className="text-neutral-500" />
-                            )}
-                            Audio
-                        </p>
-                        <button
-                            onClick={() => setSoundEnabled((v) => !v)}
-                            className="flex items-center justify-between w-full bg-white/4 border border-white/7 rounded-xl px-4 py-3"
-                            aria-pressed={soundEnabled}
-                        >
-                            <div>
-                                <p className="text-body font-bold text-white text-left">Timer end beep</p>
-                                <p className="text-mini text-neutral-500 font-medium mt-0.5 text-left">
-                                    Play sound when rest timer finishes
-                                </p>
-                            </div>
-                            <div
-                                className={cn(
-                                    "w-11 h-6 rounded-full border transition-all relative shrink-0",
-                                    soundEnabled
-                                        ? "bg-accent-400/20 border-accent-400/40"
-                                        : "bg-white/6 border-white/10"
-                                )}
-                            >
-                                <div
-                                    className={cn(
-                                        "absolute top-0.5 w-5 h-5 rounded-full transition-all duration-200",
-                                        soundEnabled ? "left-5 bg-accent-400" : "left-0.5 bg-neutral-500"
-                                    )}
-                                />
-                            </div>
-                        </button>
-                    </div>
-
-                    {/* Workout Template */}
-                    <div>
-                        <p className="text-mini text-neutral-500 font-black uppercase tracking-widest mb-3 flex items-center gap-2">
-                            <Dumbbell size={12} className="text-accent-400" />
-                            Workout Program
-                        </p>
-
-                        <div className="flex flex-col gap-2">
-                            <button
-                                onClick={onOpenWorkoutEditor}
-                                className="flex items-center gap-3 w-full bg-white/4 hover:bg-white/7 border border-white/8 rounded-xl px-4 py-3.5 transition-all group"
-                            >
-                                <div className="w-9 h-9 bg-accent-400/10 border border-accent-400/20 rounded-xl flex items-center justify-center shrink-0">
-                                    <Dumbbell size={16} className="text-accent-400" />
-                                </div>
-                                <div className="text-left">
-                                    <p className="text-body font-bold text-white group-hover:text-accent-400 transition-colors">
-                                        Edit Workout
-                                    </p>
-                                    <p className="text-mini text-neutral-500 font-medium mt-0.5">
-                                        Customize the shipped {workoutDayCount}-day routine
-                                    </p>
-                                </div>
-                            </button>
-
-                            <button
-                                onClick={onApplyFreeWeightWorkout}
-                                className="flex items-center gap-3 w-full bg-white/4 hover:bg-white/7 border border-white/8 rounded-xl px-4 py-3.5 transition-all group"
-                            >
-                                <div className="w-9 h-9 bg-info-400/10 border border-info-400/20 rounded-xl flex items-center justify-center shrink-0">
-                                    <ArrowLeftRight size={16} className="text-info-400" />
-                                </div>
-                                <div className="text-left">
-                                    <p className="text-body font-bold text-white">
-                                        Apply Free-Weight Friendly Swaps
-                                    </p>
-                                    <p className="text-mini text-neutral-500 font-medium mt-0.5">
-                                        Replace machine-locked movements with accessible alternatives
-                                    </p>
-                                </div>
-                            </button>
-
-                            <button
-                                onClick={() => setConfirmAction("reset-workout")}
-                                className="flex items-center gap-3 w-full bg-white/4 hover:bg-white/7 border border-white/8 rounded-xl px-4 py-3.5 transition-all group"
-                            >
-                                <div className="w-9 h-9 bg-white/6 border border-white/10 rounded-xl flex items-center justify-center shrink-0">
-                                    <RotateCcw
-                                        size={16}
-                                        className="text-neutral-400 group-hover:text-white transition-colors"
-                                    />
-                                </div>
-                                <div className="text-left">
-                                    <p className="text-body font-bold text-white">
-                                        Revert to Default Workout
-                                    </p>
-                                    <p className="text-mini text-neutral-500 font-medium mt-0.5">
-                                        Restore the standard plan without clearing progress history
-                                    </p>
-                                </div>
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Data / Backup */}
-                    <div>
-                        <p className="text-mini text-neutral-500 font-black uppercase tracking-widest mb-3 flex items-center gap-2">
-                            <Download size={12} className="text-accent-400" />
-                            Data Management
-                        </p>
-                        <div className="flex flex-col gap-2">
-                            <button
-                                onClick={() => {
-                                    onClose();
-                                    onOpenAddPastSession();
-                                }}
-                                className="flex items-center gap-3 w-full bg-white/4 hover:bg-white/7 border border-white/8 rounded-xl px-4 py-3.5 transition-all group"
-                            >
-                                <div className="w-9 h-9 bg-purple-400/10 border border-purple-400/20 rounded-xl flex items-center justify-center shrink-0">
-                                    <DatabaseBackup size={16} className="text-purple-400" />
-                                </div>
-                                <div className="text-left">
-                                    <p className="text-body font-bold text-white group-hover:text-purple-400 transition-colors">
-                                        Add Past Session
-                                    </p>
-                                    <p className="text-mini text-neutral-500 font-medium mt-0.5">
-                                        Backfill previous workouts with normal inputs; JSON is advanced
-                                    </p>
-                                </div>
-                            </button>
-
-                            <button
-                                onClick={onExport}
-                                className="flex items-center gap-3 w-full bg-white/4 hover:bg-white/7 border border-white/8 rounded-xl px-4 py-3.5 transition-all group"
-                            >
-                                <div className="w-9 h-9 bg-accent-400/10 border border-accent-400/20 rounded-xl flex items-center justify-center shrink-0">
-                                    <Download size={16} className="text-accent-400" />
-                                </div>
-                                <div className="text-left">
-                                    <p className="text-body font-bold text-white group-hover:text-accent-400 transition-colors">
-                                        Export Full Backup
-                                    </p>
-                                    <p className="text-mini text-neutral-500 font-medium mt-0.5">
-                                        Download a restorable backup of plan, sessions, notes &amp; settings
-                                    </p>
-                                </div>
-                            </button>
-
-                            <button
-                                onClick={onExportCsv}
-                                className="flex items-center gap-3 w-full bg-white/4 hover:bg-white/7 border border-white/8 rounded-xl px-4 py-3.5 transition-all group"
-                            >
-                                <div className="w-9 h-9 bg-info-400/10 border border-info-400/20 rounded-xl flex items-center justify-center shrink-0">
-                                    <Download size={16} className="text-info-400" />
-                                </div>
-                                <div className="text-left">
-                                    <p className="text-body font-bold text-white group-hover:text-info-400 transition-colors">
-                                        Export CSV
-                                    </p>
-                                    <p className="text-mini text-neutral-500 font-medium mt-0.5">
-                                        Download analytics rows for Excel or custom pivot tables
-                                    </p>
-                                </div>
-                            </button>
-
-                            <button
-                                onClick={onExportConfig}
-                                className="flex items-center gap-3 w-full bg-white/4 hover:bg-white/7 border border-white/8 rounded-xl px-4 py-3.5 transition-all group"
-                            >
-                                <div className="w-9 h-9 bg-orange-400/10 border border-orange-400/20 rounded-xl flex items-center justify-center shrink-0">
-                                    <Download size={16} className="text-orange-400" />
-                                </div>
-                                <div className="text-left">
-                                    <p className="text-body font-bold text-white group-hover:text-orange-400 transition-colors">
-                                        Export Workout Plan
-                                    </p>
-                                    <p className="text-mini text-neutral-500 font-medium mt-0.5">
-                                        Download a text summary of your daily routines and exercises
-                                    </p>
-                                </div>
-                            </button>
-
-                            <button
-                                onClick={() => importRef.current?.click()}
-                                className="flex items-center gap-3 w-full bg-white/4 hover:bg-white/7 border border-white/8 rounded-xl px-4 py-3.5 transition-all group"
-                            >
-                                <div className="w-9 h-9 bg-white/6 border border-white/10 rounded-xl flex items-center justify-center shrink-0">
-                                    <Upload
-                                        size={16}
-                                        className="text-neutral-400 group-hover:text-white transition-colors"
-                                    />
-                                </div>
-                                <div className="text-left">
-                                    <p className="text-body font-bold text-white">Restore Backup</p>
-                                    <p className="text-mini text-neutral-500 font-medium mt-0.5">
-                                        Advanced: import a previous Recomp 88 JSON export
-                                    </p>
-                                </div>
-                            </button>
-
-                            <input
-                                ref={importRef}
-                                type="file"
-                                accept=".json"
-                                className="hidden"
-                                onChange={onImport}
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                {/* Stats */}
-                <div className="bg-white/3 border border-white/6 rounded-xl px-4 py-3">
-                    <p className="text-mini text-neutral-500 font-medium leading-relaxed">
-                        <span className="text-neutral-400 font-bold">Sessions saved:</span>{" "}
-                        {sessionCount} workout{sessionCount !== 1 ? "s" : ""} logged
-                    </p>
-                </div>
-
-                {/* Danger Zone */}
-                <div className="pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] mt-2 border-t border-white/6 flex justify-center">
                     <button
-                        onClick={() => setConfirmAction("clear-data")}
-                        className="bg-danger-400/10 hover:bg-danger-400/20 text-danger-400 font-bold uppercase tracking-widest text-caption px-6 py-3 rounded-xl border border-danger-400/20 transition-all active:scale-95"
+                        onClick={onClose}
+                        className="w-8 h-8 bg-white/6 rounded-full flex items-center justify-center text-neutral-400 hover:text-white hover:bg-white/10 transition-all border border-white/7"
+                        aria-label="Close settings"
                     >
-                        Delete All Data
+                        <X size={15} />
                     </button>
                 </div>
-                {confirmAction && (
-                    <div className="absolute inset-0 z-20 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-                        <div className="w-full rounded-2xl border border-white/10 bg-raised p-5 shadow-2xl">
-                            <p className="text-[15px] font-black text-white tracking-wide">
-                                {confirmCopy.title}
-                            </p>
-                            <p className="mt-2 text-small leading-relaxed text-neutral-400">
-                                {confirmCopy.body}
-                            </p>
-                            <div className="mt-5 grid grid-cols-2 gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => setConfirmAction(null)}
-                                    className="rounded-xl border border-white/8 bg-white/5 py-3 text-caption font-black uppercase tracking-widest text-neutral-300 transition-all hover:bg-white/8"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={handleConfirmAction}
-                                    className="rounded-xl border border-danger-400/30 bg-danger-400/15 py-3 text-caption font-black uppercase tracking-widest text-danger-300 transition-all hover:bg-danger-400/25"
-                                >
-                                    {confirmCopy.confirm}
-                                </button>
+            </div>
+
+            <div className="p-5 flex flex-col gap-5 overflow-y-auto max-h-[75vh] overscroll-contain">
+                {/* Rest Timer Customization */}
+                <div>
+                    <p className="text-mini text-neutral-500 font-black uppercase tracking-widest mb-3 flex items-center gap-2">
+                        <Timer size={12} className="text-accent-400" />
+                        Rest Timers
+                    </p>
+                    <div className="flex flex-col gap-2">
+                        {[
+                            {
+                                label: "Strength",
+                                desc: "After strength sets",
+                                value: strengthRestDuration,
+                                set: setStrengthRestDuration,
+                            },
+                            {
+                                label: "Hypertrophy",
+                                desc: "After hypertrophy sets",
+                                value: hypertrophyRestDuration,
+                                set: setHypertrophyRestDuration,
+                            },
+                        ].map(({ label, desc, value, set }) => (
+                            <div
+                                key={label}
+                                className="flex items-center justify-between bg-white/4 border border-white/7 rounded-xl px-4 py-3"
+                            >
+                                <div>
+                                    <p className="text-body font-bold text-white">{label}</p>
+                                    <p className="text-mini text-neutral-500 font-medium mt-0.5">{desc}</p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={() => set((v) => Math.max(REST_MIN, v - REST_STEP))}
+                                        className="w-7 h-7 bg-white/6 hover:bg-white/12 rounded-lg flex items-center justify-center text-neutral-400 hover:text-white border border-white/8 transition-all active:scale-90"
+                                        aria-label={`Decrease ${label.toLowerCase()} rest by ${REST_STEP} seconds`}
+                                    >
+                                        <Minus size={12} />
+                                    </button>
+                                    <span className="text-[14px] font-mono font-bold text-accent-400 tabular-nums w-12 text-center">
+                                        {value}s
+                                    </span>
+                                    <button
+                                        onClick={() => set((v) => Math.min(REST_MAX, v + REST_STEP))}
+                                        className="w-7 h-7 bg-white/6 hover:bg-white/12 rounded-lg flex items-center justify-center text-neutral-400 hover:text-white border border-white/8 transition-all active:scale-90"
+                                        aria-label={`Increase ${label.toLowerCase()} rest by ${REST_STEP} seconds`}
+                                    >
+                                        <Plus size={12} />
+                                    </button>
+                                </div>
                             </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Weight Unit Toggle */}
+                <div>
+                    <p className="text-mini text-neutral-500 font-black uppercase tracking-widest mb-3 flex items-center gap-2">
+                        <Scale size={12} className="text-accent-400" />
+                        Weight Unit
+                    </p>
+                    <div className="flex gap-2">
+                        {(["kg", "lbs"] as const).map((unit) => (
+                            <button
+                                key={unit}
+                                onClick={() => setWeightUnit(() => unit)}
+                                className={cn(
+                                    "flex-1 py-3 rounded-xl border font-bold text-body uppercase tracking-widest transition-all",
+                                    weightUnit === unit
+                                        ? "bg-accent-400/15 border-accent-400/30 text-accent-400"
+                                        : "bg-white/4 border-white/7 text-neutral-500 hover:bg-white/7 hover:text-neutral-300"
+                                )}
+                            >
+                                {unit}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Theme */}
+                <div>
+                    <p className="text-mini text-neutral-500 font-black uppercase tracking-widest mb-3 flex items-center gap-2">
+                        <Palette size={12} className="text-accent-400" />
+                        Theme
+                    </p>
+                    <div className="flex gap-2" role="radiogroup" aria-label="Theme">
+                        {THEMES.map((t) => (
+                            <button
+                                key={t.id}
+                                role="radio"
+                                aria-checked={theme === t.id}
+                                onClick={() => {
+                                    setTheme(t.id);
+                                    applyTheme(t.id);
+                                }}
+                                className={cn(
+                                    "flex-1 flex items-center gap-3 px-3 py-3 rounded-xl border text-left transition-all",
+                                    theme === t.id
+                                        ? "bg-accent-400/15 border-accent-400/30"
+                                        : "bg-white/4 border-white/7 hover:bg-white/7"
+                                )}
+                            >
+                                <span
+                                    aria-hidden="true"
+                                    className="shrink-0 w-8 h-8 rounded-lg border border-white/15 overflow-hidden grid grid-cols-2"
+                                >
+                                    <span style={{ backgroundColor: t.swatch[0] }} />
+                                    <span style={{ backgroundColor: t.swatch[1] }} />
+                                </span>
+                                <span className="min-w-0">
+                                    <span className={cn("block text-body font-bold", theme === t.id ? "text-accent-400" : "text-white")}>
+                                        {t.label}
+                                    </span>
+                                    <span className="block text-mini text-neutral-500 font-medium">{t.description}</span>
+                                </span>
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Sound Toggle */}
+                <div>
+                    <p className="text-mini text-neutral-500 font-black uppercase tracking-widest mb-3 flex items-center gap-2">
+                        {soundEnabled ? (
+                            <Volume2 size={12} className="text-accent-400" />
+                        ) : (
+                            <VolumeX size={12} className="text-neutral-500" />
+                        )}
+                        Audio
+                    </p>
+                    <button
+                        onClick={() => setSoundEnabled((v) => !v)}
+                        className="flex items-center justify-between w-full bg-white/4 border border-white/7 rounded-xl px-4 py-3"
+                        aria-pressed={soundEnabled}
+                    >
+                        <div>
+                            <p className="text-body font-bold text-white text-left">Timer end beep</p>
+                            <p className="text-mini text-neutral-500 font-medium mt-0.5 text-left">
+                                Play sound when rest timer finishes
+                            </p>
+                        </div>
+                        <div
+                            className={cn(
+                                "w-11 h-6 rounded-full border transition-all relative shrink-0",
+                                soundEnabled
+                                    ? "bg-accent-400/20 border-accent-400/40"
+                                    : "bg-white/6 border-white/10"
+                            )}
+                        >
+                            <div
+                                className={cn(
+                                    "absolute top-0.5 w-5 h-5 rounded-full transition-all duration-200",
+                                    soundEnabled ? "left-5 bg-accent-400" : "left-0.5 bg-neutral-500"
+                                )}
+                            />
+                        </div>
+                    </button>
+                </div>
+
+                {/* Workout Template */}
+                <div>
+                    <p className="text-mini text-neutral-500 font-black uppercase tracking-widest mb-3 flex items-center gap-2">
+                        <Dumbbell size={12} className="text-accent-400" />
+                        Workout Program
+                    </p>
+
+                    <div className="flex flex-col gap-2">
+                        <button
+                            onClick={onOpenWorkoutEditor}
+                            className="flex items-center gap-3 w-full bg-white/4 hover:bg-white/7 border border-white/8 rounded-xl px-4 py-3.5 transition-all group"
+                        >
+                            <div className="w-9 h-9 bg-accent-400/10 border border-accent-400/20 rounded-xl flex items-center justify-center shrink-0">
+                                <Dumbbell size={16} className="text-accent-400" />
+                            </div>
+                            <div className="text-left">
+                                <p className="text-body font-bold text-white group-hover:text-accent-400 transition-colors">
+                                    Edit Workout
+                                </p>
+                                <p className="text-mini text-neutral-500 font-medium mt-0.5">
+                                    Customize the shipped {workoutDayCount}-day routine
+                                </p>
+                            </div>
+                        </button>
+
+                        <button
+                            onClick={onApplyFreeWeightWorkout}
+                            className="flex items-center gap-3 w-full bg-white/4 hover:bg-white/7 border border-white/8 rounded-xl px-4 py-3.5 transition-all group"
+                        >
+                            <div className="w-9 h-9 bg-info-400/10 border border-info-400/20 rounded-xl flex items-center justify-center shrink-0">
+                                <ArrowLeftRight size={16} className="text-info-400" />
+                            </div>
+                            <div className="text-left">
+                                <p className="text-body font-bold text-white">
+                                    Apply Free-Weight Friendly Swaps
+                                </p>
+                                <p className="text-mini text-neutral-500 font-medium mt-0.5">
+                                    Replace machine-locked movements with accessible alternatives
+                                </p>
+                            </div>
+                        </button>
+
+                        <button
+                            onClick={() => setConfirmAction("reset-workout")}
+                            className="flex items-center gap-3 w-full bg-white/4 hover:bg-white/7 border border-white/8 rounded-xl px-4 py-3.5 transition-all group"
+                        >
+                            <div className="w-9 h-9 bg-white/6 border border-white/10 rounded-xl flex items-center justify-center shrink-0">
+                                <RotateCcw
+                                    size={16}
+                                    className="text-neutral-400 group-hover:text-white transition-colors"
+                                />
+                            </div>
+                            <div className="text-left">
+                                <p className="text-body font-bold text-white">
+                                    Revert to Default Workout
+                                </p>
+                                <p className="text-mini text-neutral-500 font-medium mt-0.5">
+                                    Restore the standard plan without clearing progress history
+                                </p>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                {/* Data / Backup */}
+                <div>
+                    <p className="text-mini text-neutral-500 font-black uppercase tracking-widest mb-3 flex items-center gap-2">
+                        <Download size={12} className="text-accent-400" />
+                        Data Management
+                    </p>
+                    <div className="flex flex-col gap-2">
+                        <button
+                            onClick={() => {
+                                onClose();
+                                onOpenAddPastSession();
+                            }}
+                            className="flex items-center gap-3 w-full bg-white/4 hover:bg-white/7 border border-white/8 rounded-xl px-4 py-3.5 transition-all group"
+                        >
+                            <div className="w-9 h-9 bg-purple-400/10 border border-purple-400/20 rounded-xl flex items-center justify-center shrink-0">
+                                <DatabaseBackup size={16} className="text-purple-400" />
+                            </div>
+                            <div className="text-left">
+                                <p className="text-body font-bold text-white group-hover:text-purple-400 transition-colors">
+                                    Add Past Session
+                                </p>
+                                <p className="text-mini text-neutral-500 font-medium mt-0.5">
+                                    Backfill previous workouts with normal inputs; JSON is advanced
+                                </p>
+                            </div>
+                        </button>
+
+                        <button
+                            onClick={onExport}
+                            className="flex items-center gap-3 w-full bg-white/4 hover:bg-white/7 border border-white/8 rounded-xl px-4 py-3.5 transition-all group"
+                        >
+                            <div className="w-9 h-9 bg-accent-400/10 border border-accent-400/20 rounded-xl flex items-center justify-center shrink-0">
+                                <Download size={16} className="text-accent-400" />
+                            </div>
+                            <div className="text-left">
+                                <p className="text-body font-bold text-white group-hover:text-accent-400 transition-colors">
+                                    Export Full Backup
+                                </p>
+                                <p className="text-mini text-neutral-500 font-medium mt-0.5">
+                                    Download a restorable backup of plan, sessions, notes &amp; settings
+                                </p>
+                            </div>
+                        </button>
+
+                        <button
+                            onClick={onExportCsv}
+                            className="flex items-center gap-3 w-full bg-white/4 hover:bg-white/7 border border-white/8 rounded-xl px-4 py-3.5 transition-all group"
+                        >
+                            <div className="w-9 h-9 bg-info-400/10 border border-info-400/20 rounded-xl flex items-center justify-center shrink-0">
+                                <Download size={16} className="text-info-400" />
+                            </div>
+                            <div className="text-left">
+                                <p className="text-body font-bold text-white group-hover:text-info-400 transition-colors">
+                                    Export CSV
+                                </p>
+                                <p className="text-mini text-neutral-500 font-medium mt-0.5">
+                                    Download analytics rows for Excel or custom pivot tables
+                                </p>
+                            </div>
+                        </button>
+
+                        <button
+                            onClick={onExportConfig}
+                            className="flex items-center gap-3 w-full bg-white/4 hover:bg-white/7 border border-white/8 rounded-xl px-4 py-3.5 transition-all group"
+                        >
+                            <div className="w-9 h-9 bg-orange-400/10 border border-orange-400/20 rounded-xl flex items-center justify-center shrink-0">
+                                <Download size={16} className="text-orange-400" />
+                            </div>
+                            <div className="text-left">
+                                <p className="text-body font-bold text-white group-hover:text-orange-400 transition-colors">
+                                    Export Workout Plan
+                                </p>
+                                <p className="text-mini text-neutral-500 font-medium mt-0.5">
+                                    Download a text summary of your daily routines and exercises
+                                </p>
+                            </div>
+                        </button>
+
+                        <button
+                            onClick={() => importRef.current?.click()}
+                            className="flex items-center gap-3 w-full bg-white/4 hover:bg-white/7 border border-white/8 rounded-xl px-4 py-3.5 transition-all group"
+                        >
+                            <div className="w-9 h-9 bg-white/6 border border-white/10 rounded-xl flex items-center justify-center shrink-0">
+                                <Upload
+                                    size={16}
+                                    className="text-neutral-400 group-hover:text-white transition-colors"
+                                />
+                            </div>
+                            <div className="text-left">
+                                <p className="text-body font-bold text-white">Restore Backup</p>
+                                <p className="text-mini text-neutral-500 font-medium mt-0.5">
+                                    Advanced: import a previous Recomp 88 JSON export
+                                </p>
+                            </div>
+                        </button>
+
+                        <input
+                            ref={importRef}
+                            type="file"
+                            accept=".json"
+                            className="hidden"
+                            onChange={onImport}
+                        />
+                    </div>
+                </div>
+            </div>
+
+            {/* Stats */}
+            <div className="bg-white/3 border border-white/6 rounded-xl px-4 py-3">
+                <p className="text-mini text-neutral-500 font-medium leading-relaxed">
+                    <span className="text-neutral-400 font-bold">Sessions saved:</span>{" "}
+                    {sessionCount} workout{sessionCount !== 1 ? "s" : ""} logged
+                </p>
+            </div>
+
+            {/* Danger Zone */}
+            <div className="pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] mt-2 border-t border-white/6 flex justify-center">
+                <button
+                    onClick={() => setConfirmAction("clear-data")}
+                    className="bg-danger-400/10 hover:bg-danger-400/20 text-danger-400 font-bold uppercase tracking-widest text-caption px-6 py-3 rounded-xl border border-danger-400/20 transition-all active:scale-95"
+                >
+                    Delete All Data
+                </button>
+            </div>
+            {confirmAction && (
+                <div className="absolute inset-0 z-20 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+                    <div className="w-full rounded-2xl border border-white/10 bg-raised p-5 shadow-2xl">
+                        <p className="text-[15px] font-black text-white tracking-wide">
+                            {confirmCopy.title}
+                        </p>
+                        <p className="mt-2 text-small leading-relaxed text-neutral-400">
+                            {confirmCopy.body}
+                        </p>
+                        <div className="mt-5 grid grid-cols-2 gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setConfirmAction(null)}
+                                className="rounded-xl border border-white/8 bg-white/5 py-3 text-caption font-black uppercase tracking-widest text-neutral-300 transition-all hover:bg-white/8"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleConfirmAction}
+                                className="rounded-xl border border-danger-400/30 bg-danger-400/15 py-3 text-caption font-black uppercase tracking-widest text-danger-300 transition-all hover:bg-danger-400/25"
+                            >
+                                {confirmCopy.confirm}
+                            </button>
                         </div>
                     </div>
-                )}
-            </div>
-        </div>
+                </div>
+            )}
+        </Sheet>
     );
 }

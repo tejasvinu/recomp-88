@@ -29,7 +29,7 @@ import type {
   ExerciseWiki,
   WorkoutSession,
 } from "./types";
-import { cn, getClosestBodyWeight, resolveWeight, toLocalDateKey } from "./utils";
+import { getClosestBodyWeight, resolveWeight, toLocalDateKey } from "./utils";
 import {
   findWikiEntry,
   isFreeWeightFriendly,
@@ -57,6 +57,7 @@ import GlobalModals from "./components/GlobalModals";
 import JustShowUpModal from "./components/JustShowUpModal";
 import ToastContainer from "./components/ui/ToastContainer";
 import InstallPrompt from "./components/InstallPrompt";
+import { SegmentedControl } from "./components/ui/primitives";
 
 const WikiView = lazy(() => import("./components/WikiView"));
 const ChartsView = lazy(() => import("./components/ChartsView"));
@@ -1018,32 +1019,16 @@ function AppMain() {
             </div>
 
             <div className={activeTab === "charts" ? "block" : "hidden"}>
-              <div className="flex bg-white/4 rounded-xl p-1 border border-white/7 mb-4 gap-1">
-                <button
-                  type="button"
-                  onClick={() => setProgressSubView("charts")}
-                  className={cn(
-                    "flex-1 py-2 rounded-lg text-caption font-black uppercase tracking-widest transition-all",
-                    progressSubView === "charts"
-                      ? "bg-accent-400 text-neutral-950"
-                      : "text-neutral-500 hover:text-neutral-300"
-                  )}
-                >
-                  Progression
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setProgressSubView("records")}
-                  className={cn(
-                    "flex-1 py-2 rounded-lg text-caption font-black uppercase tracking-widest transition-all",
-                    progressSubView === "records"
-                      ? "bg-accent-400 text-neutral-950"
-                      : "text-neutral-500 hover:text-neutral-300"
-                  )}
-                >
-                  Personal Records
-                </button>
-              </div>
+              <SegmentedControl
+                aria-label="Progress view"
+                className="mb-4"
+                value={progressSubView}
+                onChange={setProgressSubView}
+                options={[
+                  { value: "charts", label: "Progression" },
+                  { value: "records", label: "Personal Records" },
+                ]}
+              />
 
               {progressSubView === "charts" ? (
                 <Suspense fallback={<Spinner />}>

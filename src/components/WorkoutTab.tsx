@@ -5,6 +5,7 @@ import type { DayRoutine, ExerciseLinkType, WorkoutProgress } from "../types";
 import { cn } from "../utils";
 import { RotateCcw, Save, Timer, Zap } from "lucide-react";
 import ExerciseCard from "./ExerciseCard";
+import { ActionButton } from "./ui/primitives";
 import { useSwipeNavigation } from "../hooks/useSwipeNavigation";
 
 const subscribeToMount = () => () => {};
@@ -132,13 +133,15 @@ export default function WorkoutTab({
             onTouchEnd={handleTouchEnd}
         >
             {isMounted && activeDay.primerId && (
-                <button
+                <ActionButton
+                    tone="warn"
+                    emphasis="loud"
+                    icon={<Timer size={18} />}
                     onClick={() => onStartStretching?.(activeDay.primerId!)}
-                    className="w-full active:scale-[0.98] flex items-center justify-center gap-2.5 py-4 rounded-2xl font-black text-body tracking-[0.2em] uppercase transition-all border bg-warn-500/15 hover:bg-warn-500/25 border-warn-500/40 text-warn-500 shadow-[0_0_20px_color-mix(in_oklab,_var(--color-warn-500)_15%,_transparent)] mt-1 mb-2"
+                    className="shadow-[0_0_20px_color-mix(in_oklab,_var(--color-warn-500)_15%,_transparent)] mt-1 mb-2"
                 >
-                    <Timer size={18} />
                     Start Session Primer
-                </button>
+                </ActionButton>
             )}
 
             {exerciseSegments.map((segment) => {
@@ -258,63 +261,63 @@ export default function WorkoutTab({
             {/* End-of-workout actions */}
             <div className="mt-6 mb-4 space-y-3">
                 {isMounted && (
-                    <button
+                    <ActionButton
+                        tone="accent"
+                        emphasis="loud"
+                        icon={<Zap size={18} />}
                         onClick={onOpenJustShowUp}
-                        className="w-full active:scale-[0.98] flex items-center justify-center gap-2.5 py-4 rounded-2xl font-black text-body tracking-[0.2em] uppercase transition-all border bg-accent-400/10 hover:bg-accent-400/20 border-accent-400/25 text-accent-400 shadow-[0_0_20px_color-mix(in_oklab,_var(--color-accent-400)_10%,_transparent)]"
+                        className="shadow-[0_0_20px_color-mix(in_oklab,_var(--color-accent-400)_10%,_transparent)]"
                     >
-                        <Zap size={18} />
                         Just Show Up — 15 min
-                    </button>
+                    </ActionButton>
                 )}
                 {isMounted && activeDay.preWorkoutStretchId && (
-                    <button
+                    <ActionButton
+                        icon={<Timer size={15} className="text-warn-400" />}
                         onClick={() => onStartStretching?.(activeDay.preWorkoutStretchId!)}
-                        className="w-full active:scale-[0.98] flex items-center justify-center gap-2.5 py-4 rounded-2xl font-bold text-small tracking-[0.18em] uppercase transition-all border bg-warn-400/5 hover:bg-warn-400/10 border-warn-400/15 text-white"
+                        className="bg-warn-400/5 hover:bg-warn-400/10 border-warn-400/15 text-white"
                     >
-                        <Timer size={15} className="text-warn-400" />
                         Start Pre-Workout Warmup
-                    </button>
+                    </ActionButton>
                 )}
                 {isMounted && activeDay.finisherId && (
-                    <button
+                    <ActionButton
+                        tone="rose"
+                        emphasis="loud"
+                        icon={<Timer size={18} />}
                         onClick={() => onStartStretching?.(activeDay.finisherId!)}
-                        className="w-full active:scale-[0.98] flex items-center justify-center gap-2.5 py-4 rounded-2xl font-black text-body tracking-[0.2em] uppercase transition-all border bg-rose-500/15 hover:bg-rose-500/25 border-rose-500/40 text-rose-500 shadow-[0_0_20px_rgba(244,63,94,0.15)]"
+                        className="shadow-[0_0_20px_rgba(244,63,94,0.15)]"
                     >
-                        <Timer size={18} />
                         Start Session Finisher
-                    </button>
+                    </ActionButton>
                 )}
                 {isMounted && (activeDay.postWorkoutStretchId || activeDay.stretchingProgramId) && (
-                    <button
+                    <ActionButton
+                        tone="plain"
+                        icon={<Timer size={15} className="text-accent-400" />}
                         onClick={() => onStartStretching?.((activeDay.postWorkoutStretchId || activeDay.stretchingProgramId)!)}
-                        className="w-full active:scale-[0.98] flex items-center justify-center gap-2.5 py-4 rounded-2xl font-bold text-small tracking-[0.18em] uppercase transition-all border bg-white/5 hover:bg-white/8 border-white/10 text-white"
                     >
-                        <Timer size={15} className="text-accent-400" />
                         Start Post-Workout Recovery
-                    </button>
+                    </ActionButton>
                 )}
-                <button
+                <ActionButton
+                    icon={<Save size={15} className="text-accent-400" />}
                     onClick={onShowFinishConfirm}
-                    className={cn(
-                        "w-full active:scale-[0.98] flex items-center justify-center gap-2.5 py-4 rounded-2xl font-bold text-small tracking-[0.18em] uppercase transition-all border",
-                        progressPercent === 100
-                            ? "bg-accent-400/15 hover:bg-accent-400/22 border-accent-400/40 text-accent-400"
-                            : "bg-white/4 hover:bg-white/7 border-white/9 text-white"
-                    )}
+                    className={progressPercent === 100 ? "bg-accent-400/15 hover:bg-accent-400/22 border-accent-400/40 text-accent-400" : undefined}
                 >
-                    <Save size={15} className="text-accent-400" />
                     Save Workout
-                </button>
+                </ActionButton>
                 <p className="text-center text-mini text-neutral-600 mt-2.5 px-6 font-medium leading-relaxed">
                     Saves this session to history, then clears checkmarks while keeping planned weights and reps.
                 </p>
-                <button
+                <ActionButton
+                    tone="ghost"
+                    icon={<RotateCcw size={14} />}
                     onClick={onClearCheckmarks}
-                    className="w-full active:scale-[0.98] flex items-center justify-center gap-2.5 py-3 rounded-2xl font-bold text-caption tracking-[0.16em] uppercase transition-all border bg-white/3 hover:bg-white/6 border-white/8 text-neutral-500"
+                    className="py-3 text-caption tracking-[0.16em]"
                 >
-                    <RotateCcw size={14} />
                     Clear Unsaved Checkmarks
-                </button>
+                </ActionButton>
                 <p className="text-center text-micro text-neutral-700 px-6 font-medium leading-relaxed">
                     Use only when you want to restart today&apos;s checkmarks without saving a session.
                 </p>

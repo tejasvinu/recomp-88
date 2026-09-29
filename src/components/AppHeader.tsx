@@ -3,6 +3,7 @@
 import { Calculator, ChevronLeft, ChevronRight, Clock, Play, RotateCcw, Settings } from 'lucide-react';
 import { cn, formatTime } from '../utils';
 import { useAppStore } from '../store/appStore';
+import { IconButton } from './ui/primitives';
 
 interface AppHeaderProps {
     progressPercent: number;
@@ -87,34 +88,28 @@ export default function AppHeader({
                                     {formatTime(elapsedSeconds)}
                                 </span>
                             </button>
-                            <button
+                            <IconButton
+                                size="sm"
+                                hover="danger"
                                 onClick={onResetTimer}
-                                className="w-7 h-7 flex items-center justify-center rounded-xl bg-white/5 border border-white/8 text-neutral-500 hover:text-danger-400 hover:bg-danger-400/10 hover:border-danger-400/20 transition-all active:scale-90"
+                                className="active:scale-90"
                                 aria-label="Reset workout timer"
                                 title="Reset timer"
                             >
                                 <RotateCcw size={11} />
-                            </button>
+                            </IconButton>
                         </div>
                     )}
 
                     {/* Plate calculator shortcut */}
-                    <button
-                        onClick={onShowPlateCalc}
-                        className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/5 border border-white/8 text-neutral-500 hover:text-accent-400 hover:bg-accent-400/10 hover:border-accent-400/20 transition-all"
-                        aria-label="Open plate calculator"
-                    >
+                    <IconButton hover="accent" onClick={onShowPlateCalc} aria-label="Open plate calculator">
                         <Calculator size={15} />
-                    </button>
+                    </IconButton>
 
                     {/* Settings */}
-                    <button
-                        onClick={onShowSettings}
-                        className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/5 border border-white/8 text-neutral-500 hover:text-neutral-300 hover:bg-white/8 transition-all"
-                        aria-label="Open settings"
-                    >
+                    <IconButton onClick={onShowSettings} aria-label="Open settings">
                         <Settings size={15} />
-                    </button>
+                    </IconButton>
                 </div>
             </div>
 

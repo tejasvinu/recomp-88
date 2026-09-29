@@ -6,6 +6,7 @@ import { cn, resolveWeight, getClosestBodyWeight, toLocalDateKey } from "../util
 import { useModalEscape } from "../hooks/useModalEscape";
 import { sanitizeSessionHistory } from "../lib/sync";
 import type { WorkoutTemplate, WorkoutSession, BodyWeightEntry } from "../types";
+import { Sheet } from "./ui/Sheet";
 
 interface AddPastSessionModalProps {
   workoutTemplate: WorkoutTemplate;
@@ -323,264 +324,255 @@ export default function AddPastSessionModal({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-70 flex items-end sm:items-center justify-center p-4 sm:p-0"
-      onClick={onClose}
-    >
-      <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" />
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="relative z-10 w-full max-w-md bg-sheet border border-white/8 shadow-[0_0_60px_rgba(0,0,0,0.9)] rounded-t-3xl sm:rounded-3xl overflow-hidden animate-slide-up flex flex-col"
-      >
-        <div className="border-b border-white/6 px-5 pt-5 pb-4 shrink-0">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-[16px] font-black text-white tracking-wide flex items-center gap-2">
-                <DatabaseBackup size={18} className="text-accent-400" />
-                Add Past Session
-              </h2>
-              <p className="mt-1 text-mini font-medium text-neutral-600">
-                Manual entry is safest for backfilling. JSON import is tucked under Advanced.
-              </p>
-            </div>
-            <button
-              onClick={onClose}
-              className="w-8 h-8 bg-white/6 rounded-full flex items-center justify-center text-neutral-400 hover:text-white hover:bg-white/10 transition-all border border-white/7"
-            >
-              <X size={15} />
-            </button>
+    <Sheet onClose={onClose} wrapperClassName="p-4 sm:p-0" className="sm:rounded-3xl flex flex-col">
+      <div className="border-b border-white/6 px-5 pt-5 pb-4 shrink-0">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-[16px] font-black text-white tracking-wide flex items-center gap-2">
+              <DatabaseBackup size={18} className="text-accent-400" />
+              Add Past Session
+            </h2>
+            <p className="mt-1 text-mini font-medium text-neutral-600">
+              Manual entry is safest for backfilling. JSON import is tucked under Advanced.
+            </p>
           </div>
-
-          <div className="flex gap-2 mt-4">
-            <button
-              onClick={openManualMode}
-              className={cn(
-                "flex-1 py-2 rounded-xl text-mini font-black uppercase tracking-widest transition-all px-1",
-                mode === "manual"
-                  ? "bg-accent-400/15 border border-accent-400/30 text-accent-400"
-                  : "bg-white/4 border border-white/7 text-neutral-500 hover:text-neutral-300"
-              )}
-            >
-              Manual Entry
-            </button>
-            <button
-              onClick={toggleAdvancedJson}
-              className={cn(
-                "flex-1 py-2 rounded-xl text-mini font-black uppercase tracking-widest transition-all px-1",
-                showAdvancedJson
-                  ? "bg-info-400/15 border border-info-400/30 text-info-400"
-                  : "bg-white/4 border border-white/7 text-neutral-500 hover:text-neutral-300"
-              )}
-            >
-              Advanced JSON
-            </button>
-          </div>
-
-          {showAdvancedJson && (
-            <div className="grid grid-cols-2 gap-2 mt-2">
-              <button
-                onClick={() => setMode("day-json")}
-                className={cn(
-                  "py-2 rounded-xl text-micro font-black uppercase tracking-widest transition-all px-1 border",
-                  mode === "day-json"
-                    ? "bg-accent-400/15 border-accent-400/30 text-accent-400"
-                    : "bg-white/4 border-white/7 text-neutral-500 hover:text-neutral-300"
-                )}
-              >
-                Paste Day Sets
-              </button>
-              <button
-                onClick={() => setMode("json")}
-                className={cn(
-                  "py-2 rounded-xl text-micro font-black uppercase tracking-widest transition-all px-1 border",
-                  mode === "json"
-                    ? "bg-accent-400/15 border-accent-400/30 text-accent-400"
-                    : "bg-white/4 border-white/7 text-neutral-500 hover:text-neutral-300"
-                )}
-              >
-                Paste Backup
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-5 overscroll-contain max-h-[75vh]">
-          {mode !== "json" && activeDay && (
-            <div className="flex flex-col gap-5 mb-5">
-              <div className="flex gap-3">
-                <div className="flex-1">
-                  <label className="text-mini text-neutral-500 font-bold uppercase tracking-widest mb-1.5 block">
-                    Date
-                  </label>
-                  <input
-                    type="date"
-                    value={selectedDate}
-                    onChange={(e) => {
-                      setSelectedDate(e.target.value);
-                      setManualError("");
-                      setDayJsonError("");
-                    }}
-                    className="w-full bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm font-mono font-bold text-white outline-none focus:ring-1 focus:ring-accent-400/40 focus:border-accent-400/30"
-                  />
-                </div>
-                <div className="w-24">
-                  <label className="text-mini text-neutral-500 font-bold uppercase tracking-widest mb-1.5 block">
-                    Mins
-                  </label>
-                  <input
-                    type="number"
-                    value={durationMinutes}
-                    onChange={(e) => setDurationMinutes(e.target.value)}
-                    className="w-full bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm font-mono font-bold text-white outline-none focus:ring-1 focus:ring-accent-400/40 focus:border-accent-400/30 text-center uppercase"
-                  />
-                </div>
-              </div>
-              {manualError && mode === "manual" && (
-                <p className="text-mini font-bold text-danger-400 uppercase tracking-widest">
-                  {manualError}
-                </p>
-              )}
-
-              <div>
-                <label className="text-mini text-neutral-500 font-bold uppercase tracking-widest mb-1.5 block">
-                  Workout Day
-                </label>
-                <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-none">
-                  {workoutTemplate.map((day) => (
-                    <button
-                      key={day.id}
-                      onClick={() => setSelectedDayId(day.id)}
-                      className={cn(
-                        "shrink-0 px-3 py-2 rounded-xl text-caption font-bold uppercase tracking-widest transition-all border",
-                        day.id === selectedDayId
-                          ? "bg-white border-white text-black"
-                          : "bg-white/4 border-white/8 text-neutral-400"
-                      )}
-                    >
-                      D{day.dayNumber} - {day.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {mode === "manual" && activeDay && (
-            <div className="flex flex-col gap-4 mt-2">
-                {activeDay.exercises.map((ex) => (
-                  <div key={ex.id} className="bg-white/3 border border-white/5 rounded-2xl p-3.5">
-                    <h4 className="text-body font-black tracking-wide text-white mb-3">
-                      {ex.name}
-                    </h4>
-                    <div className="flex flex-col gap-2">
-                      {ex.sets.map((set, idx) => (
-                        <div key={set.id} className="flex gap-2">
-                          <div className="w-8 flex items-center justify-center shrink-0">
-                            <span className="text-caption font-bold text-neutral-600">
-                              {idx + 1}
-                            </span>
-                          </div>
-                          <input
-                            type="text"
-                            placeholder="Weight"
-                            value={progress[ex.id]?.[set.id]?.loggedWeight || ""}
-                            onChange={(e) =>
-                              handleUpdateSet(ex.id, set.id, "loggedWeight", e.target.value)
-                            }
-                            className="w-full bg-raised border border-white/6 rounded-lg px-3 py-2 text-xs font-mono font-bold text-white outline-none focus:border-accent-400/40 placeholder-neutral-700"
-                          />
-                          <input
-                            type="text"
-                            placeholder="Reps"
-                            value={progress[ex.id]?.[set.id]?.loggedReps || ""}
-                            onChange={(e) =>
-                              handleUpdateSet(ex.id, set.id, "loggedReps", e.target.value)
-                            }
-                            className="w-full bg-raised border border-white/6 rounded-lg px-3 py-2 text-xs font-mono font-bold text-white outline-none focus:border-accent-400/40 placeholder-neutral-700"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-          )}
-
-          {mode === "day-json" && activeDay && (
-            <div className="flex flex-col gap-3 h-full">
-              <div className="flex items-center justify-between">
-                <label className="text-mini text-neutral-500 font-bold uppercase tracking-widest block">
-                  Paste sets for {activeDay.name}
-                </label>
-                <button
-                  type="button"
-                  onClick={handleLoadDaySampleJson}
-                  className="flex items-center gap-1.5 text-mini font-bold text-info-400 bg-info-400/10 border border-info-400/20 px-2.5 py-1.5 rounded-lg transition-all hover:bg-info-400/20 active:scale-95"
-                >
-                  <FileJson size={12} />
-                  Load Template
-                </button>
-              </div>
-              <textarea
-                value={dayJsonInput}
-                onChange={(e) => {
-                  setDayJsonInput(e.target.value);
-                  setDayJsonError("");
-                }}
-                className="w-full h-64 bg-white/5 border border-white/8 rounded-2xl p-4 text-caption font-mono font-medium text-white/90 outline-none focus:ring-1 focus:ring-accent-400/40 focus:border-accent-400/30 resize-none"
-                placeholder={'{\n  "Exercise Name": [\n    {"weight": 100, "reps": 10}\n  ]\n}'}
-              />
-              {dayJsonError && (
-                <p className="text-mini font-bold text-danger-400 uppercase tracking-widest">
-                  {dayJsonError}
-                </p>
-              )}
-            </div>
-          )}
-
-          {mode === "json" && (
-            <div className="flex flex-col gap-3 h-full">
-              <div className="flex items-center justify-between">
-                <label className="text-mini text-neutral-500 font-bold uppercase tracking-widest block">
-                  Paste WorkoutSession JSON
-                </label>
-                <button
-                  type="button"
-                  onClick={handleLoadSampleJson}
-                  className="flex items-center gap-1.5 text-mini font-bold text-info-400 bg-info-400/10 border border-info-400/20 px-2.5 py-1.5 rounded-lg transition-all hover:bg-info-400/20 active:scale-95"
-                >
-                  <FileJson size={12} />
-                  Load Sample
-                </button>
-              </div>
-              <textarea
-                value={jsonInput}
-                onChange={(e) => {
-                  setJsonInput(e.target.value);
-                  setJsonError("");
-                }}
-                className="w-full h-64 bg-white/5 border border-white/8 rounded-2xl p-4 text-caption font-mono font-medium text-white/90 outline-none focus:ring-1 focus:ring-accent-400/40 focus:border-accent-400/30 resize-none"
-                placeholder={'[{\n  "id": "...",\n  "date": "...",\n  "dayId": "...",\n  "exercises": []\n}]'}
-              />
-              {jsonError && (
-                <p className="text-mini font-bold text-danger-400 uppercase tracking-widest">
-                  {jsonError}
-                </p>
-              )}
-            </div>
-          )}
-        </div>
-
-        <div className="p-5 border-t border-white/6 shrink-0 bg-sheet">
           <button
-            onClick={mode === "manual" ? handleSaveManual : mode === "day-json" ? handleSaveDayJson : handleSaveJson}
-            className="w-full flex items-center justify-center gap-2 bg-accent-400 text-neutral-950 font-black text-body py-4 rounded-xl hover:bg-accent-300 transition-all shadow-[0_0_20px_color-mix(in_oklab,_var(--color-accent-400)_30%,_transparent)]"
+            onClick={onClose}
+            className="w-8 h-8 bg-white/6 rounded-full flex items-center justify-center text-neutral-400 hover:text-white hover:bg-white/10 transition-all border border-white/7"
           >
-            <Save size={16} />
-            SAVE PAST SESSION
+            <X size={15} />
           </button>
         </div>
+
+        <div className="flex gap-2 mt-4">
+          <button
+            onClick={openManualMode}
+            className={cn(
+              "flex-1 py-2 rounded-xl text-mini font-black uppercase tracking-widest transition-all px-1",
+              mode === "manual"
+                ? "bg-accent-400/15 border border-accent-400/30 text-accent-400"
+                : "bg-white/4 border border-white/7 text-neutral-500 hover:text-neutral-300"
+            )}
+          >
+            Manual Entry
+          </button>
+          <button
+            onClick={toggleAdvancedJson}
+            className={cn(
+              "flex-1 py-2 rounded-xl text-mini font-black uppercase tracking-widest transition-all px-1",
+              showAdvancedJson
+                ? "bg-info-400/15 border border-info-400/30 text-info-400"
+                : "bg-white/4 border border-white/7 text-neutral-500 hover:text-neutral-300"
+            )}
+          >
+            Advanced JSON
+          </button>
+        </div>
+
+        {showAdvancedJson && (
+          <div className="grid grid-cols-2 gap-2 mt-2">
+            <button
+              onClick={() => setMode("day-json")}
+              className={cn(
+                "py-2 rounded-xl text-micro font-black uppercase tracking-widest transition-all px-1 border",
+                mode === "day-json"
+                  ? "bg-accent-400/15 border-accent-400/30 text-accent-400"
+                  : "bg-white/4 border-white/7 text-neutral-500 hover:text-neutral-300"
+              )}
+            >
+              Paste Day Sets
+            </button>
+            <button
+              onClick={() => setMode("json")}
+              className={cn(
+                "py-2 rounded-xl text-micro font-black uppercase tracking-widest transition-all px-1 border",
+                mode === "json"
+                  ? "bg-accent-400/15 border-accent-400/30 text-accent-400"
+                  : "bg-white/4 border-white/7 text-neutral-500 hover:text-neutral-300"
+              )}
+            >
+              Paste Backup
+            </button>
+          </div>
+        )}
       </div>
-    </div>
+
+      <div className="flex-1 overflow-y-auto p-5 overscroll-contain max-h-[75vh]">
+        {mode !== "json" && activeDay && (
+          <div className="flex flex-col gap-5 mb-5">
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="text-mini text-neutral-500 font-bold uppercase tracking-widest mb-1.5 block">
+                  Date
+                </label>
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => {
+                    setSelectedDate(e.target.value);
+                    setManualError("");
+                    setDayJsonError("");
+                  }}
+                  className="w-full bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm font-mono font-bold text-white outline-none focus:ring-1 focus:ring-accent-400/40 focus:border-accent-400/30"
+                />
+              </div>
+              <div className="w-24">
+                <label className="text-mini text-neutral-500 font-bold uppercase tracking-widest mb-1.5 block">
+                  Mins
+                </label>
+                <input
+                  type="number"
+                  value={durationMinutes}
+                  onChange={(e) => setDurationMinutes(e.target.value)}
+                  className="w-full bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm font-mono font-bold text-white outline-none focus:ring-1 focus:ring-accent-400/40 focus:border-accent-400/30 text-center uppercase"
+                />
+              </div>
+            </div>
+            {manualError && mode === "manual" && (
+              <p className="text-mini font-bold text-danger-400 uppercase tracking-widest">
+                {manualError}
+              </p>
+            )}
+
+            <div>
+              <label className="text-mini text-neutral-500 font-bold uppercase tracking-widest mb-1.5 block">
+                Workout Day
+              </label>
+              <div className="flex overflow-x-auto gap-2 pb-2 scrollbar-none">
+                {workoutTemplate.map((day) => (
+                  <button
+                    key={day.id}
+                    onClick={() => setSelectedDayId(day.id)}
+                    className={cn(
+                      "shrink-0 px-3 py-2 rounded-xl text-caption font-bold uppercase tracking-widest transition-all border",
+                      day.id === selectedDayId
+                        ? "bg-white border-white text-black"
+                        : "bg-white/4 border-white/8 text-neutral-400"
+                    )}
+                  >
+                    D{day.dayNumber} - {day.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {mode === "manual" && activeDay && (
+          <div className="flex flex-col gap-4 mt-2">
+              {activeDay.exercises.map((ex) => (
+                <div key={ex.id} className="bg-white/3 border border-white/5 rounded-2xl p-3.5">
+                  <h4 className="text-body font-black tracking-wide text-white mb-3">
+                    {ex.name}
+                  </h4>
+                  <div className="flex flex-col gap-2">
+                    {ex.sets.map((set, idx) => (
+                      <div key={set.id} className="flex gap-2">
+                        <div className="w-8 flex items-center justify-center shrink-0">
+                          <span className="text-caption font-bold text-neutral-600">
+                            {idx + 1}
+                          </span>
+                        </div>
+                        <input
+                          type="text"
+                          placeholder="Weight"
+                          value={progress[ex.id]?.[set.id]?.loggedWeight || ""}
+                          onChange={(e) =>
+                            handleUpdateSet(ex.id, set.id, "loggedWeight", e.target.value)
+                          }
+                          className="w-full bg-raised border border-white/6 rounded-lg px-3 py-2 text-xs font-mono font-bold text-white outline-none focus:border-accent-400/40 placeholder-neutral-700"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Reps"
+                          value={progress[ex.id]?.[set.id]?.loggedReps || ""}
+                          onChange={(e) =>
+                            handleUpdateSet(ex.id, set.id, "loggedReps", e.target.value)
+                          }
+                          className="w-full bg-raised border border-white/6 rounded-lg px-3 py-2 text-xs font-mono font-bold text-white outline-none focus:border-accent-400/40 placeholder-neutral-700"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+        )}
+
+        {mode === "day-json" && activeDay && (
+          <div className="flex flex-col gap-3 h-full">
+            <div className="flex items-center justify-between">
+              <label className="text-mini text-neutral-500 font-bold uppercase tracking-widest block">
+                Paste sets for {activeDay.name}
+              </label>
+              <button
+                type="button"
+                onClick={handleLoadDaySampleJson}
+                className="flex items-center gap-1.5 text-mini font-bold text-info-400 bg-info-400/10 border border-info-400/20 px-2.5 py-1.5 rounded-lg transition-all hover:bg-info-400/20 active:scale-95"
+              >
+                <FileJson size={12} />
+                Load Template
+              </button>
+            </div>
+            <textarea
+              value={dayJsonInput}
+              onChange={(e) => {
+                setDayJsonInput(e.target.value);
+                setDayJsonError("");
+              }}
+              className="w-full h-64 bg-white/5 border border-white/8 rounded-2xl p-4 text-caption font-mono font-medium text-white/90 outline-none focus:ring-1 focus:ring-accent-400/40 focus:border-accent-400/30 resize-none"
+              placeholder={'{\n  "Exercise Name": [\n    {"weight": 100, "reps": 10}\n  ]\n}'}
+            />
+            {dayJsonError && (
+              <p className="text-mini font-bold text-danger-400 uppercase tracking-widest">
+                {dayJsonError}
+              </p>
+            )}
+          </div>
+        )}
+
+        {mode === "json" && (
+          <div className="flex flex-col gap-3 h-full">
+            <div className="flex items-center justify-between">
+              <label className="text-mini text-neutral-500 font-bold uppercase tracking-widest block">
+                Paste WorkoutSession JSON
+              </label>
+              <button
+                type="button"
+                onClick={handleLoadSampleJson}
+                className="flex items-center gap-1.5 text-mini font-bold text-info-400 bg-info-400/10 border border-info-400/20 px-2.5 py-1.5 rounded-lg transition-all hover:bg-info-400/20 active:scale-95"
+              >
+                <FileJson size={12} />
+                Load Sample
+              </button>
+            </div>
+            <textarea
+              value={jsonInput}
+              onChange={(e) => {
+                setJsonInput(e.target.value);
+                setJsonError("");
+              }}
+              className="w-full h-64 bg-white/5 border border-white/8 rounded-2xl p-4 text-caption font-mono font-medium text-white/90 outline-none focus:ring-1 focus:ring-accent-400/40 focus:border-accent-400/30 resize-none"
+              placeholder={'[{\n  "id": "...",\n  "date": "...",\n  "dayId": "...",\n  "exercises": []\n}]'}
+            />
+            {jsonError && (
+              <p className="text-mini font-bold text-danger-400 uppercase tracking-widest">
+                {jsonError}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="p-5 border-t border-white/6 shrink-0 bg-sheet">
+        <button
+          onClick={mode === "manual" ? handleSaveManual : mode === "day-json" ? handleSaveDayJson : handleSaveJson}
+          className="w-full flex items-center justify-center gap-2 bg-accent-400 text-neutral-950 font-black text-body py-4 rounded-xl hover:bg-accent-300 transition-all shadow-[0_0_20px_color-mix(in_oklab,_var(--color-accent-400)_30%,_transparent)]"
+        >
+          <Save size={16} />
+          SAVE PAST SESSION
+        </button>
+      </div>
+    </Sheet>
   );
 }
