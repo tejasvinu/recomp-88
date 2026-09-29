@@ -15,8 +15,10 @@ import {
     RotateCcw,
     ArrowLeftRight,
     DatabaseBackup,
+    Palette,
 } from "lucide-react";
 import { cn } from "../utils";
+import { THEMES, applyTheme, getStoredTheme, type ThemeId } from "../theme";
 import { useModalEscape } from "../hooks/useModalEscape";
 
 const REST_STEP = 15;
@@ -73,6 +75,7 @@ export default function SettingsModal({
     useModalEscape(onClose);
     const importRef = useRef<HTMLInputElement>(null);
     const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null);
+    const [theme, setTheme] = useState<ThemeId>(getStoredTheme);
 
     const confirmCopy = confirmAction === "reset-workout"
         ? {
@@ -202,6 +205,47 @@ export default function SettingsModal({
                                     )}
                                 >
                                     {unit}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Theme */}
+                    <div>
+                        <p className="text-mini text-neutral-500 font-black uppercase tracking-widest mb-3 flex items-center gap-2">
+                            <Palette size={12} className="text-accent-400" />
+                            Theme
+                        </p>
+                        <div className="flex gap-2" role="radiogroup" aria-label="Theme">
+                            {THEMES.map((t) => (
+                                <button
+                                    key={t.id}
+                                    role="radio"
+                                    aria-checked={theme === t.id}
+                                    onClick={() => {
+                                        setTheme(t.id);
+                                        applyTheme(t.id);
+                                    }}
+                                    className={cn(
+                                        "flex-1 flex items-center gap-3 px-3 py-3 rounded-xl border text-left transition-all",
+                                        theme === t.id
+                                            ? "bg-accent-400/15 border-accent-400/30"
+                                            : "bg-white/4 border-white/7 hover:bg-white/7"
+                                    )}
+                                >
+                                    <span
+                                        aria-hidden="true"
+                                        className="shrink-0 w-8 h-8 rounded-lg border border-white/15 overflow-hidden grid grid-cols-2"
+                                    >
+                                        <span style={{ backgroundColor: t.swatch[0] }} />
+                                        <span style={{ backgroundColor: t.swatch[1] }} />
+                                    </span>
+                                    <span className="min-w-0">
+                                        <span className={cn("block text-body font-bold", theme === t.id ? "text-accent-400" : "text-white")}>
+                                            {t.label}
+                                        </span>
+                                        <span className="block text-mini text-neutral-500 font-medium">{t.description}</span>
+                                    </span>
                                 </button>
                             ))}
                         </div>

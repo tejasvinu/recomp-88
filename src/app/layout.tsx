@@ -1,8 +1,45 @@
 import type { Metadata, Viewport } from "next";
+import localFont from "next/font/local";
 import "./globals.css";
 import SplashHider from "./SplashHider";
 import AuthProvider from "./AuthProvider";
 import { auth } from "@/auth";
+import { DEFAULT_THEME, THEME_BOOT_SCRIPT } from "@/theme";
+
+// Self-hosted font files (src/fonts), so they load under the app's CSP
+// (font-src 'self') and builds don't need network access.
+const barlow = localFont({
+  src: [
+    { path: "../fonts/barlow-condensed-400.woff2", weight: "400" },
+    { path: "../fonts/barlow-condensed-500.woff2", weight: "500" },
+    { path: "../fonts/barlow-condensed-600.woff2", weight: "600" },
+    { path: "../fonts/barlow-condensed-700.woff2", weight: "700" },
+    { path: "../fonts/barlow-condensed-800.woff2", weight: "800" },
+    { path: "../fonts/barlow-condensed-900.woff2", weight: "900" },
+  ],
+  variable: "--font-barlow",
+  display: "swap",
+});
+const saira = localFont({
+  src: [
+    { path: "../fonts/saira-condensed-400.woff2", weight: "400" },
+    { path: "../fonts/saira-condensed-500.woff2", weight: "500" },
+    { path: "../fonts/saira-condensed-600.woff2", weight: "600" },
+    { path: "../fonts/saira-condensed-700.woff2", weight: "700" },
+    { path: "../fonts/saira-condensed-800.woff2", weight: "800" },
+    { path: "../fonts/saira-condensed-900.woff2", weight: "900" },
+  ],
+  variable: "--font-saira",
+  display: "swap",
+});
+const dmMono = localFont({
+  src: [
+    { path: "../fonts/dm-mono-400.woff2", weight: "400" },
+    { path: "../fonts/dm-mono-500.woff2", weight: "500" },
+  ],
+  variable: "--font-dm-mono",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Recomp 88",
@@ -38,8 +75,14 @@ export default async function RootLayout({
   const session = await auth();
 
   return (
-    <html lang="en">
+    <html
+      lang="en"
+      data-theme={DEFAULT_THEME}
+      className={`${barlow.variable} ${saira.variable} ${dmMono.variable}`}
+      suppressHydrationWarning
+    >
       <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
         {/* iOS Native Splash Screens */}
         <link rel="apple-touch-startup-image" href="/splash/apple-splash-2048-2732.jpg" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" />
         <link rel="apple-touch-startup-image" href="/splash/apple-splash-1668-2388.jpg" media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" />

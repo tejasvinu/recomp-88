@@ -1,0 +1,73 @@
+/*
+ * ─── Themes ────────────────────────────────────────────────────────────────
+ * Each theme overrides the design tokens declared in globals.css. Components
+ * never change per theme — only these variables do. The active theme is the
+ * `data-theme` attribute on <html> (see src/theme.ts).
+ *
+ * To add a theme: copy a block, change the values, add its id to THEMES in
+ * src/theme.ts. Keep accent-400 light enough for dark text (text-neutral-950)
+ * on filled accent buttons.
+ */
+
+/* Classic — lime on black, Barlow Condensed. Uses the defaults in globals.css. */
+:root[data-theme="classic"] {
+  --font-sans: var(--font-barlow), system-ui, -apple-system, sans-serif;
+}
+
+/*
+ * Chalk — chalk-dusted iron. Cool graphite canvas, competition-plate cobalt
+ * accent, teal secondary, Saira Condensed, sharper rack-and-plate corners.
+ */
+:root[data-theme="chalk"] {
+  --font-sans: var(--font-saira), system-ui, -apple-system, sans-serif;
+
+  --color-canvas: #13151a;
+  --color-sheet: #181b21;
+  --color-raised: #1c1f26;
+  --color-overlay: #22262e;
+  --color-chart-grid: #262a33;
+  --color-chart-edge: #323744;
+  --color-figure: #1a1d24;
+
+  --color-accent-50: oklch(97% 0.02 262);
+  --color-accent-100: oklch(94% 0.04 262);
+  --color-accent-200: oklch(89% 0.075 262);
+  --color-accent-300: oklch(81% 0.12 262);
+  --color-accent-400: oklch(72% 0.165 262);
+  --color-accent-500: oklch(64% 0.195 262);
+  --color-accent-600: oklch(56% 0.2 263);
+  --color-accent-700: oklch(49% 0.185 264);
+  --color-accent-800: oklch(42% 0.155 265);
+  --color-accent-900: oklch(36% 0.12 265);
+  --color-accent-950: oklch(26% 0.08 266);
+
+  --color-info-50: oklch(97.5% 0.02 185);
+  --color-info-100: oklch(94.5% 0.045 185);
+  --color-info-200: oklch(90% 0.08 184);
+  --color-info-300: oklch(85% 0.11 183);
+  --color-info-400: oklch(78% 0.13 182);
+  --color-info-500: oklch(70% 0.13 182);
+  --color-info-600: oklch(60% 0.115 184);
+  --color-info-700: oklch(51% 0.095 186);
+  --color-info-800: oklch(44% 0.078 188);
+  --color-info-900: oklch(38% 0.063 189);
+  --color-info-950: oklch(28% 0.046 191);
+
+  --color-neutral-50: oklch(98.5% 0.003 255);
+  --color-neutral-100: oklch(97% 0.004 255);
+  --color-neutral-200: oklch(92.2% 0.007 255);
+  --color-neutral-300: oklch(87% 0.01 255);
+  --color-neutral-400: oklch(71% 0.014 255);
+  --color-neutral-500: oklch(56.5% 0.016 255);
+  --color-neutral-600: oklch(45.5% 0.016 255);
+  --color-neutral-700: oklch(38% 0.015 255);
+  --color-neutral-800: oklch(28% 0.013 255);
+  --color-neutral-900: oklch(22% 0.011 255);
+  --color-neutral-950: oklch(15.5% 0.009 255);
+
+  --radius-md: 0.3rem;
+  --radius-lg: 0.4rem;
+  --radius-xl: 0.55rem;
+  --radius-2xl: 0.75rem;
+  --radius-3xl: 1.1rem;
+}

@@ -1,6 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap');
-
 @import "tailwindcss";
+@import "./themes.css";
 
 /*
  * ─── Design tokens ─────────────────────────────────────────────────────────
@@ -17,8 +16,8 @@
  * component files.
  */
 @theme static {
-  --font-sans: 'Barlow Condensed', system-ui, -apple-system, sans-serif;
-  --font-mono: 'DM Mono', 'SF Mono', 'Fira Code', monospace;
+  --font-sans: var(--font-barlow), 'Barlow Condensed', system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-dm-mono), 'DM Mono', 'SF Mono', 'Fira Code', monospace;
 
   /* Type scale for small UI text (font-size only; line-height inherits).
      Keep this list in sync with the tailwind-merge config in src/utils.ts. */
