@@ -36,17 +36,17 @@ export default function MuscleHeatmapSvg({ activeSide, regionsById }: MuscleHeat
     return (
         <svg viewBox="0 0 200 360" className="w-full h-auto" role="img" aria-label={`${activeSide} body heatmap`}>
             {/* Skeleton outline */}
-            <circle cx="100" cy="34" r="20" fill="#101214" stroke="#2a2a2a" />
-            <rect x="86" y="52" width="28" height="18" rx="10" fill="#101214" stroke="#2a2a2a" />
+            <circle cx="100" cy="34" r="20" fill="var(--color-figure)" stroke="var(--color-chart-edge)" />
+            <rect x="86" y="52" width="28" height="18" rx="10" fill="var(--color-figure)" stroke="var(--color-chart-edge)" />
             <path
                 d="M72 76 Q100 62 128 76 L122 170 Q120 188 128 232 L136 324 H120 L108 240 H92 L80 324 H64 L72 232 Q80 188 78 170 Z"
-                fill="#101214"
-                stroke="#2a2a2a"
+                fill="var(--color-figure)"
+                stroke="var(--color-chart-edge)"
             />
-            <rect x="48" y="86" width="18" height="110" rx="9" fill="#101214" stroke="#2a2a2a" />
-            <rect x="134" y="86" width="18" height="110" rx="9" fill="#101214" stroke="#2a2a2a" />
-            <rect x="82" y="228" width="18" height="110" rx="9" fill="#101214" stroke="#2a2a2a" />
-            <rect x="100" y="228" width="18" height="110" rx="9" fill="#101214" stroke="#2a2a2a" />
+            <rect x="48" y="86" width="18" height="110" rx="9" fill="var(--color-figure)" stroke="var(--color-chart-edge)" />
+            <rect x="134" y="86" width="18" height="110" rx="9" fill="var(--color-figure)" stroke="var(--color-chart-edge)" />
+            <rect x="82" y="228" width="18" height="110" rx="9" fill="var(--color-figure)" stroke="var(--color-chart-edge)" />
+            <rect x="100" y="228" width="18" height="110" rx="9" fill="var(--color-figure)" stroke="var(--color-chart-edge)" />
 
             {activeSide === 'front' ? (
                 <>

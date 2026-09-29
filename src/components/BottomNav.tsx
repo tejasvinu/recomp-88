@@ -26,7 +26,7 @@ export default function BottomNav() {
     const onSetTab = useAppStore((s) => s.setActiveTab);
     return (
         <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md pointer-events-none z-50">
-            <div className="pointer-events-auto bg-[#080808]/88 backdrop-blur-2xl border-t border-white/6 shadow-[0_-10px_40px_rgba(0,0,0,0.55)] px-2 pb-[env(safe-area-inset-bottom)]">
+            <div className="pointer-events-auto bg-canvas/88 backdrop-blur-2xl border-t border-white/6 shadow-[0_-10px_40px_rgba(0,0,0,0.55)] px-2 pb-[env(safe-area-inset-bottom)]">
                 <div className="h-[var(--bottom-nav-height)] flex items-center justify-center">
                     <nav className="grid grid-cols-6 w-full gap-0.5" aria-label="Main navigation">
                         {TABS.map(({ id, label, icon: Icon }) => {
@@ -42,8 +42,8 @@ export default function BottomNav() {
                                     className={cn(
                                         'group relative flex flex-col items-center justify-center gap-[2px] rounded-2xl transition-all duration-200 py-1.5',
                                         'min-h-[52px] min-w-0 select-none outline-none',
-                                        'focus-visible:ring-2 focus-visible:ring-lime-400/40 focus-visible:ring-offset-2 focus-visible:ring-offset-[#080808]',
-                                        isActive ? 'text-lime-400' : 'text-neutral-600 hover:text-neutral-300',
+                                        'focus-visible:ring-2 focus-visible:ring-accent-400/40 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas',
+                                        isActive ? 'text-accent-400' : 'text-neutral-600 hover:text-neutral-300',
                                     )}
                                     aria-current={isActive ? 'page' : undefined}
                                 >
@@ -51,7 +51,7 @@ export default function BottomNav() {
                                         className={cn(
                                             'w-9 h-8 flex items-center justify-center rounded-2xl transition-all duration-200 border',
                                             isActive
-                                                ? 'bg-lime-400/12 border-lime-400/25 shadow-[0_0_18px_rgba(163,230,53,0.14)]'
+                                                ? 'bg-accent-400/12 border-accent-400/25 shadow-[0_0_18px_color-mix(in_oklab,_var(--color-accent-400)_14%,_transparent)]'
                                                 : 'border-transparent group-hover:bg-white/4',
                                         )}
                                     >
@@ -60,7 +60,7 @@ export default function BottomNav() {
                                     <span
                                         className={cn(
                                             'text-[8px] uppercase font-bold tracking-[0.1em] leading-none transition-colors truncate w-full text-center px-0.5',
-                                            isActive ? 'text-lime-400' : 'text-neutral-600 group-hover:text-neutral-400',
+                                            isActive ? 'text-accent-400' : 'text-neutral-600 group-hover:text-neutral-400',
                                         )}
                                     >
                                         {label}
@@ -70,7 +70,7 @@ export default function BottomNav() {
                                         aria-hidden="true"
                                         className={cn(
                                             'absolute -top-px left-1/2 -translate-x-1/2 h-[2px] w-8 rounded-full transition-opacity',
-                                            'bg-lime-400/80 shadow-[0_0_10px_rgba(163,230,53,0.45)]',
+                                            'bg-accent-400/80 shadow-[0_0_10px_color-mix(in_oklab,_var(--color-accent-400)_45%,_transparent)]',
                                             isActive ? 'opacity-100' : 'opacity-0',
                                         )}
                                     />

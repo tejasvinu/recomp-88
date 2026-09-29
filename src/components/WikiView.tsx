@@ -25,9 +25,9 @@ const ACCESS_FILTERS = [
 
 const categoryColors: Record<string, { badge: string; bar: string; dot: string }> = {
   Push:             { badge: "text-orange-400 bg-orange-400/10 border-orange-400/20", bar: "bg-orange-400",  dot: "bg-orange-400 shadow-[0_0_6px_theme(colors.orange.400)]" },
-  Pull:             { badge: "text-sky-400 bg-sky-400/10 border-sky-400/20",           bar: "bg-sky-400",     dot: "bg-sky-400 shadow-[0_0_6px_theme(colors.sky.400)]" },
+  Pull:             { badge: "text-info-400 bg-info-400/10 border-info-400/20",           bar: "bg-info-400",     dot: "bg-info-400 shadow-[0_0_6px_theme(colors.sky.400)]" },
   Legs:             { badge: "text-purple-400 bg-purple-400/10 border-purple-400/20",  bar: "bg-purple-400",  dot: "bg-purple-400 shadow-[0_0_6px_theme(colors.purple.400)]" },
-  Core:             { badge: "text-amber-400 bg-amber-400/10 border-amber-400/20",     bar: "bg-amber-400",   dot: "bg-amber-400 shadow-[0_0_6px_theme(colors.amber.400)]" },
+  Core:             { badge: "text-warn-400 bg-warn-400/10 border-warn-400/20",     bar: "bg-warn-400",   dot: "bg-warn-400 shadow-[0_0_6px_theme(colors.amber.400)]" },
   "Cardio/Mobility":{ badge: "text-emerald-400 bg-emerald-400/10 border-emerald-400/20", bar: "bg-emerald-400", dot: "bg-emerald-400 shadow-[0_0_6px_theme(colors.emerald.400)]" },
 };
 
@@ -77,8 +77,8 @@ export default function WikiView() {
     <div className="flex flex-col gap-4 pb-8">
       {/* Header */}
       <div className="flex items-center gap-3 mb-1">
-        <div className="w-11 h-11 bg-lime-400/10 border border-lime-400/20 rounded-xl flex items-center justify-center shrink-0">
-          <BookOpen size={22} className="text-lime-400" />
+        <div className="w-11 h-11 bg-accent-400/10 border border-accent-400/20 rounded-xl flex items-center justify-center shrink-0">
+          <BookOpen size={22} className="text-accent-400" />
         </div>
         <div>
           <h2 className="text-xl font-black text-white tracking-wide">Exercise Wiki</h2>
@@ -96,7 +96,7 @@ export default function WikiView() {
           placeholder="Search exercises or muscles…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full bg-white/5 border border-white/8 rounded-xl py-3 pl-10 pr-10 text-sm font-medium text-white placeholder-neutral-600 outline-none focus:ring-1 focus:ring-lime-400/40 focus:border-lime-400/30 transition-all"
+          className="w-full bg-white/5 border border-white/8 rounded-xl py-3 pl-10 pr-10 text-sm font-medium text-white placeholder-neutral-600 outline-none focus:ring-1 focus:ring-accent-400/40 focus:border-accent-400/30 transition-all"
         />
         {search && (
           <button
@@ -117,7 +117,7 @@ export default function WikiView() {
             className={cn(
               "shrink-0 px-3.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all duration-200 border whitespace-nowrap",
               activeCategory === cat
-                ? "bg-lime-400 text-neutral-950 border-lime-400 shadow-[0_0_10px_rgba(163,230,53,0.2)]"
+                ? "bg-accent-400 text-neutral-950 border-accent-400 shadow-[0_0_10px_color-mix(in_oklab,_var(--color-accent-400)_20%,_transparent)]"
                 : "bg-white/4 text-neutral-500 border-white/6 hover:bg-white/8 hover:text-neutral-300"
             )}
           >
@@ -134,7 +134,7 @@ export default function WikiView() {
             className={cn(
               "shrink-0 px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all duration-200 border whitespace-nowrap",
               activeAccess === filter
-                ? "bg-sky-400 text-neutral-950 border-sky-400 shadow-[0_0_10px_rgba(56,189,248,0.18)]"
+                ? "bg-info-400 text-neutral-950 border-info-400 shadow-[0_0_10px_color-mix(in_oklab,_var(--color-info-400)_18%,_transparent)]"
                 : "bg-white/4 text-neutral-500 border-white/6 hover:bg-white/8 hover:text-neutral-300"
             )}
           >
@@ -180,17 +180,17 @@ export default function WikiView() {
                   </p>
                   <div className="flex flex-wrap gap-1.5 mt-2">
                     {isHomeGymFriendly(ex) && (
-                      <span className="text-[9px] uppercase font-black tracking-widest text-sky-400 bg-sky-400/10 border border-sky-400/20 px-2 py-0.5 rounded-full">
+                      <span className="text-[9px] uppercase font-black tracking-widest text-info-400 bg-info-400/10 border border-info-400/20 px-2 py-0.5 rounded-full">
                         Home Gym
                       </span>
                     )}
                     {isFreeWeightFriendly(ex) && (
-                      <span className="text-[9px] uppercase font-black tracking-widest text-lime-400 bg-lime-400/10 border border-lime-400/20 px-2 py-0.5 rounded-full">
+                      <span className="text-[9px] uppercase font-black tracking-widest text-accent-400 bg-accent-400/10 border border-accent-400/20 px-2 py-0.5 rounded-full">
                         Free Weight
                       </span>
                     )}
                     {getFreeWeightAlternatives(ex).length > 0 && !isFreeWeightFriendly(ex) && (
-                      <span className="text-[9px] uppercase font-black tracking-widest text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded-full">
+                      <span className="text-[9px] uppercase font-black tracking-widest text-warn-400 bg-warn-400/10 border border-warn-400/20 px-2 py-0.5 rounded-full">
                         {getFreeWeightAlternatives(ex).length} swap options
                       </span>
                     )}

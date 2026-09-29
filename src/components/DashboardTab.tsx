@@ -177,8 +177,8 @@ export default function DashboardTab({ onStartStretching, onOpenJustShowUp }: Da
         >
             {/* 1. Header */}
             <div className="flex items-center gap-3 mb-1">
-                <div className="w-11 h-11 bg-lime-400/10 border border-lime-400/20 rounded-xl flex items-center justify-center shrink-0">
-                    <Sparkles size={22} className="text-lime-400" />
+                <div className="w-11 h-11 bg-accent-400/10 border border-accent-400/20 rounded-xl flex items-center justify-center shrink-0">
+                    <Sparkles size={22} className="text-accent-400" />
                 </div>
                 <div>
                     <h2 className="text-xl font-black text-white tracking-wide">Welcome back</h2>
@@ -195,12 +195,12 @@ export default function DashboardTab({ onStartStretching, onOpenJustShowUp }: Da
             >
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
-                        <Calendar size={15} className="text-lime-400" />
+                        <Calendar size={15} className="text-accent-400" />
                         <h3 className="text-[12px] font-black text-white uppercase tracking-widest">
                             Consistency
                         </h3>
                     </div>
-                    <div className="flex items-center gap-1 bg-lime-400/8 border border-lime-400/20 px-2.5 py-1 rounded-xl text-lime-400 font-mono font-bold text-[11px]">
+                    <div className="flex items-center gap-1 bg-accent-400/8 border border-accent-400/20 px-2.5 py-1 rounded-xl text-accent-400 font-mono font-bold text-[11px]">
                         <Flame size={12} className="fill-current animate-pulse" />
                         {activeStreak} Day Streak
                     </div>
@@ -214,7 +214,7 @@ export default function DashboardTab({ onStartStretching, onOpenJustShowUp }: Da
                                     key={`${wIdx}-${dIdx}`}
                                     className={`w-[11px] h-[11px] rounded-[3px] transition-colors duration-300 ${
                                         day.completed
-                                            ? "bg-lime-400 shadow-[0_0_8px_rgba(163,230,53,0.4)]"
+                                            ? "bg-accent-400 shadow-[0_0_8px_color-mix(in_oklab,_var(--color-accent-400)_40%,_transparent)]"
                                             : "bg-white/4 border border-white/5"
                                     }`}
                                     title={day.dateStr}
@@ -233,12 +233,12 @@ export default function DashboardTab({ onStartStretching, onOpenJustShowUp }: Da
             <motion.button
                 variants={cardVariants}
                 onClick={onOpenJustShowUp}
-                className="group text-left bg-neutral-900/50 border border-lime-400/20 rounded-2xl p-4 shadow-lg relative overflow-hidden active:scale-[0.99] transition-transform cursor-pointer"
+                className="group text-left bg-neutral-900/50 border border-accent-400/20 rounded-2xl p-4 shadow-lg relative overflow-hidden active:scale-[0.99] transition-transform cursor-pointer"
             >
-                <div className="absolute top-0 right-0 w-28 h-28 bg-lime-400/10 rounded-full blur-[36px] pointer-events-none" />
+                <div className="absolute top-0 right-0 w-28 h-28 bg-accent-400/10 rounded-full blur-[36px] pointer-events-none" />
                 <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 bg-lime-400/12 border border-lime-400/25 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                        <Play size={20} className="text-lime-400 fill-lime-400/25" />
+                    <div className="w-11 h-11 bg-accent-400/12 border border-accent-400/25 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                        <Play size={20} className="text-accent-400 fill-accent-400/25" />
                     </div>
                     <div className="flex-1 min-w-0">
                         <p className="text-[13px] font-black text-white tracking-wide leading-snug">
@@ -248,7 +248,7 @@ export default function DashboardTab({ onStartStretching, onOpenJustShowUp }: Da
                             A 15-minute, no-pressure session. It still counts toward your streak.
                         </p>
                     </div>
-                    <ArrowRight size={16} className="text-lime-400 shrink-0 group-hover:translate-x-0.5 transition-transform" />
+                    <ArrowRight size={16} className="text-accent-400 shrink-0 group-hover:translate-x-0.5 transition-transform" />
                 </div>
             </motion.button>
 
@@ -259,9 +259,9 @@ export default function DashboardTab({ onStartStretching, onOpenJustShowUp }: Da
                     className="bg-neutral-900/50 border border-white/6 rounded-2xl p-4 shadow-lg relative overflow-hidden"
                 >
                     {/* Background visual highlight */}
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-lime-400/5 rounded-full blur-[40px] pointer-events-none" />
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-accent-400/5 rounded-full blur-[40px] pointer-events-none" />
 
-                    <p className="text-[10px] text-lime-400 font-black uppercase tracking-[0.2em] mb-1.5 flex items-center gap-1.5">
+                    <p className="text-[10px] text-accent-400 font-black uppercase tracking-[0.2em] mb-1.5 flex items-center gap-1.5">
                         <Activity size={10} />
                         Next Up
                     </p>
@@ -277,7 +277,7 @@ export default function DashboardTab({ onStartStretching, onOpenJustShowUp }: Da
                             {suggestedRecoveryProgram && (
                                 <button
                                     onClick={() => onStartStretching?.(suggestedRecoveryProgram.id)}
-                                    className="mt-4 flex items-center gap-2 px-4 py-2.5 bg-lime-400 text-neutral-950 font-black text-[11px] uppercase tracking-widest rounded-xl hover:bg-lime-300 active:scale-95 transition-all shadow-[0_0_15px_rgba(163,230,53,0.2)]"
+                                    className="mt-4 flex items-center gap-2 px-4 py-2.5 bg-accent-400 text-neutral-950 font-black text-[11px] uppercase tracking-widest rounded-xl hover:bg-accent-300 active:scale-95 transition-all shadow-[0_0_15px_color-mix(in_oklab,_var(--color-accent-400)_20%,_transparent)]"
                                 >
                                     Start {suggestedRecoveryProgram.name}
                                     <ArrowRight size={13} />
@@ -291,7 +291,7 @@ export default function DashboardTab({ onStartStretching, onOpenJustShowUp }: Da
                                     Day {activeDay.dayNumber}: {activeDay.name}
                                 </h4>
                                 {workoutProgressState.started && (
-                                    <span className="text-[10px] font-mono text-lime-400 font-bold bg-lime-400/10 border border-lime-400/20 px-2 py-0.5 rounded-lg">
+                                    <span className="text-[10px] font-mono text-accent-400 font-bold bg-accent-400/10 border border-accent-400/20 px-2 py-0.5 rounded-lg">
                                         {workoutProgressState.percent}% In Progress
                                     </span>
                                 )}
@@ -305,7 +305,7 @@ export default function DashboardTab({ onStartStretching, onOpenJustShowUp }: Da
                             {workoutProgressState.started && (
                                 <div className="w-full bg-white/5 h-2 rounded-full overflow-hidden mb-4 border border-white/6">
                                     <div
-                                        className="h-full bg-lime-400 transition-all duration-500 rounded-full"
+                                        className="h-full bg-accent-400 transition-all duration-500 rounded-full"
                                         style={{ width: `${workoutProgressState.percent}%` }}
                                     />
                                 </div>
@@ -313,7 +313,7 @@ export default function DashboardTab({ onStartStretching, onOpenJustShowUp }: Da
 
                             <button
                                 onClick={() => setActiveTab("workout")}
-                                className="flex items-center gap-2 px-4 py-2.5 bg-lime-400 text-neutral-950 font-black text-[11px] uppercase tracking-widest rounded-xl hover:bg-lime-300 active:scale-95 transition-all shadow-[0_0_15px_rgba(163,230,53,0.2)]"
+                                className="flex items-center gap-2 px-4 py-2.5 bg-accent-400 text-neutral-950 font-black text-[11px] uppercase tracking-widest rounded-xl hover:bg-accent-300 active:scale-95 transition-all shadow-[0_0_15px_color-mix(in_oklab,_var(--color-accent-400)_20%,_transparent)]"
                             >
                                 <Play size={12} fill="currentColor" />
                                 {workoutProgressState.started ? "Resume Workout" : "Start Workout"}
@@ -331,7 +331,7 @@ export default function DashboardTab({ onStartStretching, onOpenJustShowUp }: Da
                     className="bg-neutral-900/50 border border-white/6 rounded-2xl p-4 shadow-lg flex flex-col justify-between"
                 >
                     <div className="flex items-center gap-2 mb-4 shrink-0">
-                        <HeartPulse size={15} className="text-lime-400" />
+                        <HeartPulse size={15} className="text-accent-400" />
                         <h3 className="text-[12px] font-black text-white uppercase tracking-widest">
                             Readiness
                         </h3>
@@ -359,7 +359,7 @@ export default function DashboardTab({ onStartStretching, onOpenJustShowUp }: Da
                                     fill="transparent"
                                     strokeDasharray={251}
                                     strokeDashoffset={251 * (1 - readinessScore / 100)}
-                                    className="text-lime-400 transition-all duration-1000 ease-out"
+                                    className="text-accent-400 transition-all duration-1000 ease-out"
                                     strokeLinecap="round"
                                 />
                             </svg>
@@ -367,7 +367,7 @@ export default function DashboardTab({ onStartStretching, onOpenJustShowUp }: Da
                                 <span className="text-2xl font-mono font-bold text-white leading-none mt-1">
                                     {readinessScore}
                                 </span>
-                                <span className="text-[9px] text-lime-400/70 font-black uppercase mt-0.5">%</span>
+                                <span className="text-[9px] text-accent-400/70 font-black uppercase mt-0.5">%</span>
                             </div>
                         </div>
                         <div className="flex-1 min-w-0">
@@ -391,7 +391,7 @@ export default function DashboardTab({ onStartStretching, onOpenJustShowUp }: Da
                     className="bg-neutral-900/50 border border-white/6 rounded-2xl p-4 shadow-lg flex flex-col justify-between"
                 >
                     <div className="flex items-center gap-2 mb-4 shrink-0">
-                        <TrendingUp size={15} className="text-lime-400" />
+                        <TrendingUp size={15} className="text-accent-400" />
                         <h3 className="text-[12px] font-black text-white uppercase tracking-widest">
                             Weekly Summary
                         </h3>

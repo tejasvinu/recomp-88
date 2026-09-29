@@ -132,15 +132,15 @@ export default function JustShowUpModal({
             <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
             <div
                 onClick={(e) => e.stopPropagation()}
-                className="relative z-10 w-full max-w-md bg-[#0e0e0e] border border-white/8 shadow-[0_0_60px_rgba(0,0,0,0.9)] rounded-t-3xl sm:rounded-2xl overflow-hidden animate-slide-up p-5 max-h-[92vh] flex flex-col"
+                className="relative z-10 w-full max-w-md bg-sheet border border-white/8 shadow-[0_0_60px_rgba(0,0,0,0.9)] rounded-t-3xl sm:rounded-2xl overflow-hidden animate-slide-up p-5 max-h-[92vh] flex flex-col"
             >
                 <div className="w-10 h-1 bg-white/12 rounded-full mx-auto mb-4 sm:hidden" />
 
                 {/* Header */}
                 <div className="flex items-start justify-between gap-3 mb-4">
                     <div className="flex items-center gap-3">
-                        <div className="w-11 h-11 bg-lime-400/10 border border-lime-400/20 rounded-2xl flex items-center justify-center shrink-0">
-                            <Flame size={22} className="text-lime-400" />
+                        <div className="w-11 h-11 bg-accent-400/10 border border-accent-400/20 rounded-2xl flex items-center justify-center shrink-0">
+                            <Flame size={22} className="text-accent-400" />
                         </div>
                         <div>
                             <h3
@@ -167,7 +167,7 @@ export default function JustShowUpModal({
                 <div className="flex-1 overflow-y-auto space-y-4 pr-0.5">
                     <p className="text-[12px] text-neutral-400 leading-relaxed">
                         No PRs. No pressure. Just get in and move for a little while —{" "}
-                        <span className="text-lime-400 font-bold">anything counts today.</span>{" "}
+                        <span className="text-accent-400 font-bold">anything counts today.</span>{" "}
                         {dayName && (
                             <>
                                 We trimmed <span className="text-white font-bold">{dayName}</span>{" "}
@@ -205,7 +205,7 @@ export default function JustShowUpModal({
                                                     className={cn(
                                                         "flex items-center gap-1.5 px-3 py-2 rounded-xl border text-[12px] font-bold transition-all active:scale-95 min-w-[64px] justify-center",
                                                         done
-                                                            ? "bg-lime-400/15 border-lime-400/40 text-lime-400"
+                                                            ? "bg-accent-400/15 border-accent-400/40 text-accent-400"
                                                             : "bg-white/4 border-white/8 text-neutral-400 hover:bg-white/8"
                                                     )}
                                                 >
@@ -213,7 +213,7 @@ export default function JustShowUpModal({
                                                         className={cn(
                                                             "w-4 h-4 rounded-md border flex items-center justify-center transition-colors",
                                                             done
-                                                                ? "bg-lime-400 border-lime-400 text-neutral-950"
+                                                                ? "bg-accent-400 border-accent-400 text-neutral-950"
                                                                 : "border-white/25"
                                                         )}
                                                     >
@@ -243,7 +243,7 @@ export default function JustShowUpModal({
                                 />
                                 <circle
                                     cx="66" cy="66" r="56" fill="none"
-                                    stroke="rgba(163,230,53,0.9)" strokeWidth="8"
+                                    stroke="color-mix(in oklab, var(--color-accent-400) 90%, transparent)" strokeWidth="8"
                                     strokeLinecap="round" strokeDasharray={CIRCLE}
                                     strokeDashoffset={CIRCLE * (1 - timerFrac)}
                                     transform="rotate(-90 66 66)"
@@ -296,16 +296,16 @@ export default function JustShowUpModal({
                         <div>
                             <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-1.5">
                                 <span className="flex items-center gap-1">
-                                    <Zap size={11} className="text-lime-400" />
+                                    <Zap size={11} className="text-accent-400" />
                                     Keep it rolling
                                 </span>
-                                <span className="font-mono text-lime-400">
+                                <span className="font-mono text-accent-400">
                                     {completedCount}/{totalSets}
                                 </span>
                             </div>
                             <div className="h-2 rounded-full bg-white/6 overflow-hidden">
                                 <div
-                                    className="h-full bg-lime-400 rounded-full transition-all duration-500"
+                                    className="h-full bg-accent-400 rounded-full transition-all duration-500"
                                     style={{ width: `${Math.round(completeFrac * 100)}%` }}
                                 />
                             </div>
@@ -323,7 +323,7 @@ export default function JustShowUpModal({
                     </button>
                     <button
                         onClick={handleComplete}
-                        className="flex-[2] py-3 rounded-xl border border-lime-400/30 bg-lime-400/15 text-lime-400 font-black text-[13px] hover:bg-lime-400/25 transition-all active:scale-95 flex items-center justify-center gap-2 shadow-[0_0_18px_rgba(163,230,53,0.12)]"
+                        className="flex-[2] py-3 rounded-xl border border-accent-400/30 bg-accent-400/15 text-accent-400 font-black text-[13px] hover:bg-accent-400/25 transition-all active:scale-95 flex items-center justify-center gap-2 shadow-[0_0_18px_color-mix(in_oklab,_var(--color-accent-400)_12%,_transparent)]"
                     >
                         <PartyPopper size={15} />
                         Count it — I showed up

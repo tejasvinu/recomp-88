@@ -53,7 +53,7 @@ import {
 export { MUSCLE_STATUS_STYLES };
 
 const EXERCISE_AXIS_MAX_LENGTH = 14;
-const LINE_COLORS = ["#a3e635", "#38bdf8", "#f97316", "#a78bfa", "#fb923c"];
+const LINE_COLORS = ["var(--color-accent-400)", "var(--color-info-400)", "#f97316", "#a78bfa", "#fb923c"];
 
 type AnalyticsViewMode = "overview" | "heatmap";
 type HeatmapSide = "front" | "back";
@@ -142,8 +142,8 @@ export default function ChartsView({
     <div className="flex flex-col gap-4 pb-8">
       {/* Header */}
       <div className="flex items-center gap-3 mb-1">
-        <div className="w-11 h-11 bg-lime-400/10 border border-lime-400/20 rounded-xl flex items-center justify-center shrink-0">
-          <BarChart3 size={22} className="text-lime-400" />
+        <div className="w-11 h-11 bg-accent-400/10 border border-accent-400/20 rounded-xl flex items-center justify-center shrink-0">
+          <BarChart3 size={22} className="text-accent-400" />
         </div>
         <div>
           <h2 className="text-xl font-black text-white tracking-wide">Progression</h2>
@@ -165,7 +165,7 @@ export default function ChartsView({
             className={cn(
               "rounded-xl border px-3 py-2.5 text-[11px] font-black uppercase tracking-[0.18em] transition-all",
               analyticsView === view.id
-                ? "bg-lime-400/12 border-lime-400/25 text-lime-400"
+                ? "bg-accent-400/12 border-accent-400/25 text-accent-400"
                 : "bg-white/4 border-white/7 text-neutral-500 hover:bg-white/7 hover:text-neutral-300"
             )}
           >
@@ -187,14 +187,14 @@ export default function ChartsView({
           <div className="bg-neutral-900/50 border border-white/6 rounded-2xl p-4 shadow-lg">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <Scale size={15} className="text-lime-400" />
+                <Scale size={15} className="text-accent-400" />
                 <h3 className="text-[12px] font-black text-white uppercase tracking-widest">
                   Body Weight
                 </h3>
               </div>
               {todayBw && (
                 <div className="flex items-baseline gap-0.5">
-                  <span className="text-lg font-mono font-bold text-lime-400 tabular-nums">{todayBw.weight}</span>
+                  <span className="text-lg font-mono font-bold text-accent-400 tabular-nums">{todayBw.weight}</span>
                   <span className="text-[9px] text-neutral-500 font-bold uppercase tracking-widest ml-1">{weightUnit} today</span>
                 </div>
               )}
@@ -207,7 +207,7 @@ export default function ChartsView({
                 placeholder={todayBw ? String(todayBw.weight) : "e.g. 80.5"}
                 value={bwInput}
                 onChange={(e) => setBwInput(e.target.value)}
-                className="flex-1 bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm font-mono font-bold text-white placeholder-neutral-600 outline-none focus:ring-1 focus:ring-lime-400/40 focus:border-lime-400/30 transition-all"
+                className="flex-1 bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm font-mono font-bold text-white placeholder-neutral-600 outline-none focus:ring-1 focus:ring-accent-400/40 focus:border-accent-400/30 transition-all"
               />
               <span className="flex items-center text-[11px] font-bold text-neutral-600 shrink-0">{weightUnit}</span>
               <button
@@ -218,7 +218,7 @@ export default function ChartsView({
                     setBwInput("");
                   }
                 }}
-                className="px-4 py-2.5 rounded-xl bg-lime-400/12 border border-lime-400/25 text-lime-400 font-bold text-[12px] hover:bg-lime-400/20 transition-all active:scale-95"
+                className="px-4 py-2.5 rounded-xl bg-accent-400/12 border border-accent-400/25 text-accent-400 font-bold text-[12px] hover:bg-accent-400/20 transition-all active:scale-95"
               >
                 Log
               </button>
@@ -228,15 +228,15 @@ export default function ChartsView({
               <div className="h-32">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={bwChartData} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-chart-grid)" />
                     <XAxis
                       dataKey="date"
-                      tick={{ fill: "#525252", fontSize: 9, fontWeight: 700 }}
+                      tick={{ fill: "var(--color-neutral-600)", fontSize: 9, fontWeight: 700 }}
                       axisLine={false}
                       tickLine={false}
                     />
                     <YAxis
-                      tick={{ fill: "#525252", fontSize: 9 }}
+                      tick={{ fill: "var(--color-neutral-600)", fontSize: 9 }}
                       axisLine={false}
                       tickLine={false}
                       width={30}
@@ -244,17 +244,17 @@ export default function ChartsView({
                       tickFormatter={(v) => `${v}`}
                     />
                     <Tooltip
-                      contentStyle={{ backgroundColor: "#111", border: "1px solid #2a2a2a", borderRadius: 10, fontSize: 12, fontFamily: "DM Mono, monospace" }}
-                      labelStyle={{ color: "#a3e635", fontWeight: 800, fontSize: 10, letterSpacing: "0.1em" }}
+                      contentStyle={{ backgroundColor: "var(--color-raised)", border: "1px solid var(--color-chart-edge)", borderRadius: 10, fontSize: 12, fontFamily: "DM Mono, monospace" }}
+                      labelStyle={{ color: "var(--color-accent-400)", fontWeight: 800, fontSize: 10, letterSpacing: "0.1em" }}
                       formatter={(value: unknown) => [`${value} ${weightUnit}`, "Weight"]}
                       cursor={{ stroke: "rgba(255,255,255,0.06)" }}
                     />
                     <Line
                       type="monotone"
                       dataKey="weight"
-                      stroke="#a3e635"
+                      stroke="var(--color-accent-400)"
                       strokeWidth={2}
-                      dot={{ r: 3, fill: "#a3e635", strokeWidth: 0 }}
+                      dot={{ r: 3, fill: "var(--color-accent-400)", strokeWidth: 0 }}
                       activeDot={{ r: 5, strokeWidth: 0 }}
                     />
                   </LineChart>
@@ -269,11 +269,11 @@ export default function ChartsView({
           <div className="bg-neutral-900/50 border border-white/6 rounded-2xl p-4 shadow-lg">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <Flame size={16} className="text-lime-400" />
+                <Flame size={16} className="text-accent-400" />
                 <h3 className="text-[12px] font-black text-white uppercase tracking-widest">Latest Session Tonnage</h3>
               </div>
               <div className="flex items-baseline gap-1">
-                <span className="text-xl font-mono font-bold text-lime-400 tabular-nums">
+                <span className="text-xl font-mono font-bold text-accent-400 tabular-nums">
                   {totalWeeklyVolume.toLocaleString()}
                 </span>
                 <span className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest">{weightUnit}</span>
@@ -284,24 +284,24 @@ export default function ChartsView({
               <div className="h-32">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={dayVolumeSummary} barSize={22}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" />
-                    <XAxis dataKey="name" tick={{ fill: "#525252", fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-chart-grid)" />
+                    <XAxis dataKey="name" tick={{ fill: "var(--color-neutral-600)", fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} />
                     <YAxis hide />
                     <Tooltip
-                      contentStyle={{ backgroundColor: "#111", border: "1px solid #2a2a2a", borderRadius: 10, fontSize: 12, fontFamily: "DM Mono, monospace" }}
-                      labelStyle={{ color: "#a3e635", fontWeight: 800, textTransform: "uppercase" as const, fontSize: 10, letterSpacing: "0.1em" }}
+                      contentStyle={{ backgroundColor: "var(--color-raised)", border: "1px solid var(--color-chart-edge)", borderRadius: 10, fontSize: 12, fontFamily: "DM Mono, monospace" }}
+                      labelStyle={{ color: "var(--color-accent-400)", fontWeight: 800, textTransform: "uppercase" as const, fontSize: 10, letterSpacing: "0.1em" }}
                       formatter={(value: unknown) => [`${Number(value).toLocaleString()} ${weightUnit}`, "Volume"]}
                       labelFormatter={(label: unknown) => {
                         const day = dayVolumeSummary.find((d) => d.name === String(label));
                         return day ? day.fullName : String(label);
                       }}
-                      cursor={{ fill: "rgba(163,230,53,0.04)" }}
+                      cursor={{ fill: "color-mix(in oklab, var(--color-accent-400) 4%, transparent)" }}
                     />
                     <Bar dataKey="volume" radius={[4, 4, 0, 0]}>
                       {dayVolumeSummary.map((entry, index) => (
                         <Cell
                           key={`cell-${index}`}
-                          fill={entry.volume > 0 ? "#a3e635" : "#1f1f1f"}
+                          fill={entry.volume > 0 ? "var(--color-accent-400)" : "var(--color-chart-grid)"}
                           fillOpacity={entry.volume > 0 ? 0.85 : 0.4}
                         />
                       ))}
@@ -318,16 +318,16 @@ export default function ChartsView({
           {weekComparison.hasData && (
             <div className="bg-neutral-900/50 border border-white/6 rounded-2xl p-4 shadow-lg">
               <div className="flex items-center gap-2 mb-4">
-                <TrendingUp size={15} className="text-lime-400" />
+                <TrendingUp size={15} className="text-accent-400" />
                 <h3 className="text-[12px] font-black text-white uppercase tracking-widest">Week vs Week</h3>
                 {weekComparison.change !== null && (
                   <div
                     className={cn(
                       "ml-auto flex items-center gap-1 text-[11px] font-mono font-bold px-2 py-1 rounded-lg border",
                       weekComparison.change > 0
-                        ? "text-lime-400 bg-lime-400/10 border-lime-400/20"
+                        ? "text-accent-400 bg-accent-400/10 border-accent-400/20"
                         : weekComparison.change < 0
-                          ? "text-red-400 bg-red-400/10 border-red-400/20"
+                          ? "text-danger-400 bg-danger-400/10 border-danger-400/20"
                           : "text-neutral-400 bg-white/5 border-white/8"
                     )}
                   >
@@ -337,13 +337,13 @@ export default function ChartsView({
                 )}
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <div className="bg-lime-400/8 border border-lime-400/20 rounded-xl p-3.5">
-                  <p className="text-[9px] font-black uppercase tracking-widest text-lime-400/70 mb-2">This Week</p>
-                  <p className="text-xl font-mono font-bold text-lime-400 tabular-nums leading-none">
+                <div className="bg-accent-400/8 border border-accent-400/20 rounded-xl p-3.5">
+                  <p className="text-[9px] font-black uppercase tracking-widest text-accent-400/70 mb-2">This Week</p>
+                  <p className="text-xl font-mono font-bold text-accent-400 tabular-nums leading-none">
                     {weekComparison.thisWeek.toLocaleString()}
-                    <span className="text-[9px] text-lime-400/60 font-bold uppercase tracking-widest ml-1">{weightUnit}</span>
+                    <span className="text-[9px] text-accent-400/60 font-bold uppercase tracking-widest ml-1">{weightUnit}</span>
                   </p>
-                  <p className="text-[10px] text-lime-400/50 font-medium mt-1.5">
+                  <p className="text-[10px] text-accent-400/50 font-medium mt-1.5">
                     {weekComparison.thisWeekCount} session{weekComparison.thisWeekCount !== 1 ? "s" : ""}
                   </p>
                 </div>
@@ -372,7 +372,7 @@ export default function ChartsView({
           {sessionTonnageTrend && (
             <div className="bg-neutral-900/50 border border-white/6 rounded-2xl p-4 shadow-lg">
               <div className="flex items-center gap-2 mb-4">
-                <TrendingUp size={15} className="text-sky-400" />
+                <TrendingUp size={15} className="text-info-400" />
                 <h3 className="text-[12px] font-black text-white uppercase tracking-widest">Session Tonnage Trend</h3>
                 <span className="text-[9px] text-neutral-600 font-bold uppercase tracking-widest ml-auto">
                   Last {sessionTonnageTrend.length} sessions
@@ -381,12 +381,12 @@ export default function ChartsView({
               <div className="h-40">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={sessionTonnageTrend} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" />
-                    <XAxis dataKey="date" tick={{ fill: "#525252", fontSize: 9, fontWeight: 700 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
-                    <YAxis tick={{ fill: "#525252", fontSize: 9 }} axisLine={false} tickLine={false} width={40} tickFormatter={(v) => `${(Number(v) / 1000).toFixed(1)}k`} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-chart-grid)" />
+                    <XAxis dataKey="date" tick={{ fill: "var(--color-neutral-600)", fontSize: 9, fontWeight: 700 }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
+                    <YAxis tick={{ fill: "var(--color-neutral-600)", fontSize: 9 }} axisLine={false} tickLine={false} width={40} tickFormatter={(v) => `${(Number(v) / 1000).toFixed(1)}k`} />
                     <Tooltip
-                      contentStyle={{ backgroundColor: "#111", border: "1px solid #2a2a2a", borderRadius: 10, fontSize: 12, fontFamily: "DM Mono, monospace" }}
-                      labelStyle={{ color: "#38bdf8", fontWeight: 800, fontSize: 10, letterSpacing: "0.1em" }}
+                      contentStyle={{ backgroundColor: "var(--color-raised)", border: "1px solid var(--color-chart-edge)", borderRadius: 10, fontSize: 12, fontFamily: "DM Mono, monospace" }}
+                      labelStyle={{ color: "var(--color-info-400)", fontWeight: 800, fontSize: 10, letterSpacing: "0.1em" }}
                       formatter={(value: unknown) => [`${Number(value).toLocaleString()} ${weightUnit}`, "Tonnage"]}
                       labelFormatter={(_: unknown, payload: readonly { payload?: { dayName?: string; fullDate?: string } }[]) => {
                         const item = payload?.[0]?.payload;
@@ -395,7 +395,7 @@ export default function ChartsView({
                       }}
                       cursor={{ stroke: "rgba(255,255,255,0.06)" }}
                     />
-                    <Line type="monotone" dataKey="tonnage" stroke="#38bdf8" strokeWidth={2} dot={{ r: 3, fill: "#38bdf8", strokeWidth: 0 }} activeDot={{ r: 5, strokeWidth: 0 }} />
+                    <Line type="monotone" dataKey="tonnage" stroke="var(--color-info-400)" strokeWidth={2} dot={{ r: 3, fill: "var(--color-info-400)", strokeWidth: 0 }} activeDot={{ r: 5, strokeWidth: 0 }} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -414,7 +414,7 @@ export default function ChartsView({
                       className={cn(
                         "snap-center shrink-0 px-3.5 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest transition-all duration-200 border",
                         selectedDayIdx === idx
-                          ? "bg-lime-400 text-neutral-950 border-lime-400 shadow-[0_0_10px_rgba(163,230,53,0.2)]"
+                          ? "bg-accent-400 text-neutral-950 border-accent-400 shadow-[0_0_10px_color-mix(in_oklab,_var(--color-accent-400)_20%,_transparent)]"
                           : "bg-white/4 text-neutral-500 border-white/6 hover:bg-white/8 hover:text-neutral-300"
                       )}
                     >
@@ -430,7 +430,7 @@ export default function ChartsView({
               {/* Per-Exercise Volume */}
               <div className="bg-neutral-900/50 border border-white/6 rounded-2xl p-4 shadow-lg">
                 <div className="flex items-center gap-2 mb-4">
-                  <Dumbbell size={15} className="text-lime-400" />
+                  <Dumbbell size={15} className="text-accent-400" />
                   <h3 className="text-[12px] font-black text-white uppercase tracking-widest">Exercise Volume</h3>
                 </div>
 
@@ -438,8 +438,8 @@ export default function ChartsView({
                   <div className="h-44">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={exerciseStats.filter((entry) => entry.totalVolume > 0)} barSize={18} layout="vertical">
-                        <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" horizontal={false} />
-                        <XAxis type="number" tick={{ fill: "#525252", fontSize: 10 }} axisLine={false} tickLine={false} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-chart-grid)" horizontal={false} />
+                        <XAxis type="number" tick={{ fill: "var(--color-neutral-600)", fontSize: 10 }} axisLine={false} tickLine={false} />
                         <YAxis
                           dataKey="exerciseId"
                           type="category"
@@ -450,13 +450,13 @@ export default function ChartsView({
                           tickFormatter={(value) => formatExerciseAxisLabel(exerciseStatsById.get(String(value)) ?? String(value))}
                         />
                         <Tooltip
-                          contentStyle={{ backgroundColor: "#111", border: "1px solid #2a2a2a", borderRadius: 10, fontSize: 12, fontFamily: "DM Mono, monospace" }}
+                          contentStyle={{ backgroundColor: "var(--color-raised)", border: "1px solid var(--color-chart-edge)", borderRadius: 10, fontSize: 12, fontFamily: "DM Mono, monospace" }}
                           labelStyle={{ color: "#fff", fontWeight: 800, fontSize: 11 }}
                           formatter={(value: unknown) => [`${Number(value).toLocaleString()} ${weightUnit}`, "Volume"]}
                           labelFormatter={(label: unknown) => exerciseStatsById.get(String(label)) ?? String(label)}
-                          cursor={{ fill: "rgba(163,230,53,0.04)" }}
+                          cursor={{ fill: "color-mix(in oklab, var(--color-accent-400) 4%, transparent)" }}
                         />
-                        <Bar dataKey="totalVolume" fill="#a3e635" radius={[0, 4, 4, 0]} fillOpacity={0.85} />
+                        <Bar dataKey="totalVolume" fill="var(--color-accent-400)" radius={[0, 4, 4, 0]} fillOpacity={0.85} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -489,7 +489,7 @@ export default function ChartsView({
               {estimatedMaxes.length > 0 && (
                 <div className="bg-neutral-900/50 border border-white/6 rounded-2xl p-4 shadow-lg">
                   <div className="flex items-center gap-2 mb-4">
-                    <Award size={15} className="text-lime-400" />
+                    <Award size={15} className="text-accent-400" />
                     <h3 className="text-[12px] font-black text-white uppercase tracking-widest">Estimated 1RM</h3>
                     <span className="text-[9px] text-neutral-600 font-black uppercase tracking-widest ml-auto bg-white/4 px-2 py-1 rounded-md border border-white/6">Epley</span>
                   </div>
@@ -502,10 +502,10 @@ export default function ChartsView({
                             {onOpenExercise && (
                               <button
                                 onClick={() => onOpenExercise(entry.name)}
-                                className="shrink-0 w-5 h-5 bg-white/5 hover:bg-lime-400/15 rounded-full flex items-center justify-center transition-colors border border-white/6 hover:border-lime-400/30 group"
+                                className="shrink-0 w-5 h-5 bg-white/5 hover:bg-accent-400/15 rounded-full flex items-center justify-center transition-colors border border-white/6 hover:border-accent-400/30 group"
                                 title="View exercise info"
                               >
-                                <Info size={10} className="text-neutral-500 group-hover:text-lime-400 transition-colors" />
+                                <Info size={10} className="text-neutral-500 group-hover:text-accent-400 transition-colors" />
                               </button>
                             )}
                           </div>
@@ -514,7 +514,7 @@ export default function ChartsView({
                           </p>
                         </div>
                         <div className="flex items-baseline gap-0.5 shrink-0 ml-3">
-                          <span className="text-[22px] font-mono font-bold text-lime-400 tabular-nums leading-none">{entry.estimated1RM}</span>
+                          <span className="text-[22px] font-mono font-bold text-accent-400 tabular-nums leading-none">{entry.estimated1RM}</span>
                           <span className="text-[9px] text-neutral-500 font-bold uppercase tracking-widest ml-1">{weightUnit}</span>
                         </div>
                       </div>
@@ -530,7 +530,7 @@ export default function ChartsView({
               {prHistory && (
                 <div className="bg-neutral-900/50 border border-white/6 rounded-2xl p-4 shadow-lg">
                   <div className="flex items-center gap-2 mb-1">
-                    <TrendingUp size={15} className="text-lime-400" />
+                    <TrendingUp size={15} className="text-accent-400" />
                     <h3 className="text-[12px] font-black text-white uppercase tracking-widest">PR Tracker</h3>
                     <span className="text-[9px] text-neutral-600 font-black uppercase tracking-widest ml-auto bg-white/4 px-2 py-1 rounded-md border border-white/6">
                       {sessions.filter((session) => session.dayId === activeDay.id).length} sessions
@@ -540,10 +540,10 @@ export default function ChartsView({
                   <div className="h-44">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={prHistory.series} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" />
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--color-chart-grid)" />
                         <XAxis
                           dataKey="dateKey"
-                          tick={{ fill: "#525252", fontSize: 9, fontWeight: 700 }}
+                          tick={{ fill: "var(--color-neutral-600)", fontSize: 9, fontWeight: 700 }}
                           axisLine={false}
                           tickLine={false}
                           tickFormatter={(value) => {
@@ -551,10 +551,10 @@ export default function ChartsView({
                             return entry ? String(entry.displayDate) : formatSessionDateLabel(String(value));
                           }}
                         />
-                        <YAxis tick={{ fill: "#525252", fontSize: 9 }} axisLine={false} tickLine={false} width={32} tickFormatter={(v) => `${v}`} />
+                        <YAxis tick={{ fill: "var(--color-neutral-600)", fontSize: 9 }} axisLine={false} tickLine={false} width={32} tickFormatter={(v) => `${v}`} />
                         <Tooltip
-                          contentStyle={{ backgroundColor: "#111", border: "1px solid #2a2a2a", borderRadius: 10, fontSize: 11, fontFamily: "DM Mono, monospace" }}
-                          labelStyle={{ color: "#a3e635", fontWeight: 800, textTransform: "uppercase" as const, fontSize: 9, letterSpacing: "0.1em" }}
+                          contentStyle={{ backgroundColor: "var(--color-raised)", border: "1px solid var(--color-chart-edge)", borderRadius: 10, fontSize: 11, fontFamily: "DM Mono, monospace" }}
+                          labelStyle={{ color: "var(--color-accent-400)", fontWeight: 800, textTransform: "uppercase" as const, fontSize: 9, letterSpacing: "0.1em" }}
                           formatter={(value: unknown, name: unknown) => [
                             `${value} ${weightUnit}`,
                             prHistory.exercises.find((e) => e.key === name)?.label ?? String(name),
@@ -592,7 +592,7 @@ export default function ChartsView({
               {activeDay.exercises.some((exercise) => exercise.type !== "other") && (
                 <div className="bg-neutral-900/50 border border-white/6 rounded-2xl p-4 shadow-lg">
                   <div className="flex items-center gap-2 mb-1">
-                    <Award size={15} className="text-sky-400" />
+                    <Award size={15} className="text-info-400" />
                     <h3 className="text-[12px] font-black text-white uppercase tracking-widest">Actual Rep Max</h3>
                     <div className="ml-auto flex gap-1">
                       {([8, 10] as const).map((target) => (
@@ -603,7 +603,7 @@ export default function ChartsView({
                           className={cn(
                             "px-2 py-1 rounded-md border text-[9px] font-black uppercase tracking-widest transition-all",
                             actualRmTarget === target
-                              ? "bg-sky-400/12 border-sky-400/25 text-sky-400"
+                              ? "bg-info-400/12 border-info-400/25 text-info-400"
                               : "bg-white/4 border-white/8 text-neutral-500 hover:bg-white/7 hover:text-neutral-300"
                           )}
                         >
@@ -621,10 +621,10 @@ export default function ChartsView({
                       <div className="h-44">
                         <ResponsiveContainer width="100%" height="100%">
                           <LineChart data={actualRepMaxHistory.series} margin={{ top: 4, right: 4, left: 0, bottom: 0 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#1f1f1f" />
+                            <CartesianGrid strokeDasharray="3 3" stroke="var(--color-chart-grid)" />
                             <XAxis
                               dataKey="dateKey"
-                              tick={{ fill: "#525252", fontSize: 9, fontWeight: 700 }}
+                              tick={{ fill: "var(--color-neutral-600)", fontSize: 9, fontWeight: 700 }}
                               axisLine={false}
                               tickLine={false}
                               tickFormatter={(value) => {
@@ -632,10 +632,10 @@ export default function ChartsView({
                                 return entry ? String(entry.displayDate) : formatSessionDateLabel(String(value));
                               }}
                             />
-                            <YAxis tick={{ fill: "#525252", fontSize: 9 }} axisLine={false} tickLine={false} width={32} tickFormatter={(v) => `${v}`} />
+                            <YAxis tick={{ fill: "var(--color-neutral-600)", fontSize: 9 }} axisLine={false} tickLine={false} width={32} tickFormatter={(v) => `${v}`} />
                             <Tooltip
-                              contentStyle={{ backgroundColor: "#111", border: "1px solid #2a2a2a", borderRadius: 10, fontSize: 11, fontFamily: "DM Mono, monospace" }}
-                              labelStyle={{ color: "#38bdf8", fontWeight: 800, textTransform: "uppercase" as const, fontSize: 9, letterSpacing: "0.1em" }}
+                              contentStyle={{ backgroundColor: "var(--color-raised)", border: "1px solid var(--color-chart-edge)", borderRadius: 10, fontSize: 11, fontFamily: "DM Mono, monospace" }}
+                              labelStyle={{ color: "var(--color-info-400)", fontWeight: 800, textTransform: "uppercase" as const, fontSize: 9, letterSpacing: "0.1em" }}
                               formatter={(value: unknown, name: unknown) => [
                                 `${value} ${weightUnit}`,
                                 actualRepMaxHistory.exercises.find((e) => e.key === name)?.label ?? String(name),
@@ -686,7 +686,7 @@ export default function ChartsView({
           {recentSessions.length > 0 && (
             <div className="bg-neutral-900/50 border border-white/6 rounded-2xl p-4 shadow-lg">
               <div className="flex items-center gap-2 mb-4">
-                <History size={15} className="text-lime-400" />
+                <History size={15} className="text-accent-400" />
                 <h3 className="text-[12px] font-black text-white uppercase tracking-widest">Recent Sessions</h3>
                 <span className="text-[9px] text-neutral-600 font-bold ml-auto">tap to expand</span>
               </div>
@@ -730,7 +730,7 @@ export default function ChartsView({
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="text-right">
-                            <p className="text-[13px] font-mono font-bold text-lime-400 tabular-nums">
+                            <p className="text-[13px] font-mono font-bold text-accent-400 tabular-nums">
                               {Math.round(totalVol).toLocaleString()}{" "}
                               <span className="text-[9px] text-neutral-500 font-bold uppercase tracking-widest">{weightUnit}</span>
                             </p>
@@ -752,7 +752,7 @@ export default function ChartsView({
                                       <span className="text-[10px] font-mono text-neutral-400">{i + 1}.{" "}</span>
                                       <span className="text-[10px] font-mono font-bold text-white">
                                         {set.completed && !set.loggedWeight && !set.loggedReps ? (
-                                          <span className="text-lime-400">Completed ✓</span>
+                                          <span className="text-accent-400">Completed ✓</span>
                                         ) : (
                                           <>
                                             {set.loggedWeight || "—"}
@@ -782,7 +782,7 @@ export default function ChartsView({
                                   setDeleteConfirmId(null);
                                   setExpandedSessionId(null);
                                 }}
-                                className="flex-1 py-2 rounded-xl text-[11px] font-bold text-red-400 border border-red-400/25 bg-red-400/8 hover:bg-red-400/15 transition-all"
+                                className="flex-1 py-2 rounded-xl text-[11px] font-bold text-danger-400 border border-danger-400/25 bg-danger-400/8 hover:bg-danger-400/15 transition-all"
                               >
                                 Delete session
                               </button>
@@ -793,7 +793,7 @@ export default function ChartsView({
                                 e.stopPropagation();
                                 setDeleteConfirmId(session.id);
                               }}
-                              className="flex items-center gap-1.5 text-[10px] font-bold text-neutral-600 hover:text-red-400 transition-colors"
+                              className="flex items-center gap-1.5 text-[10px] font-bold text-neutral-600 hover:text-danger-400 transition-colors"
                             >
                               <Trash2 size={11} />
                               Delete this session
@@ -893,7 +893,7 @@ function MuscleRecoveryHeatmapCard({
               className={cn(
                 "px-2.5 py-1.5 rounded-lg border text-[9px] font-black uppercase tracking-[0.18em] transition-all",
                 activeSide === side
-                  ? "bg-lime-400/12 border-lime-400/25 text-lime-400"
+                  ? "bg-accent-400/12 border-accent-400/25 text-accent-400"
                   : "bg-white/4 border-white/8 text-neutral-500 hover:bg-white/7 hover:text-neutral-300"
               )}
             >
@@ -904,7 +904,7 @@ function MuscleRecoveryHeatmapCard({
       </div>
 
       <div className="grid gap-4">
-        <div className="rounded-2xl border border-white/7 bg-[radial-gradient(circle_at_top,rgba(163,230,53,0.08),transparent_55%),linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))] p-4">
+        <div className="rounded-2xl border border-white/7 bg-[radial-gradient(circle_at_top,color-mix(in_oklab,_var(--color-accent-400)_8%,_transparent),transparent_55%),linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01))] p-4">
           <MuscleHeatmapSvg activeSide={activeSide} regionsById={regionsById} />
         </div>
 

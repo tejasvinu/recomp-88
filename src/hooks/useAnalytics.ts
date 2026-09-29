@@ -131,10 +131,10 @@ export const MUSCLE_STATUS_STYLES: Record<
     MuscleRecoveryStatus,
     { fill: string; stroke: string; chip: string; copy: string }
 > = {
-    fatigued: { fill: 'rgba(248, 113, 113, 0.88)', stroke: 'rgba(252, 165, 165, 0.95)', chip: 'text-red-300 bg-red-400/12 border-red-400/25', copy: 'High recent workload' },
-    recovering: { fill: 'rgba(251, 191, 36, 0.82)', stroke: 'rgba(252, 211, 77, 0.95)', chip: 'text-amber-300 bg-amber-400/12 border-amber-400/25', copy: 'Still settling from recent work' },
-    ready: { fill: 'rgba(163, 230, 53, 0.78)', stroke: 'rgba(190, 242, 100, 0.95)', chip: 'text-lime-300 bg-lime-400/12 border-lime-400/25', copy: 'Recovered and ready' },
-    undertrained: { fill: 'rgba(82, 82, 91, 0.55)', stroke: 'rgba(161, 161, 170, 0.65)', chip: 'text-neutral-300 bg-white/6 border-white/10', copy: 'Very little weighted work this week' },
+    fatigued: { fill: 'color-mix(in oklab, var(--color-danger-400) 88%, transparent)', stroke: 'color-mix(in oklab, var(--color-danger-300) 95%, transparent)', chip: 'text-danger-300 bg-danger-400/12 border-danger-400/25', copy: 'High recent workload' },
+    recovering: { fill: 'color-mix(in oklab, var(--color-warn-400) 82%, transparent)', stroke: 'color-mix(in oklab, var(--color-warn-300) 95%, transparent)', chip: 'text-warn-300 bg-warn-400/12 border-warn-400/25', copy: 'Still settling from recent work' },
+    ready: { fill: 'color-mix(in oklab, var(--color-accent-400) 78%, transparent)', stroke: 'color-mix(in oklab, var(--color-accent-300) 95%, transparent)', chip: 'text-accent-300 bg-accent-400/12 border-accent-400/25', copy: 'Recovered and ready' },
+    undertrained: { fill: 'rgba(82,82,91,0.55)', stroke: 'rgba(161,161,170,0.65)', chip: 'text-neutral-300 bg-white/6 border-white/10', copy: 'Very little weighted work this week' },
 };
 
 // ─── Pure helpers (module-level, tree-shaken) ─────────────────────────────────

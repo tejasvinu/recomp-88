@@ -141,11 +141,11 @@ export default function StretchingTab({
                     initial="initial"
                     animate="animate"
                     exit="exit"
-                    className="w-full max-w-3xl mx-auto pb-24 text-zinc-50 font-sans selection:bg-lime-400 selection:text-black px-4 sm:px-0"
+                    className="w-full max-w-3xl mx-auto pb-24 text-zinc-50 font-sans selection:bg-accent-400 selection:text-black px-4 sm:px-0"
                 >
                     <header className="pt-8 pb-8 border-b border-white/8 relative">
                         {/* Decorative background glow */}
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-lime-400/5 rounded-full blur-[50px] pointer-events-none" />
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-accent-400/5 rounded-full blur-[50px] pointer-events-none" />
 
                         <div className="flex items-center justify-between gap-4 relative z-10">
                             <div>
@@ -156,7 +156,7 @@ export default function StretchingTab({
                                     Optimize your body. Choose structured mobility flows or intense training extras.
                                 </p>
                             </div>
-                            <div className="w-12 h-12 rounded-2xl bg-linear-to-br from-white/10 to-white/5 border border-white/10 flex items-center justify-center text-lime-400 shadow-xl">
+                            <div className="w-12 h-12 rounded-2xl bg-linear-to-br from-white/10 to-white/5 border border-white/10 flex items-center justify-center text-accent-400 shadow-xl">
                                 <Activity size={24} />
                             </div>
                         </div>
@@ -170,20 +170,20 @@ export default function StretchingTab({
                             onClick={() => setZone('mobility')}
                             className={cn(
                                 'rounded-3xl border text-left p-6 transition-all duration-300 relative overflow-hidden group',
-                                'bg-zinc-900/50 border-lime-400/20 hover:border-lime-400/40 hover:bg-zinc-900',
+                                'bg-zinc-900/50 border-accent-400/20 hover:border-accent-400/40 hover:bg-zinc-900',
                                 'shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]',
                             )}
                         >
                             <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
-                                <HeartPulse size={120} className="text-lime-400 -translate-y-8 translate-x-8" />
+                                <HeartPulse size={120} className="text-accent-400 -translate-y-8 translate-x-8" />
                             </div>
 
                             <div className="flex items-start gap-5 relative z-10">
-                                <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-lime-400/20 to-lime-400/5 border border-lime-400/30 flex items-center justify-center text-lime-400 shrink-0 shadow-[0_0_20px_rgba(163,230,53,0.1)] group-hover:shadow-[0_0_30px_rgba(163,230,53,0.2)] transition-shadow">
+                                <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-accent-400/20 to-accent-400/5 border border-accent-400/30 flex items-center justify-center text-accent-400 shrink-0 shadow-[0_0_20px_color-mix(in_oklab,_var(--color-accent-400)_10%,_transparent)] group-hover:shadow-[0_0_30px_color-mix(in_oklab,_var(--color-accent-400)_20%,_transparent)] transition-shadow">
                                     <HeartPulse size={26} />
                                 </div>
                                 <div className="min-w-0 flex-1 pt-1">
-                                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-lime-400/90 mb-1">
+                                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-accent-400/90 mb-1">
                                         Mobility & stretching
                                     </p>
                                     <h3 className="text-xl font-black text-white tracking-tight">
@@ -193,7 +193,7 @@ export default function StretchingTab({
                                         Static stretches and slow flows for after training, tight days, or general flexibility.
                                     </p>
                                     <div className="mt-4 flex items-center gap-2">
-                                        <span className="px-2.5 py-1 rounded-full bg-lime-400/10 border border-lime-400/20 text-[11px] font-bold text-lime-300">
+                                        <span className="px-2.5 py-1 rounded-full bg-accent-400/10 border border-accent-400/20 text-[11px] font-bold text-accent-300">
                                             {StretchPrograms.length} routines
                                         </span>
                                     </div>
@@ -208,20 +208,20 @@ export default function StretchingTab({
                             onClick={() => setZone('training')}
                             className={cn(
                                 'rounded-3xl border text-left p-6 transition-all duration-300 relative overflow-hidden group',
-                                'bg-zinc-900/50 border-amber-400/20 hover:border-amber-400/40 hover:bg-zinc-900',
+                                'bg-zinc-900/50 border-warn-400/20 hover:border-warn-400/40 hover:bg-zinc-900',
                                 'shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]',
                             )}
                         >
                             <div className="absolute top-0 right-0 p-6 opacity-5 group-hover:opacity-10 transition-opacity">
-                                <Activity size={120} className="text-amber-400 -translate-y-8 translate-x-8" />
+                                <Activity size={120} className="text-warn-400 -translate-y-8 translate-x-8" />
                             </div>
 
                             <div className="flex items-start gap-5 relative z-10">
-                                <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-amber-400/20 via-orange-400/10 to-rose-400/20 border border-amber-400/30 flex items-center justify-center text-amber-400 shrink-0 shadow-[0_0_20px_rgba(251,191,36,0.1)] group-hover:shadow-[0_0_30px_rgba(251,191,36,0.2)] transition-all duration-500">
+                                <div className="w-14 h-14 rounded-2xl bg-linear-to-br from-warn-400/20 via-orange-400/10 to-rose-400/20 border border-warn-400/30 flex items-center justify-center text-warn-400 shrink-0 shadow-[0_0_20px_color-mix(in_oklab,_var(--color-warn-400)_10%,_transparent)] group-hover:shadow-[0_0_30px_color-mix(in_oklab,_var(--color-warn-400)_20%,_transparent)] transition-all duration-500">
                                     <Dumbbell size={26} className="-rotate-12 group-hover:rotate-0 transition-transform duration-500" />
                                 </div>
                                 <div className="min-w-0 flex-1 pt-1">
-                                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-amber-400/90 mb-1">
+                                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-warn-400/90 mb-1">
                                         Training extras
                                     </p>
                                     <h3 className="text-xl font-black text-white tracking-tight">
@@ -231,7 +231,7 @@ export default function StretchingTab({
                                         Short, higher-effort blocks meant around your main lifts — not replacement stretching.
                                     </p>
                                     <div className="mt-4 flex items-center gap-2">
-                                        <span className="px-2.5 py-1 rounded-full bg-amber-400/10 border border-amber-400/20 text-[11px] font-bold text-amber-300">
+                                        <span className="px-2.5 py-1 rounded-full bg-warn-400/10 border border-warn-400/20 text-[11px] font-bold text-warn-300">
                                             {PrimerPrograms.length} primers
                                         </span>
                                         <span className="px-2.5 py-1 rounded-full bg-rose-400/10 border border-rose-400/20 text-[11px] font-bold text-rose-300">
@@ -252,9 +252,9 @@ export default function StretchingTab({
                     initial="initial"
                     animate="animate"
                     exit="exit"
-                    className="w-full max-w-3xl mx-auto pb-24 text-zinc-50 font-sans selection:bg-lime-400 selection:text-black px-4 sm:px-0"
+                    className="w-full max-w-3xl mx-auto pb-24 text-zinc-50 font-sans selection:bg-accent-400 selection:text-black px-4 sm:px-0"
                 >
-                    <header className="pt-4 pb-6 border-b border-white/8 sticky top-0 bg-[#080808]/95 backdrop-blur-xl z-20">
+                    <header className="pt-4 pb-6 border-b border-white/8 sticky top-0 bg-canvas/95 backdrop-blur-xl z-20">
                         <button
                             type="button"
                             onClick={() => {
@@ -269,14 +269,14 @@ export default function StretchingTab({
                         </button>
                         <div className="flex items-start justify-between gap-3">
                             <div>
-                                <h2 className="text-2xl font-black tracking-tight text-lime-300">
+                                <h2 className="text-2xl font-black tracking-tight text-accent-300">
                                     Mobility Flows
                                 </h2>
                                 <p className="text-sm text-zinc-400 font-medium mt-1">
                                     Stretching and slow movement — search by muscle or goal.
                                 </p>
                             </div>
-                            <div className="w-10 h-10 rounded-xl bg-lime-400/10 border border-lime-400/20 flex items-center justify-center text-lime-400">
+                            <div className="w-10 h-10 rounded-xl bg-accent-400/10 border border-accent-400/20 flex items-center justify-center text-accent-400">
                                 <HeartPulse size={20} />
                             </div>
                         </div>
@@ -290,7 +290,7 @@ export default function StretchingTab({
                                 placeholder="Search routines, muscles, goals…"
                                 value={searchMobility}
                                 onChange={(event) => setSearchMobility(event.target.value)}
-                                className="w-full bg-zinc-900/80 border border-white/10 rounded-xl py-3.5 pl-12 pr-4 text-[15px] font-medium text-white placeholder-zinc-500 outline-none focus:ring-2 focus:ring-lime-400/30 focus:border-lime-400/40 transition-all shadow-inner"
+                                className="w-full bg-zinc-900/80 border border-white/10 rounded-xl py-3.5 pl-12 pr-4 text-[15px] font-medium text-white placeholder-zinc-500 outline-none focus:ring-2 focus:ring-accent-400/30 focus:border-accent-400/40 transition-all shadow-inner"
                             />
                         </div>
                     </header>
@@ -332,9 +332,9 @@ export default function StretchingTab({
                     initial="initial"
                     animate="animate"
                     exit="exit"
-                    className="w-full max-w-3xl mx-auto pb-24 text-zinc-50 font-sans selection:bg-amber-400 selection:text-black px-4 sm:px-0"
+                    className="w-full max-w-3xl mx-auto pb-24 text-zinc-50 font-sans selection:bg-warn-400 selection:text-black px-4 sm:px-0"
                 >
-                    <header className="pt-4 pb-6 border-b border-white/8 sticky top-0 bg-[#080808]/95 backdrop-blur-xl z-20">
+                    <header className="pt-4 pb-6 border-b border-white/8 sticky top-0 bg-canvas/95 backdrop-blur-xl z-20">
                         <button
                             type="button"
                             onClick={() => {
@@ -366,7 +366,7 @@ export default function StretchingTab({
                                 placeholder="Search primers and finishers…"
                                 value={searchTraining}
                                 onChange={(event) => setSearchTraining(event.target.value)}
-                                className="w-full bg-zinc-900/80 border border-white/10 rounded-xl py-3.5 pl-12 pr-4 text-[15px] font-medium text-white placeholder-zinc-500 outline-none focus:ring-2 focus:ring-amber-400/30 focus:border-amber-400/40 transition-all shadow-inner"
+                                className="w-full bg-zinc-900/80 border border-white/10 rounded-xl py-3.5 pl-12 pr-4 text-[15px] font-medium text-white placeholder-zinc-500 outline-none focus:ring-2 focus:ring-warn-400/30 focus:border-warn-400/40 transition-all shadow-inner"
                             />
                         </div>
                     </header>
@@ -374,8 +374,8 @@ export default function StretchingTab({
                     <section className="py-6 space-y-10">
                         <div>
                             <div className="flex items-center gap-2.5 mb-4 px-1">
-                                <Sparkles size={18} className="text-amber-400" />
-                                <h3 className="text-xs font-black uppercase tracking-[0.2em] text-amber-300">
+                                <Sparkles size={18} className="text-warn-400" />
+                                <h3 className="text-xs font-black uppercase tracking-[0.2em] text-warn-300">
                                     Primers
                                 </h3>
                                 <span className="text-[11px] text-zinc-500 font-medium">— before lifting</span>
@@ -511,7 +511,7 @@ function MobilityProgramRow({
                         className={cn(
                             'flex items-center justify-center gap-1.5 rounded-xl border px-4 py-2.5',
                             'text-xs font-black uppercase tracking-widest',
-                            'text-lime-300 bg-lime-400/10 border-lime-400/20 hover:bg-lime-400/20 hover:border-lime-400/30 transition-all active:scale-95 shadow-sm',
+                            'text-accent-300 bg-accent-400/10 border-accent-400/20 hover:bg-accent-400/20 hover:border-accent-400/30 transition-all active:scale-95 shadow-sm',
                         )}
                     >
                         <Timer size={14} />
@@ -573,7 +573,7 @@ function TrainingProgramRow({
     const moveCount = program.stretches.length;
     const isPrimer = variant === 'primer';
     const accent = isPrimer
-        ? 'text-amber-300 bg-amber-400/10 border-amber-400/20 hover:bg-amber-400/20 hover:border-amber-400/30'
+        ? 'text-warn-300 bg-warn-400/10 border-warn-400/20 hover:bg-warn-400/20 hover:border-warn-400/30'
         : 'text-rose-300 bg-rose-400/10 border-rose-400/20 hover:bg-rose-400/20 hover:border-rose-400/30';
     const badge = isPrimer ? 'Primer' : 'Finisher';
 
@@ -581,7 +581,7 @@ function TrainingProgramRow({
         <div
             className={cn(
                 'rounded-2xl border px-4 py-4 flex items-center gap-4 transition-colors hover:border-white/20',
-                isPrimer ? 'border-amber-400/15 bg-amber-400/5' : 'border-rose-400/15 bg-rose-400/5',
+                isPrimer ? 'border-warn-400/15 bg-warn-400/5' : 'border-rose-400/15 bg-rose-400/5',
             )}
         >
             <div className="min-w-0 flex-1">
@@ -590,7 +590,7 @@ function TrainingProgramRow({
                         className={cn(
                             'text-[10px] font-black uppercase tracking-[0.14em] px-2 py-0.5 rounded-md border',
                             isPrimer
-                                ? 'text-amber-400 border-amber-400/30 bg-amber-400/10'
+                                ? 'text-warn-400 border-warn-400/30 bg-warn-400/10'
                                 : 'text-rose-400 border-rose-400/30 bg-rose-400/10',
                         )}
                     >

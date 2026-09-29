@@ -65,10 +65,10 @@ function getStats(sessions: SessionHistory) {
 
 const syncLabels: Record<SyncStatus, { text: string; color: string }> = {
   idle: { text: "Not synced yet", color: "text-neutral-500" },
-  syncing: { text: "Syncing…", color: "text-lime-400" },
-  synced: { text: "Synced", color: "text-lime-400" },
-  error: { text: "Sync failed", color: "text-red-400" },
-  offline: { text: "Offline", color: "text-amber-400" },
+  syncing: { text: "Syncing…", color: "text-accent-400" },
+  synced: { text: "Synced", color: "text-accent-400" },
+  error: { text: "Sync failed", color: "text-danger-400" },
+  offline: { text: "Offline", color: "text-warn-400" },
 };
 
 export default function ProfileTab({
@@ -139,11 +139,11 @@ export default function ProfileTab({
                   className="w-14 h-14 rounded-2xl object-cover border border-white/10"
                 />
               ) : (
-                <div className="w-14 h-14 rounded-2xl bg-lime-400/10 border border-lime-400/20 flex items-center justify-center">
-                  <User size={24} className="text-lime-400" />
+                <div className="w-14 h-14 rounded-2xl bg-accent-400/10 border border-accent-400/20 flex items-center justify-center">
+                  <User size={24} className="text-accent-400" />
                 </div>
               )}
-              <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-lime-400 border-2 border-[#080808]" />
+              <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-accent-400 border-2 border-canvas" />
             </div>
 
             {/* Info */}
@@ -162,13 +162,13 @@ export default function ProfileTab({
                         }
                       }}
                       autoFocus
-                      className="flex-1 bg-white/5 border border-lime-400/30 rounded-lg px-2 py-1 text-sm text-neutral-100 focus:outline-none"
+                      className="flex-1 bg-white/5 border border-accent-400/30 rounded-lg px-2 py-1 text-sm text-neutral-100 focus:outline-none"
                     />
-                    <button onClick={saveName} disabled={saving} className="text-lime-400 hover:text-lime-300">
+                    <button onClick={saveName} disabled={saving} className="text-accent-400 hover:text-accent-300">
                       {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
                     </button>
                   </div>
-                  {saveError && <p className="text-[10px] text-red-400 mb-1">{saveError}</p>}
+                  {saveError && <p className="text-[10px] text-danger-400 mb-1">{saveError}</p>}
                 </>
               ) : (
                 <div className="flex items-center gap-1.5 mb-0.5">
@@ -187,7 +187,7 @@ export default function ProfileTab({
               )}
               <p className="text-xs text-neutral-500 truncate">{session.user?.email}</p>
               <div className="flex items-center gap-1 mt-1.5">
-                <div className={cn("w-1.5 h-1.5 rounded-full", syncStatus === "synced" ? "bg-lime-400" : syncStatus === "error" ? "bg-red-400" : syncStatus === "syncing" ? "bg-lime-400 animate-pulse" : "bg-neutral-600")} />
+                <div className={cn("w-1.5 h-1.5 rounded-full", syncStatus === "synced" ? "bg-accent-400" : syncStatus === "error" ? "bg-danger-400" : syncStatus === "syncing" ? "bg-accent-400 animate-pulse" : "bg-neutral-600")} />
                 <span className={cn("text-[10px] font-semibold uppercase tracking-widest", syncLabel.color)}>
                   {syncLabel.text}
                 </span>
@@ -211,7 +211,7 @@ export default function ProfileTab({
             </p>
             <button
               onClick={() => signIn()}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-lime-400 text-neutral-950 text-xs font-black uppercase tracking-widest hover:bg-lime-300 transition-all shadow-[0_0_15px_rgba(163,230,53,0.25)]"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent-400 text-neutral-950 text-xs font-black uppercase tracking-widest hover:bg-accent-300 transition-all shadow-[0_0_15px_color-mix(in_oklab,_var(--color-accent-400)_25%,_transparent)]"
             >
               <LogIn size={14} />
               Sign In
@@ -225,13 +225,13 @@ export default function ProfileTab({
         <div className="bg-neutral-900/60 border border-white/6 rounded-2xl overflow-hidden">
           <div className="px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-xl bg-lime-400/10 border border-lime-400/20 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-xl bg-accent-400/10 border border-accent-400/20 flex items-center justify-center">
                 {syncStatus === "syncing" ? (
-                  <Loader2 size={15} className="text-lime-400 animate-spin" />
+                  <Loader2 size={15} className="text-accent-400 animate-spin" />
                 ) : syncStatus === "error" ? (
-                  <CloudOff size={15} className="text-red-400" />
+                  <CloudOff size={15} className="text-danger-400" />
                 ) : (
-                  <CloudUpload size={15} className="text-lime-400" />
+                  <CloudUpload size={15} className="text-accent-400" />
                 )}
               </div>
               <div>
@@ -248,20 +248,20 @@ export default function ProfileTab({
             <button
               onClick={onManualSync}
               disabled={syncStatus === "syncing"}
-              className="px-3 py-1.5 rounded-lg bg-lime-400/10 border border-lime-400/20 text-lime-400 text-[10px] font-bold uppercase tracking-widest hover:bg-lime-400/20 transition-all disabled:opacity-50"
+              className="px-3 py-1.5 rounded-lg bg-accent-400/10 border border-accent-400/20 text-accent-400 text-[10px] font-bold uppercase tracking-widest hover:bg-accent-400/20 transition-all disabled:opacity-50"
             >
               Sync Now
             </button>
           </div>
           {mergeSummary && (
             <div className="px-4 pb-3 pt-0 border-t border-white/4">
-              <div className="flex gap-2 rounded-xl bg-sky-400/8 border border-sky-400/15 px-3 py-2.5">
-                <Info size={14} className="text-sky-400 shrink-0 mt-0.5" aria-hidden />
-                <p className="text-[11px] text-sky-200/90 leading-snug flex-1">{mergeSummary}</p>
+              <div className="flex gap-2 rounded-xl bg-info-400/8 border border-info-400/15 px-3 py-2.5">
+                <Info size={14} className="text-info-400 shrink-0 mt-0.5" aria-hidden />
+                <p className="text-[11px] text-info-200/90 leading-snug flex-1">{mergeSummary}</p>
                 <button
                   type="button"
                   onClick={onDismissMergeSummary}
-                  className="shrink-0 text-sky-500/80 hover:text-sky-300 p-0.5 rounded"
+                  className="shrink-0 text-info-500/80 hover:text-info-300 p-0.5 rounded"
                   aria-label="Dismiss merge note"
                 >
                   <X size={14} />
@@ -277,9 +277,9 @@ export default function ProfileTab({
         <h2 className="text-[10px] font-bold uppercase tracking-widest text-neutral-600 mb-2 px-1">Stats</h2>
         <div className="grid grid-cols-2 gap-2">
           {[
-            { icon: Trophy, label: "Workouts", value: stats.totalWorkouts.toString(), color: "text-lime-400" },
-            { icon: Activity, label: "Streak", value: `${stats.streak}d`, color: "text-amber-400" },
-            { icon: CalendarDays, label: "Sets Logged", value: stats.totalSets.toString(), color: "text-sky-400" },
+            { icon: Trophy, label: "Workouts", value: stats.totalWorkouts.toString(), color: "text-accent-400" },
+            { icon: Activity, label: "Streak", value: `${stats.streak}d`, color: "text-warn-400" },
+            { icon: CalendarDays, label: "Sets Logged", value: stats.totalSets.toString(), color: "text-info-400" },
             { icon: Scale, label: "Body Weight", value: latestBW ? `${latestBW.weight} ${weightUnit}` : "—", color: "text-purple-400" },
           ].map(({ icon: Icon, label, value, color }) => (
             <div key={label} className="bg-neutral-900/60 border border-white/6 rounded-2xl p-4 flex items-center gap-3">
@@ -306,7 +306,7 @@ export default function ProfileTab({
           </div>
           <div className="text-right">
             <p className="text-[10px] text-neutral-600 uppercase tracking-widest mb-0.5">Favourite Day</p>
-            <p className="font-bold text-lime-400 text-sm">{stats.favDay}</p>
+            <p className="font-bold text-accent-400 text-sm">{stats.favDay}</p>
           </div>
         </div>
       )}
@@ -321,7 +321,7 @@ export default function ProfileTab({
               className="w-full flex items-center justify-between px-4 py-3.5 hover:bg-white/4 transition-colors group"
             >
               <div className="flex items-center gap-3">
-                <LogOut size={15} className="text-red-400" />
+                <LogOut size={15} className="text-danger-400" />
                 <span className="text-sm font-semibold text-neutral-300 group-hover:text-white transition-colors">Sign Out</span>
               </div>
               <ChevronRight size={14} className="text-neutral-700" />
@@ -331,10 +331,10 @@ export default function ProfileTab({
       )}
 
       {!isLoggedIn && sessions.length > 0 && (
-        <div className="bg-amber-400/5 border border-amber-400/15 rounded-2xl px-4 py-3 flex items-start gap-3">
-          <Lock size={15} className="text-amber-400 mt-0.5 shrink-0" />
-          <p className="text-xs text-amber-300/80">
-            You have <strong className="text-amber-400">{sessions.length} workout sessions</strong> only on this device. Sign in to back them up before clearing browser data or switching devices.
+        <div className="bg-warn-400/5 border border-warn-400/15 rounded-2xl px-4 py-3 flex items-start gap-3">
+          <Lock size={15} className="text-warn-400 mt-0.5 shrink-0" />
+          <p className="text-xs text-warn-300/80">
+            You have <strong className="text-warn-400">{sessions.length} workout sessions</strong> only on this device. Sign in to back them up before clearing browser data or switching devices.
           </p>
         </div>
       )}

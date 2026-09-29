@@ -83,12 +83,12 @@ export default memo(function ExerciseCard({
                         {hasWikiEntry && (
                             <button
                                 onClick={() => onOpenExerciseInfo(exercise.name)}
-                                className="shrink-0 w-6 h-6 bg-white/5 hover:bg-lime-400/15 rounded-full flex items-center justify-center transition-colors group border border-white/6 hover:border-lime-400/30"
+                                className="shrink-0 w-6 h-6 bg-white/5 hover:bg-accent-400/15 rounded-full flex items-center justify-center transition-colors group border border-white/6 hover:border-accent-400/30"
                                 aria-label={`View info for ${exercise.name}`}
                             >
                                 <Info
                                     size={12}
-                                    className="text-neutral-500 group-hover:text-lime-400 transition-colors"
+                                    className="text-neutral-500 group-hover:text-accent-400 transition-colors"
                                 />
                             </button>
                         )}
@@ -98,22 +98,22 @@ export default memo(function ExerciseCard({
                                 className={cn(
                                     "shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition-colors border relative",
                                     isNoteOpen || hasNote
-                                        ? "bg-lime-400/15 border-lime-400/30 text-lime-400"
-                                        : "bg-white/5 border-white/6 text-neutral-500 hover:bg-lime-400/10 hover:text-lime-400/80 hover:border-lime-400/20"
+                                        ? "bg-accent-400/15 border-accent-400/30 text-accent-400"
+                                        : "bg-white/5 border-white/6 text-neutral-500 hover:bg-accent-400/10 hover:text-accent-400/80 hover:border-accent-400/20"
                                 )}
                                 aria-label={`${isNoteOpen ? "Close" : "Open"} notes for ${exercise.name}`}
                                 aria-expanded={isNoteOpen}
                             >
                                 <FileText size={11} />
                                 {hasNote && !isNoteOpen && (
-                                    <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-lime-400 rounded-full" />
+                                    <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-accent-400 rounded-full" />
                                 )}
                             </button>
                         )}
                         {exercise.type !== "other" && hasLastSession && (
                             <button
                                 onClick={() => onLoadLastSession(exercise.id)}
-                                className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition-colors border bg-white/5 border-white/6 text-neutral-500 hover:bg-sky-400/10 hover:text-sky-400 hover:border-sky-400/20"
+                                className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center transition-colors border bg-white/5 border-white/6 text-neutral-500 hover:bg-info-400/10 hover:text-info-400 hover:border-info-400/20"
                                 aria-label={`Load last session values for ${exercise.name}`}
                             >
                                 <History size={11} />
@@ -127,7 +127,7 @@ export default memo(function ExerciseCard({
                                     "text-[9px] uppercase font-black tracking-widest px-2 py-0.5 rounded-md border",
                                     exercise.type === "strength"
                                         ? "text-orange-400 bg-orange-500/10 border-orange-500/20"
-                                        : "text-sky-400 bg-sky-500/10 border-sky-500/20"
+                                        : "text-info-400 bg-info-500/10 border-info-500/20"
                                 )}
                             >
                                 {exercise.type === "strength" ? "Strength" : "Hypertrophy"}
@@ -144,7 +144,7 @@ export default memo(function ExerciseCard({
                                 className={cn(
                                     "text-[9px] uppercase font-black tracking-widest px-2 py-0.5 rounded-md border transition-all",
                                     isBwActive
-                                        ? "text-lime-400 bg-lime-400/10 border-lime-400/25"
+                                        ? "text-accent-400 bg-accent-400/10 border-accent-400/25"
                                         : "text-neutral-600 bg-white/3 border-white/6 hover:text-neutral-400 hover:bg-white/6"
                                 )}
                                 aria-label="Toggle bodyweight for all sets"
@@ -201,7 +201,7 @@ export default memo(function ExerciseCard({
                             <button
                                 type="button"
                                 onClick={() => onRemoveExtraSet(dayId, exercise.id, set.id)}
-                                className="self-end flex items-center gap-1.5 px-2 py-1 rounded-lg border border-red-400/15 bg-red-400/6 text-[9px] font-black uppercase tracking-widest text-red-300/80 hover:bg-red-400/12 hover:text-red-300 transition-all"
+                                className="self-end flex items-center gap-1.5 px-2 py-1 rounded-lg border border-danger-400/15 bg-danger-400/6 text-[9px] font-black uppercase tracking-widest text-danger-300/80 hover:bg-danger-400/12 hover:text-danger-300 transition-all"
                                 aria-label={`Remove extra set ${extraSetNumber}`}
                             >
                                 <Trash2 size={10} />
@@ -221,7 +221,7 @@ export default memo(function ExerciseCard({
                         className={cn(
                             "w-full active:scale-[0.98] flex items-center justify-center gap-2 py-2.5 rounded-xl border text-[10px] font-black uppercase tracking-[0.16em] transition-all",
                             plannedSetsComplete
-                                ? "bg-lime-400/10 border-lime-400/25 text-lime-400 hover:bg-lime-400/16"
+                                ? "bg-accent-400/10 border-accent-400/25 text-accent-400 hover:bg-accent-400/16"
                                 : "bg-white/3 border-white/6 text-neutral-600 cursor-not-allowed"
                         )}
                     >
@@ -244,7 +244,7 @@ export default memo(function ExerciseCard({
                         onChange={(e) => onNoteChange(exercise.id, e.target.value)}
                         placeholder="Add notes for this exercise… (cues, feel, adjustments)"
                         rows={3}
-                        className="w-full bg-white/4 border border-white/7 rounded-xl p-3 text-[12px] text-neutral-200 placeholder-neutral-600 outline-none focus:ring-1 focus:ring-lime-400/30 focus:border-lime-400/20 resize-none font-medium leading-relaxed transition-all"
+                        className="w-full bg-white/4 border border-white/7 rounded-xl p-3 text-[12px] text-neutral-200 placeholder-neutral-600 outline-none focus:ring-1 focus:ring-accent-400/30 focus:border-accent-400/20 resize-none font-medium leading-relaxed transition-all"
                         aria-label={`Notes for ${exercise.name}`}
                     />
                     <p className="text-[9px] text-neutral-700 font-medium mt-1.5 px-1 uppercase tracking-wider">

@@ -39,12 +39,12 @@ export default function FinishConfirmModal({
             <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" />
             <div
                 onClick={(e) => e.stopPropagation()}
-                className="relative z-10 w-full max-w-md bg-[#0e0e0e] border border-white/8 shadow-[0_0_60px_rgba(0,0,0,0.9)] rounded-t-3xl sm:rounded-2xl overflow-hidden animate-slide-up p-5"
+                className="relative z-10 w-full max-w-md bg-sheet border border-white/8 shadow-[0_0_60px_rgba(0,0,0,0.9)] rounded-t-3xl sm:rounded-2xl overflow-hidden animate-slide-up p-5"
             >
                 <div className="w-10 h-1 bg-white/12 rounded-full mx-auto mb-5 sm:hidden" />
                 <div className="flex flex-col items-center text-center gap-4">
-                    <div className="w-14 h-14 bg-lime-400/10 border border-lime-400/20 rounded-2xl flex items-center justify-center">
-                        <Save size={24} className="text-lime-400" />
+                    <div className="w-14 h-14 bg-accent-400/10 border border-accent-400/20 rounded-2xl flex items-center justify-center">
+                        <Save size={24} className="text-accent-400" />
                     </div>
                     <div>
                         <h3
@@ -59,7 +59,7 @@ export default function FinishConfirmModal({
                         {elapsedSeconds > 0 && (
                             <p className="text-[11px] text-neutral-600 font-medium mt-2">
                                 Duration:{" "}
-                                <span className="text-lime-400 font-mono">{formatTime(elapsedSeconds)}</span>
+                                <span className="text-accent-400 font-mono">{formatTime(elapsedSeconds)}</span>
                             </p>
                         )}
                     </div>
@@ -74,7 +74,7 @@ export default function FinishConfirmModal({
                         <button
                             onClick={handleConfirm}
                             disabled={isSaving}
-                            className="flex-1 py-3 rounded-xl border border-lime-400/30 bg-lime-400/15 text-lime-400 font-black text-[13px] hover:bg-lime-400/25 transition-all disabled:opacity-50"
+                            className="flex-1 py-3 rounded-xl border border-accent-400/30 bg-accent-400/15 text-accent-400 font-black text-[13px] hover:bg-accent-400/25 transition-all disabled:opacity-50"
                         >
                             {isSaving ? "Saving..." : "Save Workout"}
                         </button>

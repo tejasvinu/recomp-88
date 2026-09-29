@@ -46,17 +46,17 @@ const DEFAULT_OPEN_SECTIONS: SectionId[] = ["setup", "cues", "swaps"];
 
 const CATEGORY_BADGES: Record<string, string> = {
   Push: "text-orange-400 bg-orange-400/10 border-orange-400/20",
-  Pull: "text-sky-400 bg-sky-400/10 border-sky-400/20",
+  Pull: "text-info-400 bg-info-400/10 border-info-400/20",
   Legs: "text-purple-400 bg-purple-400/10 border-purple-400/20",
-  Core: "text-amber-400 bg-amber-400/10 border-amber-400/20",
+  Core: "text-warn-400 bg-warn-400/10 border-warn-400/20",
   "Cardio/Mobility": "text-emerald-400 bg-emerald-400/10 border-emerald-400/20",
 };
 
 const SECTION_TONE_STYLES: Record<SectionTone, string> = {
-  lime: "text-lime-400 bg-lime-400/10 border-lime-400/20",
-  sky: "text-sky-400 bg-sky-400/10 border-sky-400/20",
-  red: "text-red-400 bg-red-400/10 border-red-400/20",
-  amber: "text-amber-300 bg-amber-400/10 border-amber-400/20",
+  lime: "text-accent-400 bg-accent-400/10 border-accent-400/20",
+  sky: "text-info-400 bg-info-400/10 border-info-400/20",
+  red: "text-danger-400 bg-danger-400/10 border-danger-400/20",
+  amber: "text-warn-300 bg-warn-400/10 border-warn-400/20",
   violet: "text-violet-300 bg-violet-400/10 border-violet-400/20",
   neutral: "text-neutral-300 bg-white/6 border-white/10",
 };
@@ -212,12 +212,12 @@ export default function ExerciseDetailModal({ entry, onClose }: ExerciseDetailMo
       <div
         ref={dialogRef}
         onClick={(event) => event.stopPropagation()}
-        className="relative z-10 flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-t-[28px] border border-white/8 bg-[#0e0e0e] shadow-[0_0_60px_rgba(0,0,0,0.9)] animate-slide-up sm:rounded-3xl"
+        className="relative z-10 flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-t-[28px] border border-white/8 bg-sheet shadow-[0_0_60px_rgba(0,0,0,0.9)] animate-slide-up sm:rounded-3xl"
         role="dialog"
         aria-modal="true"
         aria-labelledby="exercise-detail-title"
       >
-        <div className="sticky top-0 z-20 shrink-0 border-b border-white/6 bg-[#0e0e0e]/95 px-4 pb-4 pt-4 backdrop-blur-xl sm:px-5">
+        <div className="sticky top-0 z-20 shrink-0 border-b border-white/6 bg-sheet/95 px-4 pb-4 pt-4 backdrop-blur-xl sm:px-5">
           <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-white/12 sm:hidden" />
 
           <div className="flex items-start justify-between gap-3">
@@ -234,7 +234,7 @@ export default function ExerciseDetailModal({ entry, onClose }: ExerciseDetailMo
               )}
 
               <div className="min-w-0">
-                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-lime-400">
+                <p className="text-[10px] font-black uppercase tracking-[0.18em] text-accent-400">
                   {currentEntry.category}
                   {currentEntry.movementPattern
                     ? ` · ${currentEntry.movementPattern}`
@@ -326,12 +326,12 @@ function ExerciseDetailContent({
             </span>
             {entry.difficulty && <DetailPill>{entry.difficulty}</DetailPill>}
             {isFreeWeightFriendly(entry) && (
-              <DetailPill className="border-lime-400/20 bg-lime-400/10 text-lime-400">
+              <DetailPill className="border-accent-400/20 bg-accent-400/10 text-accent-400">
                 Free Weight
               </DetailPill>
             )}
             {isHomeGymFriendly(entry) && (
-              <DetailPill className="border-sky-400/20 bg-sky-400/10 text-sky-400">
+              <DetailPill className="border-info-400/20 bg-info-400/10 text-info-400">
                 Home Gym
               </DetailPill>
             )}
@@ -409,7 +409,7 @@ function ExerciseDetailContent({
                   key={checkItem}
                   className="flex items-start gap-3 rounded-xl border border-white/6 bg-black/20 p-3"
                 >
-                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl border border-lime-400/20 bg-lime-400/10 text-[11px] font-black text-lime-400">
+                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl border border-accent-400/20 bg-accent-400/10 text-[11px] font-black text-accent-400">
                     {index + 1}
                   </span>
                   <span className="text-sm font-medium leading-relaxed text-neutral-200">
@@ -437,7 +437,7 @@ function ExerciseDetailContent({
                   key={`${entry.id}-cue-${index}`}
                   className="flex items-start gap-3 rounded-xl border border-white/6 bg-black/20 p-3"
                 >
-                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-sky-400/20 bg-sky-400/10 text-[11px] font-black text-sky-400">
+                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-info-400/20 bg-info-400/10 text-[11px] font-black text-info-400">
                     {index + 1}
                   </span>
                   <span className="text-sm font-medium leading-relaxed text-neutral-200">
@@ -463,9 +463,9 @@ function ExerciseDetailContent({
               {entry.commonMistakes.map((mistake, index) => (
                 <li
                   key={`${entry.id}-mistake-${index}`}
-                  className="flex items-start gap-3 rounded-xl border border-red-400/10 bg-red-400/4 p-3"
+                  className="flex items-start gap-3 rounded-xl border border-danger-400/10 bg-danger-400/4 p-3"
                 >
-                  <span className="mt-[7px] h-2 w-2 shrink-0 rounded-full bg-red-400/75" />
+                  <span className="mt-[7px] h-2 w-2 shrink-0 rounded-full bg-danger-400/75" />
                   <span className="text-sm font-medium leading-relaxed text-neutral-200">
                     {mistake}
                   </span>
@@ -495,7 +495,7 @@ function ExerciseDetailContent({
               {accessFriendlyAlternatives.length > 0 && (
                 <div className="space-y-3">
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-lime-400">
+                    <p className="text-[10px] font-black uppercase tracking-[0.18em] text-accent-400">
                       Access-Friendly Picks
                     </p>
                     <p className="mt-1 text-[12px] leading-relaxed text-neutral-500">
@@ -614,7 +614,7 @@ function ExerciseDetailContent({
                   <div className="absolute inset-0 bg-linear-to-t from-black/85 via-black/40 to-black/10" />
                   <div className="absolute inset-0 flex items-end justify-between gap-3 p-4">
                     <div className="min-w-0">
-                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-lime-400">
+                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-accent-400">
                         Tutorial Video
                       </p>
                       <p className="mt-1 text-sm font-semibold text-white">
@@ -657,10 +657,10 @@ function ExerciseDetailContent({
             isOpen={isSectionOpen("notes")}
             onToggle={() => toggleSection("notes")}
           >
-            <div className="rounded-xl border border-amber-400/20 bg-amber-400/6 p-4">
+            <div className="rounded-xl border border-warn-400/20 bg-warn-400/6 p-4">
               <div className="mb-2 flex items-center gap-2">
-                <Zap size={12} className="text-amber-300" />
-                <span className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-300">
+                <Zap size={12} className="text-warn-300" />
+                <span className="text-[10px] font-black uppercase tracking-[0.18em] text-warn-300">
                   Programming Note
                 </span>
               </div>
@@ -809,11 +809,11 @@ function AlternativeCard({
     <button
       type="button"
       onClick={onSelect}
-      className="group rounded-2xl border border-white/8 bg-white/4 p-3.5 text-left transition-all hover:border-lime-400/20 hover:bg-lime-400/6"
+      className="group rounded-2xl border border-white/8 bg-white/4 p-3.5 text-left transition-all hover:border-accent-400/20 hover:bg-accent-400/6"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-sm font-bold leading-snug text-white transition-colors group-hover:text-lime-300">
+          <p className="text-sm font-bold leading-snug text-white transition-colors group-hover:text-accent-300">
             {entry.name}
           </p>
           <p className="mt-1 text-[12px] font-medium capitalize leading-relaxed text-neutral-500">
@@ -823,7 +823,7 @@ function AlternativeCard({
 
         <ArrowUpRight
           size={16}
-          className="mt-0.5 shrink-0 text-neutral-500 transition-colors group-hover:text-lime-300"
+          className="mt-0.5 shrink-0 text-neutral-500 transition-colors group-hover:text-accent-300"
         />
       </div>
 
@@ -834,8 +834,8 @@ function AlternativeCard({
             className={cn(
               "rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.14em]",
               badge === "Free Weight"
-                ? "border-lime-400/20 bg-lime-400/10 text-lime-400"
-                : "border-sky-400/20 bg-sky-400/10 text-sky-400"
+                ? "border-accent-400/20 bg-accent-400/10 text-accent-400"
+                : "border-info-400/20 bg-info-400/10 text-info-400"
             )}
           >
             {badge}

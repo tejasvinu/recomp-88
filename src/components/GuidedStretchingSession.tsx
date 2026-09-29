@@ -248,14 +248,14 @@ export default function GuidedStretchingSession({ program, onClose, soundEnabled
     if (isComplete) {
         return (
             <div className="fixed inset-0 z-[100] bg-neutral-950 flex flex-col items-center justify-center p-6 text-center">
-                <div className="w-24 h-24 bg-lime-400/20 rounded-full flex items-center justify-center mb-6 animate-bounce">
-                    <CheckCircle2 size={48} className="text-lime-400" />
+                <div className="w-24 h-24 bg-accent-400/20 rounded-full flex items-center justify-center mb-6 animate-bounce">
+                    <CheckCircle2 size={48} className="text-accent-400" />
                 </div>
                 <h2 className="text-3xl font-black uppercase tracking-tighter text-white mb-2">Session Complete!</h2>
                 <p className="text-neutral-400 mb-8 max-w-xs">You&apos;ve finished the {program.name} program. Great job!</p>
                 <button
                     onClick={onClose}
-                    className="w-full max-w-xs py-4 bg-lime-400 text-neutral-950 font-black uppercase tracking-widest rounded-2xl active:scale-95 transition-all"
+                    className="w-full max-w-xs py-4 bg-accent-400 text-neutral-950 font-black uppercase tracking-widest rounded-2xl active:scale-95 transition-all"
                 >
                     Finish
                 </button>
@@ -268,7 +268,7 @@ export default function GuidedStretchingSession({ program, onClose, soundEnabled
             {/* Header */}
             <div className="p-6 flex items-center justify-between">
                 <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-lime-400 mb-1">{program.name}</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-accent-400 mb-1">{program.name}</p>
                     <h1 className="text-xl font-black uppercase tracking-tight flex items-center gap-2">
                         {isBreak ? "Next Up" : currentStretch.name}
                         {!isBreak && sides > 1 && (
@@ -313,15 +313,15 @@ export default function GuidedStretchingSession({ program, onClose, soundEnabled
                                 className={cn(
                                     "transition-all duration-1000 ease-linear",
                                     isBreak 
-                                        ? "text-amber-400 drop-shadow-[0_0_10px_rgba(251,191,36,0.5)]" 
-                                        : "text-lime-400 drop-shadow-[0_0_10px_rgba(163,230,53,0.5)]"
+                                        ? "text-warn-400 drop-shadow-[0_0_10px_color-mix(in_oklab,_var(--color-warn-400)_50%,_transparent)]" 
+                                        : "text-accent-400 drop-shadow-[0_0_10px_color-mix(in_oklab,_var(--color-accent-400)_50%,_transparent)]"
                                 )}
                                 strokeLinecap="round"
                             />
                         </svg>
                         
                         <div className="text-center absolute inset-0 flex flex-col items-center justify-center">
-                            <span className={cn("text-3xl sm:text-4xl font-black tabular-nums tracking-tighter leading-none mt-1", isBreak ? "text-amber-400" : "text-white")}>
+                            <span className={cn("text-3xl sm:text-4xl font-black tabular-nums tracking-tighter leading-none mt-1", isBreak ? "text-warn-400" : "text-white")}>
                                 {timeLeft}
                             </span>
                             <span className="text-[8px] font-black uppercase tracking-widest text-neutral-500 mt-0.5 hidden sm:block">Sec</span>
@@ -329,7 +329,7 @@ export default function GuidedStretchingSession({ program, onClose, soundEnabled
                     </div>
 
                     <div className="flex-1 min-w-0 flex flex-col justify-center">
-                        <h2 className={cn("text-lg sm:text-2xl font-black uppercase tracking-tight mb-2 leading-tight", isBreak ? "text-amber-400" : "text-white")}>
+                        <h2 className={cn("text-lg sm:text-2xl font-black uppercase tracking-tight mb-2 leading-tight", isBreak ? "text-warn-400" : "text-white")}>
                             {isBreak ? currentStretch.name : currentStretch.name}
                         </h2>
                         <p className="text-neutral-400 text-xs sm:text-sm leading-relaxed max-w-[280px]">
@@ -354,14 +354,14 @@ export default function GuidedStretchingSession({ program, onClose, soundEnabled
                                 <div className="text-left bg-neutral-900/50 backdrop-blur-sm border border-white/10 rounded-2xl p-5 shadow-xl space-y-5">
                                     {currentStretch.instructions && currentStretch.instructions.length > 0 && (
                                         <div>
-                                            <h3 className="text-[10px] uppercase font-black tracking-[0.2em] text-lime-400 mb-3 ml-2 flex items-center gap-2">
-                                                <span className="w-1 h-1 rounded-full bg-lime-400 animate-pulse"></span>
+                                            <h3 className="text-[10px] uppercase font-black tracking-[0.2em] text-accent-400 mb-3 ml-2 flex items-center gap-2">
+                                                <span className="w-1 h-1 rounded-full bg-accent-400 animate-pulse"></span>
                                                 Instructions
                                             </h3>
                                             <ul className="space-y-2">
                                                 {currentStretch.instructions.map((inst, i) => (
                                                     <li key={i} className="text-[11px] text-neutral-300 flex items-start gap-3">
-                                                        <span className="text-lime-400/50 font-mono mt-0.5 shrink-0">{i + 1}.</span> 
+                                                        <span className="text-accent-400/50 font-mono mt-0.5 shrink-0">{i + 1}.</span> 
                                                         <span className="leading-snug">{inst}</span>
                                                     </li>
                                                 ))}
@@ -371,14 +371,14 @@ export default function GuidedStretchingSession({ program, onClose, soundEnabled
 
                                     {currentStretch.cues && currentStretch.cues.length > 0 && (
                                         <div className={cn(currentStretch.instructions?.length ? "pt-4 border-t border-white/5" : "")}>
-                                            <h3 className="text-[10px] uppercase font-black tracking-[0.2em] text-sky-400 mb-3 ml-2 flex items-center gap-2">
-                                                <span className="w-1 h-1 rounded-full bg-sky-400"></span>
+                                            <h3 className="text-[10px] uppercase font-black tracking-[0.2em] text-info-400 mb-3 ml-2 flex items-center gap-2">
+                                                <span className="w-1 h-1 rounded-full bg-info-400"></span>
                                                 Pointers
                                             </h3>
                                             <ul className="space-y-2.5">
                                                 {currentStretch.cues.map((cue, i) => (
                                                     <li key={i} className="text-[11px] text-neutral-400 flex items-start gap-3">
-                                                        <span className="text-sky-400/50 font-mono mt-0.5 shrink-0 text-lg leading-[0.5] mt-1.5">·</span> 
+                                                        <span className="text-info-400/50 font-mono mt-0.5 shrink-0 text-lg leading-[0.5] mt-1.5">·</span> 
                                                         <span className="leading-snug block">{cue}</span>
                                                     </li>
                                                 ))}
@@ -388,14 +388,14 @@ export default function GuidedStretchingSession({ program, onClose, soundEnabled
 
                                     {currentStretch.commonMistakes && currentStretch.commonMistakes.length > 0 && (
                                         <div className={cn((currentStretch.instructions?.length || currentStretch.cues?.length) ? "pt-4 border-t border-white/5" : "")}>
-                                            <h3 className="text-[10px] uppercase font-black tracking-[0.2em] text-red-400 mb-3 ml-2 flex items-center gap-2">
-                                                <span className="w-1 h-1 rounded-full bg-red-400 shadow-[0_0_8px_rgba(248,113,113,0.6)]"></span>
+                                            <h3 className="text-[10px] uppercase font-black tracking-[0.2em] text-danger-400 mb-3 ml-2 flex items-center gap-2">
+                                                <span className="w-1 h-1 rounded-full bg-danger-400 shadow-[0_0_8px_color-mix(in_oklab,_var(--color-danger-400)_60%,_transparent)]"></span>
                                                 Things to Notice
                                             </h3>
                                             <ul className="space-y-2">
                                                 {currentStretch.commonMistakes.map((mistake, i) => (
-                                                    <li key={i} className="text-[10px] font-medium text-neutral-400 flex items-start gap-2.5 bg-red-400/5 border border-red-400/10 p-2.5 rounded-lg">
-                                                        <span className="text-red-400/80 font-mono shrink-0">!</span> 
+                                                    <li key={i} className="text-[10px] font-medium text-neutral-400 flex items-start gap-2.5 bg-danger-400/5 border border-danger-400/10 p-2.5 rounded-lg">
+                                                        <span className="text-danger-400/80 font-mono shrink-0">!</span> 
                                                         <span className="leading-snug text-neutral-300">{mistake}</span>
                                                     </li>
                                                 ))}
@@ -432,7 +432,7 @@ export default function GuidedStretchingSession({ program, onClose, soundEnabled
                         "w-20 h-20 flex items-center justify-center rounded-3xl transition-all active:scale-95 shadow-[0_0_30px_rgba(0,0,0,0.5)] hover:bg-opacity-90",
                         isActive 
                             ? "bg-white text-neutral-950 shadow-white/20" 
-                            : "bg-lime-400 text-neutral-950 shadow-lime-400/30"
+                            : "bg-accent-400 text-neutral-950 shadow-accent-400/30"
                     )}
                 >
                     {isActive ? <Pause size={32} fill="currentColor" /> : <Play size={32} fill="currentColor" className="ml-1" />}
@@ -458,7 +458,7 @@ export default function GuidedStretchingSession({ program, onClose, soundEnabled
                         key={idx}
                         className={cn(
                             "h-1 rounded-full transition-all duration-300",
-                            idx === currentIndex ? "w-6 bg-lime-400" : idx < currentIndex ? "w-2 bg-lime-400/40" : "w-2 bg-white/10"
+                            idx === currentIndex ? "w-6 bg-accent-400" : idx < currentIndex ? "w-2 bg-accent-400/40" : "w-2 bg-white/10"
                         )}
                     />
                 ))}

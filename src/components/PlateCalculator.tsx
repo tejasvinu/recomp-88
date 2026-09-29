@@ -26,10 +26,10 @@ const BAR_OPTIONS_LBS = [
 ];
 
 const PLATE_STYLES: Record<number, { bg: string; border: string; text: string; heightClass: string }> = {
-  45: { bg: "bg-red-500/80", border: "border-red-400", text: "text-white", heightClass: "h-16" },
-  35: { bg: "bg-sky-500/80", border: "border-sky-400", text: "text-white", heightClass: "h-14" },
-  25: { bg: "bg-red-500/80", border: "border-red-400", text: "text-white", heightClass: "h-16" },
-  20: { bg: "bg-sky-500/80", border: "border-sky-400", text: "text-white", heightClass: "h-14" },
+  45: { bg: "bg-danger-500/80", border: "border-danger-400", text: "text-white", heightClass: "h-16" },
+  35: { bg: "bg-info-500/80", border: "border-info-400", text: "text-white", heightClass: "h-14" },
+  25: { bg: "bg-danger-500/80", border: "border-danger-400", text: "text-white", heightClass: "h-16" },
+  20: { bg: "bg-info-500/80", border: "border-info-400", text: "text-white", heightClass: "h-14" },
   15: { bg: "bg-yellow-500/80", border: "border-yellow-400", text: "text-neutral-900", heightClass: "h-12" },
   10: { bg: "bg-green-500/80", border: "border-green-400", text: "text-white", heightClass: "h-10" },
   5: { bg: "bg-neutral-200/80", border: "border-neutral-300", text: "text-neutral-900", heightClass: "h-8" },
@@ -104,15 +104,15 @@ export default function PlateCalculator({ onClose, weightUnit }: PlateCalculator
       <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" />
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative z-10 w-full max-w-md bg-[#0e0e0e] border border-white/8 shadow-[0_0_60px_rgba(0,0,0,0.9)] rounded-t-3xl sm:rounded-2xl overflow-hidden flex flex-col animate-slide-up"
+        className="relative z-10 w-full max-w-md bg-sheet border border-white/8 shadow-[0_0_60px_rgba(0,0,0,0.9)] rounded-t-3xl sm:rounded-2xl overflow-hidden flex flex-col animate-slide-up"
       >
         {/* Header */}
         <div className="border-b border-white/6 px-5 pt-5 pb-4 shrink-0">
           <div className="w-10 h-1 bg-white/12 rounded-full mx-auto mb-4 sm:hidden" />
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 bg-lime-400/10 border border-lime-400/20 rounded-xl flex items-center justify-center">
-                <Calculator size={16} className="text-lime-400" />
+              <div className="w-8 h-8 bg-accent-400/10 border border-accent-400/20 rounded-xl flex items-center justify-center">
+                <Calculator size={16} className="text-accent-400" />
               </div>
               <h2 className="text-[16px] font-black text-white tracking-wide">Plate Calculator</h2>
             </div>
@@ -141,7 +141,7 @@ export default function PlateCalculator({ onClose, weightUnit }: PlateCalculator
                 onChange={(e) => setTargetWeight(e.target.value)}
                 onFocus={(e) => e.target.select()}
                 autoFocus
-                className="w-full bg-white/5 border border-white/8 rounded-xl py-3.5 pl-4 pr-14 text-2xl font-mono font-bold text-white placeholder-neutral-700 outline-none focus:ring-1 focus:ring-lime-400/40 focus:border-lime-400/30 transition-all"
+                className="w-full bg-white/5 border border-white/8 rounded-xl py-3.5 pl-4 pr-14 text-2xl font-mono font-bold text-white placeholder-neutral-700 outline-none focus:ring-1 focus:ring-accent-400/40 focus:border-accent-400/30 transition-all"
               />
               <span className="absolute right-4 top-1/2 -translate-y-1/2 text-[12px] font-bold text-neutral-500 uppercase tracking-widest">
                 {weightUnit}
@@ -162,7 +162,7 @@ export default function PlateCalculator({ onClose, weightUnit }: PlateCalculator
                   className={cn(
                     "flex-1 py-2.5 rounded-xl border text-center transition-all duration-200",
                     barWeight === opt.value
-                      ? "bg-lime-400 text-neutral-950 border-lime-400 shadow-[0_0_10px_rgba(163,230,53,0.2)]"
+                      ? "bg-accent-400 text-neutral-950 border-accent-400 shadow-[0_0_10px_color-mix(in_oklab,_var(--color-accent-400)_20%,_transparent)]"
                       : "bg-white/4 text-neutral-400 border-white/8 hover:bg-white/8 hover:text-neutral-200"
                   )}
                 >
@@ -188,7 +188,7 @@ export default function PlateCalculator({ onClose, weightUnit }: PlateCalculator
                 className={cn(
                   "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all",
                   mode === "plates"
-                    ? "bg-lime-400 text-neutral-950"
+                    ? "bg-accent-400 text-neutral-950"
                     : "text-neutral-500 hover:text-neutral-300"
                 )}
               >
@@ -200,7 +200,7 @@ export default function PlateCalculator({ onClose, weightUnit }: PlateCalculator
                 className={cn(
                   "flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all",
                   mode === "warmup"
-                    ? "bg-lime-400 text-neutral-950"
+                    ? "bg-accent-400 text-neutral-950"
                     : "text-neutral-500 hover:text-neutral-300"
                 )}
               >
@@ -227,7 +227,7 @@ export default function PlateCalculator({ onClose, weightUnit }: PlateCalculator
                   <div
                     className={cn(
                       "flex items-center justify-between rounded-xl px-4 py-3 border",
-                      isExact ? "bg-lime-400/8 border-lime-400/25" : "bg-white/3 border-white/6"
+                      isExact ? "bg-accent-400/8 border-accent-400/25" : "bg-white/3 border-white/6"
                     )}
                   >
                     <div>
@@ -237,7 +237,7 @@ export default function PlateCalculator({ onClose, weightUnit }: PlateCalculator
                       <p
                         className={cn(
                           "text-xl font-mono font-bold tabular-nums mt-0.5",
-                          isExact ? "text-lime-400" : "text-white"
+                          isExact ? "text-accent-400" : "text-white"
                         )}
                       >
                         {achievable}
@@ -359,7 +359,7 @@ export default function PlateCalculator({ onClose, weightUnit }: PlateCalculator
           {mode === "warmup" && target > barWeight && (
             <div className="flex flex-col gap-2">
               <p className="text-[10px] font-black uppercase tracking-widest text-neutral-500 mb-1 flex items-center gap-2">
-                <Flame size={11} className="text-lime-400" />
+                <Flame size={11} className="text-accent-400" />
                 Warm-Up Pyramid · Working: {target}{weightUnit}
               </p>
 
@@ -371,7 +371,7 @@ export default function PlateCalculator({ onClose, weightUnit }: PlateCalculator
                     className={cn(
                       "rounded-xl border px-4 py-3 transition-all",
                       isWorkingSet
-                        ? "bg-lime-400/8 border-lime-400/25"
+                        ? "bg-accent-400/8 border-accent-400/25"
                         : "bg-white/3 border-white/6"
                     )}
                   >
@@ -381,7 +381,7 @@ export default function PlateCalculator({ onClose, weightUnit }: PlateCalculator
                           className={cn(
                             "text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border",
                             isWorkingSet
-                              ? "text-lime-400 bg-lime-400/10 border-lime-400/25"
+                              ? "text-accent-400 bg-accent-400/10 border-accent-400/25"
                               : "text-neutral-500 bg-white/4 border-white/8"
                           )}
                         >
@@ -390,7 +390,7 @@ export default function PlateCalculator({ onClose, weightUnit }: PlateCalculator
                         <span
                           className={cn(
                             "text-[11px] font-mono font-bold",
-                            isWorkingSet ? "text-lime-400" : "text-white"
+                            isWorkingSet ? "text-accent-400" : "text-white"
                           )}
                         >
                           {achievableWeight}{weightUnit}
@@ -404,7 +404,7 @@ export default function PlateCalculator({ onClose, weightUnit }: PlateCalculator
                       <span
                         className={cn(
                           "text-[11px] font-black font-mono",
-                          isWorkingSet ? "text-lime-400" : "text-neutral-400"
+                          isWorkingSet ? "text-accent-400" : "text-neutral-400"
                         )}
                       >
                         ×{reps}

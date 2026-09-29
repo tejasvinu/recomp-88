@@ -106,7 +106,7 @@ export default function SettingsModal({
             <div className="absolute inset-0 bg-black/75 backdrop-blur-sm" />
             <div
                 onClick={(e) => e.stopPropagation()}
-                className="relative z-10 w-full max-w-md bg-[#0e0e0e] border border-white/8 shadow-[0_0_60px_rgba(0,0,0,0.9)] rounded-t-3xl sm:rounded-2xl overflow-hidden animate-slide-up"
+                className="relative z-10 w-full max-w-md bg-sheet border border-white/8 shadow-[0_0_60px_rgba(0,0,0,0.9)] rounded-t-3xl sm:rounded-2xl overflow-hidden animate-slide-up"
             >
                 <div className="border-b border-white/6 px-5 pt-5 pb-4">
                     <div className="w-10 h-1 bg-white/12 rounded-full mx-auto mb-4 sm:hidden" />
@@ -133,7 +133,7 @@ export default function SettingsModal({
                     {/* Rest Timer Customization */}
                     <div>
                         <p className="text-[10px] text-neutral-500 font-black uppercase tracking-widest mb-3 flex items-center gap-2">
-                            <Timer size={12} className="text-lime-400" />
+                            <Timer size={12} className="text-accent-400" />
                             Rest Timers
                         </p>
                         <div className="flex flex-col gap-2">
@@ -167,7 +167,7 @@ export default function SettingsModal({
                                         >
                                             <Minus size={12} />
                                         </button>
-                                        <span className="text-[14px] font-mono font-bold text-lime-400 tabular-nums w-12 text-center">
+                                        <span className="text-[14px] font-mono font-bold text-accent-400 tabular-nums w-12 text-center">
                                             {value}s
                                         </span>
                                         <button
@@ -186,7 +186,7 @@ export default function SettingsModal({
                     {/* Weight Unit Toggle */}
                     <div>
                         <p className="text-[10px] text-neutral-500 font-black uppercase tracking-widest mb-3 flex items-center gap-2">
-                            <Scale size={12} className="text-lime-400" />
+                            <Scale size={12} className="text-accent-400" />
                             Weight Unit
                         </p>
                         <div className="flex gap-2">
@@ -197,7 +197,7 @@ export default function SettingsModal({
                                     className={cn(
                                         "flex-1 py-3 rounded-xl border font-bold text-[13px] uppercase tracking-widest transition-all",
                                         weightUnit === unit
-                                            ? "bg-lime-400/15 border-lime-400/30 text-lime-400"
+                                            ? "bg-accent-400/15 border-accent-400/30 text-accent-400"
                                             : "bg-white/4 border-white/7 text-neutral-500 hover:bg-white/7 hover:text-neutral-300"
                                     )}
                                 >
@@ -211,7 +211,7 @@ export default function SettingsModal({
                     <div>
                         <p className="text-[10px] text-neutral-500 font-black uppercase tracking-widest mb-3 flex items-center gap-2">
                             {soundEnabled ? (
-                                <Volume2 size={12} className="text-lime-400" />
+                                <Volume2 size={12} className="text-accent-400" />
                             ) : (
                                 <VolumeX size={12} className="text-neutral-500" />
                             )}
@@ -232,14 +232,14 @@ export default function SettingsModal({
                                 className={cn(
                                     "w-11 h-6 rounded-full border transition-all relative shrink-0",
                                     soundEnabled
-                                        ? "bg-lime-400/20 border-lime-400/40"
+                                        ? "bg-accent-400/20 border-accent-400/40"
                                         : "bg-white/6 border-white/10"
                                 )}
                             >
                                 <div
                                     className={cn(
                                         "absolute top-0.5 w-5 h-5 rounded-full transition-all duration-200",
-                                        soundEnabled ? "left-5 bg-lime-400" : "left-0.5 bg-neutral-500"
+                                        soundEnabled ? "left-5 bg-accent-400" : "left-0.5 bg-neutral-500"
                                     )}
                                 />
                             </div>
@@ -249,7 +249,7 @@ export default function SettingsModal({
                     {/* Workout Template */}
                     <div>
                         <p className="text-[10px] text-neutral-500 font-black uppercase tracking-widest mb-3 flex items-center gap-2">
-                            <Dumbbell size={12} className="text-lime-400" />
+                            <Dumbbell size={12} className="text-accent-400" />
                             Workout Program
                         </p>
 
@@ -258,11 +258,11 @@ export default function SettingsModal({
                                 onClick={onOpenWorkoutEditor}
                                 className="flex items-center gap-3 w-full bg-white/4 hover:bg-white/7 border border-white/8 rounded-xl px-4 py-3.5 transition-all group"
                             >
-                                <div className="w-9 h-9 bg-lime-400/10 border border-lime-400/20 rounded-xl flex items-center justify-center shrink-0">
-                                    <Dumbbell size={16} className="text-lime-400" />
+                                <div className="w-9 h-9 bg-accent-400/10 border border-accent-400/20 rounded-xl flex items-center justify-center shrink-0">
+                                    <Dumbbell size={16} className="text-accent-400" />
                                 </div>
                                 <div className="text-left">
-                                    <p className="text-[13px] font-bold text-white group-hover:text-lime-400 transition-colors">
+                                    <p className="text-[13px] font-bold text-white group-hover:text-accent-400 transition-colors">
                                         Edit Workout
                                     </p>
                                     <p className="text-[10px] text-neutral-500 font-medium mt-0.5">
@@ -275,8 +275,8 @@ export default function SettingsModal({
                                 onClick={onApplyFreeWeightWorkout}
                                 className="flex items-center gap-3 w-full bg-white/4 hover:bg-white/7 border border-white/8 rounded-xl px-4 py-3.5 transition-all group"
                             >
-                                <div className="w-9 h-9 bg-sky-400/10 border border-sky-400/20 rounded-xl flex items-center justify-center shrink-0">
-                                    <ArrowLeftRight size={16} className="text-sky-400" />
+                                <div className="w-9 h-9 bg-info-400/10 border border-info-400/20 rounded-xl flex items-center justify-center shrink-0">
+                                    <ArrowLeftRight size={16} className="text-info-400" />
                                 </div>
                                 <div className="text-left">
                                     <p className="text-[13px] font-bold text-white">
@@ -313,7 +313,7 @@ export default function SettingsModal({
                     {/* Data / Backup */}
                     <div>
                         <p className="text-[10px] text-neutral-500 font-black uppercase tracking-widest mb-3 flex items-center gap-2">
-                            <Download size={12} className="text-lime-400" />
+                            <Download size={12} className="text-accent-400" />
                             Data Management
                         </p>
                         <div className="flex flex-col gap-2">
@@ -341,11 +341,11 @@ export default function SettingsModal({
                                 onClick={onExport}
                                 className="flex items-center gap-3 w-full bg-white/4 hover:bg-white/7 border border-white/8 rounded-xl px-4 py-3.5 transition-all group"
                             >
-                                <div className="w-9 h-9 bg-lime-400/10 border border-lime-400/20 rounded-xl flex items-center justify-center shrink-0">
-                                    <Download size={16} className="text-lime-400" />
+                                <div className="w-9 h-9 bg-accent-400/10 border border-accent-400/20 rounded-xl flex items-center justify-center shrink-0">
+                                    <Download size={16} className="text-accent-400" />
                                 </div>
                                 <div className="text-left">
-                                    <p className="text-[13px] font-bold text-white group-hover:text-lime-400 transition-colors">
+                                    <p className="text-[13px] font-bold text-white group-hover:text-accent-400 transition-colors">
                                         Export Full Backup
                                     </p>
                                     <p className="text-[10px] text-neutral-500 font-medium mt-0.5">
@@ -358,11 +358,11 @@ export default function SettingsModal({
                                 onClick={onExportCsv}
                                 className="flex items-center gap-3 w-full bg-white/4 hover:bg-white/7 border border-white/8 rounded-xl px-4 py-3.5 transition-all group"
                             >
-                                <div className="w-9 h-9 bg-sky-400/10 border border-sky-400/20 rounded-xl flex items-center justify-center shrink-0">
-                                    <Download size={16} className="text-sky-400" />
+                                <div className="w-9 h-9 bg-info-400/10 border border-info-400/20 rounded-xl flex items-center justify-center shrink-0">
+                                    <Download size={16} className="text-info-400" />
                                 </div>
                                 <div className="text-left">
-                                    <p className="text-[13px] font-bold text-white group-hover:text-sky-400 transition-colors">
+                                    <p className="text-[13px] font-bold text-white group-hover:text-info-400 transition-colors">
                                         Export CSV
                                     </p>
                                     <p className="text-[10px] text-neutral-500 font-medium mt-0.5">
@@ -429,14 +429,14 @@ export default function SettingsModal({
                 <div className="pt-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] mt-2 border-t border-white/6 flex justify-center">
                     <button
                         onClick={() => setConfirmAction("clear-data")}
-                        className="bg-red-400/10 hover:bg-red-400/20 text-red-400 font-bold uppercase tracking-widest text-[11px] px-6 py-3 rounded-xl border border-red-400/20 transition-all active:scale-95"
+                        className="bg-danger-400/10 hover:bg-danger-400/20 text-danger-400 font-bold uppercase tracking-widest text-[11px] px-6 py-3 rounded-xl border border-danger-400/20 transition-all active:scale-95"
                     >
                         Delete All Data
                     </button>
                 </div>
                 {confirmAction && (
                     <div className="absolute inset-0 z-20 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-                        <div className="w-full rounded-2xl border border-white/10 bg-[#111] p-5 shadow-2xl">
+                        <div className="w-full rounded-2xl border border-white/10 bg-raised p-5 shadow-2xl">
                             <p className="text-[15px] font-black text-white tracking-wide">
                                 {confirmCopy.title}
                             </p>
@@ -454,7 +454,7 @@ export default function SettingsModal({
                                 <button
                                     type="button"
                                     onClick={handleConfirmAction}
-                                    className="rounded-xl border border-red-400/30 bg-red-400/15 py-3 text-[11px] font-black uppercase tracking-widest text-red-300 transition-all hover:bg-red-400/25"
+                                    className="rounded-xl border border-danger-400/30 bg-danger-400/15 py-3 text-[11px] font-black uppercase tracking-widest text-danger-300 transition-all hover:bg-danger-400/25"
                                 >
                                     {confirmCopy.confirm}
                                 </button>

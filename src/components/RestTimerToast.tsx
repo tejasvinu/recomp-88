@@ -39,7 +39,7 @@ export default function RestTimerToast({
                 <div
                     className={cn(
                         "h-full transition-all duration-1000 ease-linear",
-                        isPaused ? "bg-yellow-400" : "bg-lime-400"
+                        isPaused ? "bg-yellow-400" : "bg-accent-400"
                     )}
                     style={{ width: `${timerPercent}%` }}
                 />
@@ -51,13 +51,13 @@ export default function RestTimerToast({
                             "w-9 h-9 border rounded-xl flex items-center justify-center shrink-0",
                             isPaused
                                 ? "bg-yellow-400/10 border-yellow-400/20"
-                                : "bg-lime-400/10 border-lime-400/20"
+                                : "bg-accent-400/10 border-accent-400/20"
                         )}
                     >
                         <Timer
                             size={18}
                             strokeWidth={2}
-                            className={isPaused ? "text-yellow-400" : "text-lime-400"}
+                            className={isPaused ? "text-yellow-400" : "text-accent-400"}
                         />
                     </div>
                     <div>

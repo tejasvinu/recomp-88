@@ -72,9 +72,9 @@ export default function InstallPrompt() {
             "fixed left-0 right-0 z-[100] px-4 pb-4 sm:pb-[calc(env(safe-area-inset-bottom)+1rem)] transform transition-transform duration-500",
             "bottom-[4.5rem]" // Place it just above the bottom nav
         )}>
-            <div className="max-w-md mx-auto bg-[#111] border border-white/10 p-4 rounded-2xl shadow-2xl flex items-center gap-4 animate-slide-up">
-                <div className="w-12 h-12 rounded-xl bg-lime-400/10 border border-lime-400/20 flex flex-shrink-0 items-center justify-center">
-                    <Download size={22} className="text-lime-400" />
+            <div className="max-w-md mx-auto bg-raised border border-white/10 p-4 rounded-2xl shadow-2xl flex items-center gap-4 animate-slide-up">
+                <div className="w-12 h-12 rounded-xl bg-accent-400/10 border border-accent-400/20 flex flex-shrink-0 items-center justify-center">
+                    <Download size={22} className="text-accent-400" />
                 </div>
 
                 <div className="flex-1 min-w-0">
@@ -97,7 +97,7 @@ export default function InstallPrompt() {
 
                     <button
                         onClick={handleInstallClick}
-                        className="px-3 py-1.5 h-8 bg-lime-400 text-neutral-950 font-bold text-[11px] uppercase tracking-wider rounded-lg hover:bg-lime-300 active:scale-95 transition-all shadow-[0_0_15px_rgba(163,230,53,0.3)]"
+                        className="px-3 py-1.5 h-8 bg-accent-400 text-neutral-950 font-bold text-[11px] uppercase tracking-wider rounded-lg hover:bg-accent-300 active:scale-95 transition-all shadow-[0_0_15px_color-mix(in_oklab,_var(--color-accent-400)_30%,_transparent)]"
                     >
                         Install
                     </button>

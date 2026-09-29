@@ -401,14 +401,14 @@ export default function WorkoutEditorModal({
             <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
 
             <div
-                className="relative z-10 w-full max-w-3xl bg-[#0e0e0e] border border-white/8 shadow-[0_0_60px_rgba(0,0,0,0.9)] rounded-t-3xl sm:rounded-3xl overflow-hidden"
+                className="relative z-10 w-full max-w-3xl bg-sheet border border-white/8 shadow-[0_0_60px_rgba(0,0,0,0.9)] rounded-t-3xl sm:rounded-3xl overflow-hidden"
                 onClick={(event) => event.stopPropagation()}
             >
                 <div className="border-b border-white/6 px-5 pt-5 pb-4">
                     <div className="w-10 h-1 bg-white/12 rounded-full mx-auto mb-4 sm:hidden" />
                     <div className="flex items-start justify-between gap-4">
                         <div>
-                            <p className="text-[10px] text-lime-400 font-black uppercase tracking-[0.2em] mb-2">
+                            <p className="text-[10px] text-accent-400 font-black uppercase tracking-[0.2em] mb-2">
                                 Configurable Program
                             </p>
                             <h2
@@ -457,7 +457,7 @@ export default function WorkoutEditorModal({
                                     className={cn(
                                         "shrink-0 px-3.5 py-2 rounded-xl border text-[11px] font-bold uppercase tracking-widest transition-all",
                                         selectedDayIndex === index
-                                            ? "bg-lime-400/15 border-lime-400/30 text-lime-400"
+                                            ? "bg-accent-400/15 border-accent-400/30 text-accent-400"
                                             : "bg-white/4 border-white/7 text-neutral-500 hover:bg-white/7 hover:text-neutral-300"
                                     )}
                                 >
@@ -492,7 +492,7 @@ export default function WorkoutEditorModal({
                                             title: event.target.value,
                                         }))
                                     }
-                                    className="bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm font-semibold text-white placeholder-neutral-600 outline-none focus:ring-1 focus:ring-lime-400/30 focus:border-lime-400/20 transition-all"
+                                    className="bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm font-semibold text-white placeholder-neutral-600 outline-none focus:ring-1 focus:ring-accent-400/30 focus:border-accent-400/20 transition-all"
                                     placeholder="Day 1"
                                 />
                             </label>
@@ -509,7 +509,7 @@ export default function WorkoutEditorModal({
                                             name: event.target.value,
                                         }))
                                     }
-                                    className="bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm font-semibold text-white placeholder-neutral-600 outline-none focus:ring-1 focus:ring-lime-400/30 focus:border-lime-400/20 transition-all"
+                                    className="bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm font-semibold text-white placeholder-neutral-600 outline-none focus:ring-1 focus:ring-accent-400/30 focus:border-accent-400/20 transition-all"
                                     placeholder="Heavy Push"
                                 />
                             </label>
@@ -566,7 +566,7 @@ export default function WorkoutEditorModal({
                             </label>
 
                             <label className="flex flex-col gap-1.5 md:col-span-1">
-                                <span className="text-[10px] text-amber-500/80 font-black uppercase tracking-widest">
+                                <span className="text-[10px] text-warn-500/80 font-black uppercase tracking-widest">
                                     Session Primer (Warm-Up)
                                 </span>
                                 <DarkSelect
@@ -585,7 +585,7 @@ export default function WorkoutEditorModal({
                                             label: program.name,
                                         })),
                                     ]}
-                                    className="focus:border-amber-400/20 focus:ring-amber-400/30"
+                                    className="focus:border-warn-400/20 focus:ring-warn-400/30"
                                 />
                             </label>
 
@@ -636,7 +636,7 @@ export default function WorkoutEditorModal({
                                         triggerLabelMode="placeholder"
                                         placeholder="Add from full library..."
                                         options={exerciseLibraryOptions}
-                                        className="border-lime-400/20 bg-lime-400/8 text-[11px] uppercase tracking-widest"
+                                        className="border-accent-400/20 bg-accent-400/8 text-[11px] uppercase tracking-widest"
                                     />
                                 </div>
                                 <button
@@ -680,8 +680,8 @@ export default function WorkoutEditorModal({
                                                                 className={cn(
                                                                     "px-2 py-0.5 rounded-full border text-[9px] font-black uppercase tracking-[0.16em]",
                                                                     currentLinkType === "superset"
-                                                                        ? "border-lime-400/20 bg-lime-400/10 text-lime-400"
-                                                                        : "border-sky-400/20 bg-sky-400/10 text-sky-400"
+                                                                        ? "border-accent-400/20 bg-accent-400/10 text-accent-400"
+                                                                        : "border-info-400/20 bg-info-400/10 text-info-400"
                                                                 )}
                                                             >
                                                                 {currentLinkType}
@@ -727,7 +727,7 @@ export default function WorkoutEditorModal({
                                                             "w-9 h-9 rounded-xl border flex items-center justify-center transition-all",
                                                             activeDay.exercises.length === 1
                                                                 ? "bg-white/4 border-white/6 text-neutral-700 cursor-not-allowed"
-                                                                : "bg-red-400/8 border-red-400/20 text-red-400 hover:bg-red-400/14"
+                                                                : "bg-danger-400/8 border-danger-400/20 text-danger-400 hover:bg-danger-400/14"
                                                         )}
                                                         aria-label={`Remove ${exercise.name}`}
                                                     >
@@ -756,7 +756,7 @@ export default function WorkoutEditorModal({
                                                                     alternatives: [],
                                                                     notes: '',
                                                                 })}
-                                                                className="text-[9px] text-lime-400 font-black uppercase tracking-widest hover:text-lime-300 transition-colors"
+                                                                className="text-[9px] text-accent-400 font-black uppercase tracking-widest hover:text-accent-300 transition-colors"
                                                             >
                                                                 + Save to Library
                                                             </button>
@@ -770,7 +770,7 @@ export default function WorkoutEditorModal({
                                                                 name: event.target.value,
                                                             }))
                                                         }
-                                                        className="bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm font-semibold text-white placeholder-neutral-600 outline-none focus:ring-1 focus:ring-lime-400/30 focus:border-lime-400/20 transition-all"
+                                                        className="bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm font-semibold text-white placeholder-neutral-600 outline-none focus:ring-1 focus:ring-accent-400/30 focus:border-accent-400/20 transition-all"
                                                         placeholder="Bench Press"
                                                     />
                                                 </label>
@@ -798,10 +798,10 @@ export default function WorkoutEditorModal({
                                                 </label>
                                             </div>
 
-                                            <div className="mt-3 rounded-2xl border border-lime-400/10 bg-[linear-gradient(135deg,rgba(163,230,53,0.07),rgba(255,255,255,0.03))] p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+                                            <div className="mt-3 rounded-2xl border border-accent-400/10 bg-[linear-gradient(135deg,color-mix(in_oklab,_var(--color-accent-400)_7%,_transparent),rgba(255,255,255,0.03))] p-3.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
                                                 <div className="flex items-start gap-3">
-                                                    <div className="w-9 h-9 rounded-xl bg-lime-400/10 border border-lime-400/20 flex items-center justify-center shrink-0">
-                                                        <ArrowLeftRight size={15} className="text-lime-400" />
+                                                    <div className="w-9 h-9 rounded-xl bg-accent-400/10 border border-accent-400/20 flex items-center justify-center shrink-0">
+                                                        <ArrowLeftRight size={15} className="text-accent-400" />
                                                     </div>
                                                     <div className="min-w-0 flex-1">
                                                         <div className="flex flex-wrap items-center gap-2">
@@ -809,13 +809,13 @@ export default function WorkoutEditorModal({
                                                                 Alternative Swaps
                                                             </p>
                                                             {swapOptions.category && (
-                                                                <span className="px-2 py-0.5 rounded-full border border-lime-400/20 bg-lime-400/10 text-[9px] font-black uppercase tracking-[0.16em] text-lime-400">
+                                                                <span className="px-2 py-0.5 rounded-full border border-accent-400/20 bg-accent-400/10 text-[9px] font-black uppercase tracking-[0.16em] text-accent-400">
                                                                     {swapOptions.category}
                                                                 </span>
                                                             )}
                                                             {swapOptions.currentEntry &&
                                                                 isHomeGymFriendly(swapOptions.currentEntry) && (
-                                                                    <span className="px-2 py-0.5 rounded-full border border-sky-400/20 bg-sky-400/10 text-[9px] font-black uppercase tracking-[0.16em] text-sky-400">
+                                                                    <span className="px-2 py-0.5 rounded-full border border-info-400/20 bg-info-400/10 text-[9px] font-black uppercase tracking-[0.16em] text-info-400">
                                                                         Home Gym Friendly
                                                                     </span>
                                                                 )}
@@ -840,7 +840,7 @@ export default function WorkoutEditorModal({
                                                                         alternativeName
                                                                     )
                                                                 }
-                                                                className="px-3 py-1.5 rounded-xl bg-black/25 border border-white/8 text-[10px] font-black uppercase tracking-[0.14em] text-neutral-200 hover:border-lime-400/25 hover:bg-lime-400/10 hover:text-lime-400 transition-all"
+                                                                className="px-3 py-1.5 rounded-xl bg-black/25 border border-white/8 text-[10px] font-black uppercase tracking-[0.14em] text-neutral-200 hover:border-accent-400/25 hover:bg-accent-400/10 hover:text-accent-400 transition-all"
                                                             >
                                                                 {alternativeName}
                                                             </button>
@@ -887,7 +887,7 @@ export default function WorkoutEditorModal({
                                                             details: event.target.value || undefined,
                                                         }))
                                                     }
-                                                    className="bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm font-semibold text-white placeholder-neutral-600 outline-none focus:ring-1 focus:ring-lime-400/30 focus:border-lime-400/20 transition-all"
+                                                    className="bg-white/5 border border-white/8 rounded-xl px-3 py-2.5 text-sm font-semibold text-white placeholder-neutral-600 outline-none focus:ring-1 focus:ring-accent-400/30 focus:border-accent-400/20 transition-all"
                                                     placeholder={
                                                         exercise.type === "other"
                                                             ? "45 mins, incline walk, mobility block..."
@@ -938,7 +938,7 @@ export default function WorkoutEditorModal({
                                                                         ),
                                                                     }))
                                                                 }
-                                                                className="bg-white/5 border border-white/8 rounded-lg px-3 py-2 text-sm font-semibold text-white placeholder-neutral-600 outline-none focus:ring-1 focus:ring-lime-400/30 focus:border-lime-400/20 transition-all"
+                                                                className="bg-white/5 border border-white/8 rounded-lg px-3 py-2 text-sm font-semibold text-white placeholder-neutral-600 outline-none focus:ring-1 focus:ring-accent-400/30 focus:border-accent-400/20 transition-all"
                                                                 placeholder="6-8"
                                                             />
 
@@ -950,7 +950,7 @@ export default function WorkoutEditorModal({
                                                                     "w-8 h-8 rounded-lg border flex items-center justify-center transition-all",
                                                                     exercise.sets.length === 1
                                                                         ? "bg-white/4 border-white/6 text-neutral-700 cursor-not-allowed"
-                                                                        : "bg-red-400/8 border-red-400/20 text-red-400 hover:bg-red-400/14"
+                                                                        : "bg-danger-400/8 border-danger-400/20 text-danger-400 hover:bg-danger-400/14"
                                                                 )}
                                                                 aria-label={`Remove set ${setIndex + 1}`}
                                                             >
@@ -980,8 +980,8 @@ export default function WorkoutEditorModal({
                                                                 className={cn(
                                                                     "px-2 py-0.5 rounded-full border text-[9px] font-black uppercase tracking-[0.16em]",
                                                                     exercise.linkToNext === "superset"
-                                                                        ? "border-lime-400/20 bg-lime-400/10 text-lime-400"
-                                                                        : "border-sky-400/20 bg-sky-400/10 text-sky-400"
+                                                                        ? "border-accent-400/20 bg-accent-400/10 text-accent-400"
+                                                                        : "border-info-400/20 bg-info-400/10 text-info-400"
                                                                 )}
                                                             >
                                                                 {exercise.linkToNext}
@@ -1002,8 +1002,8 @@ export default function WorkoutEditorModal({
                                                             className={cn(
                                                                 "px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-[0.16em] transition-all",
                                                                 exercise.linkToNext === "superset"
-                                                                    ? "border-lime-400/25 bg-lime-400/12 text-lime-400"
-                                                                    : "border-white/8 bg-white/4 text-neutral-300 hover:border-lime-400/20 hover:bg-lime-400/10 hover:text-lime-400"
+                                                                    ? "border-accent-400/25 bg-accent-400/12 text-accent-400"
+                                                                    : "border-white/8 bg-white/4 text-neutral-300 hover:border-accent-400/20 hover:bg-accent-400/10 hover:text-accent-400"
                                                             )}
                                                         >
                                                             Superset
@@ -1021,8 +1021,8 @@ export default function WorkoutEditorModal({
                                                             className={cn(
                                                                 "px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-[0.16em] transition-all",
                                                                 exercise.linkToNext === "circuit"
-                                                                    ? "border-sky-400/25 bg-sky-400/12 text-sky-400"
-                                                                    : "border-white/8 bg-white/4 text-neutral-300 hover:border-sky-400/20 hover:bg-sky-400/10 hover:text-sky-400"
+                                                                    ? "border-info-400/25 bg-info-400/12 text-info-400"
+                                                                    : "border-white/8 bg-white/4 text-neutral-300 hover:border-info-400/20 hover:bg-info-400/10 hover:text-info-400"
                                                             )}
                                                         >
                                                             Circuit
@@ -1078,7 +1078,7 @@ export default function WorkoutEditorModal({
                         <button
                             type="button"
                             onClick={() => onSave(draft)}
-                            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-lime-400/25 bg-lime-400/12 text-lime-400 text-[11px] font-black uppercase tracking-widest hover:bg-lime-400/20 transition-all"
+                            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-accent-400/25 bg-accent-400/12 text-accent-400 text-[11px] font-black uppercase tracking-widest hover:bg-accent-400/20 transition-all"
                         >
                             <Save size={13} />
                             Save Workout
@@ -1093,7 +1093,7 @@ export default function WorkoutEditorModal({
                 >
                     <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" />
                     <div
-                        className="relative z-10 w-full max-w-md bg-[#111111] border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]"
+                        className="relative z-10 w-full max-w-md bg-raised border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[80vh]"
                         onClick={(e) => e.stopPropagation()}
                     >
                         <div className="border-b border-white/6 p-4 flex items-center justify-between">
@@ -1142,7 +1142,7 @@ export default function WorkoutEditorModal({
                                         <button
                                             type="button"
                                             onClick={() => duplicateDay(index)}
-                                            className="w-8 h-8 rounded-lg bg-lime-400/10 border border-lime-400/20 text-lime-400 hover:bg-lime-400/20 flex items-center justify-center"
+                                            className="w-8 h-8 rounded-lg bg-accent-400/10 border border-accent-400/20 text-accent-400 hover:bg-accent-400/20 flex items-center justify-center"
                                             title="Duplicate Day"
                                         >
                                             <Plus size={14} />
@@ -1151,7 +1151,7 @@ export default function WorkoutEditorModal({
                                             type="button"
                                             onClick={() => deleteDay(index)}
                                             disabled={draft.length <= 1}
-                                            className="w-8 h-8 rounded-lg bg-red-400/10 border border-red-400/20 text-red-400 hover:bg-red-400/20 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
+                                            className="w-8 h-8 rounded-lg bg-danger-400/10 border border-danger-400/20 text-danger-400 hover:bg-danger-400/20 disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center"
                                             title="Delete Day"
                                         >
                                             <Trash2 size={14} />
@@ -1162,7 +1162,7 @@ export default function WorkoutEditorModal({
                             <button
                                 type="button"
                                 onClick={addDay}
-                                className="w-full py-3 rounded-xl border border-dashed border-white/10 hover:border-lime-400/30 text-[11px] font-black uppercase tracking-widest text-neutral-400 hover:text-lime-400 transition-all flex items-center justify-center gap-1.5 mt-2"
+                                className="w-full py-3 rounded-xl border border-dashed border-white/10 hover:border-accent-400/30 text-[11px] font-black uppercase tracking-widest text-neutral-400 hover:text-accent-400 transition-all flex items-center justify-center gap-1.5 mt-2"
                             >
                                 <Plus size={14} /> Add New Day
                             </button>

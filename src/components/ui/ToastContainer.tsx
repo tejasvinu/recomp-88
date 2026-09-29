@@ -22,14 +22,14 @@ export default function ToastContainer({ toasts, onDismiss }: ToastContainerProp
                     className={cn(
                         "flex items-center gap-2.5 px-4 py-3 rounded-xl border backdrop-blur-xl shadow-xl animate-slide-down pointer-events-auto",
                         toast.type === "success"
-                            ? "bg-neutral-900/95 border-lime-400/25 text-white"
-                            : "bg-neutral-900/95 border-red-400/30 text-white"
+                            ? "bg-neutral-900/95 border-accent-400/25 text-white"
+                            : "bg-neutral-900/95 border-danger-400/30 text-white"
                     )}
                 >
                     <div
                         className={cn(
                             "w-2 h-2 rounded-full shrink-0",
-                            toast.type === "success" ? "bg-lime-400" : "bg-red-400"
+                            toast.type === "success" ? "bg-accent-400" : "bg-danger-400"
                         )}
                     />
                     <span className="text-[13px] font-semibold flex-1">{toast.message}</span>
@@ -39,7 +39,7 @@ export default function ToastContainer({ toasts, onDismiss }: ToastContainerProp
                                 toast.undoAction?.();
                                 onDismiss(toast.id);
                             }}
-                            className="flex items-center gap-1 text-[11px] font-bold text-lime-400 hover:text-lime-300 transition-colors uppercase tracking-wider shrink-0"
+                            className="flex items-center gap-1 text-[11px] font-bold text-accent-400 hover:text-accent-300 transition-colors uppercase tracking-wider shrink-0"
                         >
                             <Undo2 size={12} />
                             Undo

@@ -51,11 +51,11 @@ export default function AppHeader({
     };
 
     return (
-        <header className="sticky top-0 z-40 bg-[#080808]/80 backdrop-blur-2xl border-b border-white/6 px-4 pt-4 pb-3">
+        <header className="sticky top-0 z-40 bg-canvas/80 backdrop-blur-2xl border-b border-white/6 px-4 pt-4 pb-3">
             {/* Brand + action buttons row */}
             <div className="flex items-center justify-between mb-3">
                 <div className="flex items-baseline gap-1.5">
-                    <h1 className="text-2xl font-black uppercase tracking-[0.12em] text-lime-400">Recomp</h1>
+                    <h1 className="text-2xl font-black uppercase tracking-[0.12em] text-accent-400">Recomp</h1>
                     <span className="text-2xl font-black uppercase tracking-[0.12em] text-white/90">88</span>
                 </div>
 
@@ -68,20 +68,20 @@ export default function AppHeader({
                                 className={cn(
                                     'flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border transition-all active:scale-95',
                                     isTimerPaused
-                                        ? 'bg-amber-400/10 border-amber-400/20 text-amber-400'
-                                        : 'bg-white/5 border-white/8 text-lime-400 hover:bg-white/10',
+                                        ? 'bg-warn-400/10 border-warn-400/20 text-warn-400'
+                                        : 'bg-white/5 border-white/8 text-accent-400 hover:bg-white/10',
                                 )}
                                 aria-label={isTimerPaused ? 'Resume workout' : 'Pause workout'}
                             >
                                 {isTimerPaused ? (
-                                    <Play size={12} className="text-amber-400" />
+                                    <Play size={12} className="text-warn-400" />
                                 ) : (
-                                    <Clock size={12} className="text-lime-400" />
+                                    <Clock size={12} className="text-accent-400" />
                                 )}
                                 <span
                                     className={cn(
                                         'text-[11px] font-mono font-bold tabular-nums',
-                                        isTimerPaused ? 'text-amber-400' : 'text-lime-400',
+                                        isTimerPaused ? 'text-warn-400' : 'text-accent-400',
                                     )}
                                 >
                                     {formatTime(elapsedSeconds)}
@@ -89,7 +89,7 @@ export default function AppHeader({
                             </button>
                             <button
                                 onClick={onResetTimer}
-                                className="w-7 h-7 flex items-center justify-center rounded-xl bg-white/5 border border-white/8 text-neutral-500 hover:text-red-400 hover:bg-red-400/10 hover:border-red-400/20 transition-all active:scale-90"
+                                className="w-7 h-7 flex items-center justify-center rounded-xl bg-white/5 border border-white/8 text-neutral-500 hover:text-danger-400 hover:bg-danger-400/10 hover:border-danger-400/20 transition-all active:scale-90"
                                 aria-label="Reset workout timer"
                                 title="Reset timer"
                             >
@@ -101,7 +101,7 @@ export default function AppHeader({
                     {/* Plate calculator shortcut */}
                     <button
                         onClick={onShowPlateCalc}
-                        className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/5 border border-white/8 text-neutral-500 hover:text-lime-400 hover:bg-lime-400/10 hover:border-lime-400/20 transition-all"
+                        className="w-8 h-8 flex items-center justify-center rounded-xl bg-white/5 border border-white/8 text-neutral-500 hover:text-accent-400 hover:bg-accent-400/10 hover:border-accent-400/20 transition-all"
                         aria-label="Open plate calculator"
                     >
                         <Calculator size={15} />
@@ -129,7 +129,7 @@ export default function AppHeader({
                         </p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-[11px] font-mono font-bold text-lime-400 tabular-nums">
+                        <span className="text-[11px] font-mono font-bold text-accent-400 tabular-nums">
                             {progressPercent}%
                         </span>
                         <button
@@ -138,7 +138,7 @@ export default function AppHeader({
                                 setActiveTab('workout');
                                 window.scrollTo({ top: 0, behavior: 'smooth' });
                             }}
-                            className="rounded-lg border border-lime-400/25 bg-lime-400/10 px-2.5 py-1.5 text-[9px] font-black uppercase tracking-widest text-lime-400 hover:bg-lime-400/16 transition-all"
+                            className="rounded-lg border border-accent-400/25 bg-accent-400/10 px-2.5 py-1.5 text-[9px] font-black uppercase tracking-widest text-accent-400 hover:bg-accent-400/16 transition-all"
                         >
                             Open
                         </button>
@@ -159,11 +159,11 @@ export default function AppHeader({
                             aria-valuemax={100}
                         >
                             <div
-                                className="h-full bg-lime-400 shadow-[0_0_8px_rgba(163,230,53,0.6)] transition-all duration-700 ease-out rounded-full"
+                                className="h-full bg-accent-400 shadow-[0_0_8px_color-mix(in_oklab,_var(--color-accent-400)_60%,_transparent)] transition-all duration-700 ease-out rounded-full"
                                 style={{ width: `${progressPercent}%` }}
                             />
                         </div>
-                        <span className="text-[11px] font-mono font-bold text-lime-400 tabular-nums shrink-0">
+                        <span className="text-[11px] font-mono font-bold text-accent-400 tabular-nums shrink-0">
                             {progressPercent}%
                         </span>
                     </div>
@@ -183,7 +183,7 @@ export default function AppHeader({
                                 className={cn(
                                     'snap-center shrink-0 px-3.5 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-widest transition-all duration-200 border',
                                     clampedActiveDayIndex === idx
-                                        ? 'bg-lime-400 text-neutral-950 border-lime-400 shadow-[0_0_12px_rgba(163,230,53,0.25)]'
+                                        ? 'bg-accent-400 text-neutral-950 border-accent-400 shadow-[0_0_12px_color-mix(in_oklab,_var(--color-accent-400)_25%,_transparent)]'
                                         : 'bg-white/4 text-neutral-500 border-white/6 hover:bg-white/8 hover:text-neutral-300',
                                 )}
                             >

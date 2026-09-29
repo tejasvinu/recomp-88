@@ -66,28 +66,28 @@ export default function AuthPage() {
 
   if (status === "loading") {
     return (
-      <div className="min-h-screen bg-[#080808] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-lime-400/30 border-t-lime-400 rounded-full animate-spin" />
+      <div className="min-h-screen bg-canvas flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-accent-400/30 border-t-accent-400 rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#080808] flex flex-col items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-canvas flex flex-col items-center justify-center p-4 relative overflow-hidden">
       {/* Background gradients */}
-      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top,rgba(163,230,53,0.08),transparent_60%),radial-gradient(ellipse_at_bottom_right,rgba(163,230,53,0.04),transparent_60%)] pointer-events-none" />
+      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top,color-mix(in_oklab,_var(--color-accent-400)_8%,_transparent),transparent_60%),radial-gradient(ellipse_at_bottom_right,color-mix(in_oklab,_var(--color-accent-400)_4%,_transparent),transparent_60%)] pointer-events-none" />
       <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full bg-lime-400/5 blur-3xl" />
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full bg-accent-400/5 blur-3xl" />
       </div>
 
       <div className="relative z-10 w-full max-w-sm">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-lime-400/10 border border-lime-400/20 mb-4 shadow-[0_0_30px_rgba(163,230,53,0.15)]">
-            <Dumbbell size={32} className="text-lime-400" strokeWidth={2.5} />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-accent-400/10 border border-accent-400/20 mb-4 shadow-[0_0_30px_color-mix(in_oklab,_var(--color-accent-400)_15%,_transparent)]">
+            <Dumbbell size={32} className="text-accent-400" strokeWidth={2.5} />
           </div>
           <h1 className="text-3xl font-black uppercase tracking-[0.12em]">
-            <span className="text-lime-400">Recomp</span>
+            <span className="text-accent-400">Recomp</span>
             <span className="text-white"> 88</span>
           </h1>
           <p className="text-neutral-500 text-sm mt-1">Body recomposition tracker</p>
@@ -103,7 +103,7 @@ export default function AuthPage() {
                 onClick={() => { setMode(m); setError(""); setSuccess(""); }}
                 className={`flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all duration-200 ${
                   mode === m
-                    ? "bg-lime-400 text-neutral-950 shadow-[0_0_12px_rgba(163,230,53,0.25)]"
+                    ? "bg-accent-400 text-neutral-950 shadow-[0_0_12px_color-mix(in_oklab,_var(--color-accent-400)_25%,_transparent)]"
                     : "text-neutral-500 hover:text-neutral-300"
                 }`}
               >
@@ -121,7 +121,7 @@ export default function AuthPage() {
                 className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl bg-white/5 border border-white/10 text-sm font-semibold text-neutral-200 hover:bg-white/8 hover:border-white/15 transition-all mb-4 disabled:opacity-50"
               >
                 {googleLoading ? (
-                  <Loader2 size={16} className="animate-spin text-lime-400" />
+                  <Loader2 size={16} className="animate-spin text-accent-400" />
                 ) : (
                   <svg width="18" height="18" viewBox="0 0 18 18"><path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/><path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/><path d="M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z" fill="#FBBC05"/><path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 6.293C4.672 4.166 6.656 3.58 9 3.58z" fill="#EA4335"/></svg>
                 )}
@@ -147,7 +147,7 @@ export default function AuthPage() {
                   onChange={(e) => setName(e.target.value)}
                   required
                   placeholder="Your name"
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-neutral-100 placeholder-neutral-600 focus:outline-none focus:border-lime-400/40 focus:bg-lime-400/5 transition-all"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-neutral-100 placeholder-neutral-600 focus:outline-none focus:border-accent-400/40 focus:bg-accent-400/5 transition-all"
                 />
               </div>
             )}
@@ -159,7 +159,7 @@ export default function AuthPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder="you@example.com"
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-neutral-100 placeholder-neutral-600 focus:outline-none focus:border-lime-400/40 focus:bg-lime-400/5 transition-all"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-neutral-100 placeholder-neutral-600 focus:outline-none focus:border-accent-400/40 focus:bg-accent-400/5 transition-all"
               />
             </div>
             <div>
@@ -171,7 +171,7 @@ export default function AuthPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   placeholder={mode === "signup" ? "Min. 8 characters" : "Your password"}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 pr-10 text-sm text-neutral-100 placeholder-neutral-600 focus:outline-none focus:border-lime-400/40 focus:bg-lime-400/5 transition-all"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 pr-10 text-sm text-neutral-100 placeholder-neutral-600 focus:outline-none focus:border-accent-400/40 focus:bg-accent-400/5 transition-all"
                 />
                 <button
                   type="button"
@@ -184,12 +184,12 @@ export default function AuthPage() {
             </div>
 
             {error && (
-              <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-2.5 text-xs text-red-400 font-medium">
+              <div className="bg-danger-500/10 border border-danger-500/20 rounded-xl px-4 py-2.5 text-xs text-danger-400 font-medium">
                 {error}
               </div>
             )}
             {success && (
-              <div className="bg-lime-400/10 border border-lime-400/20 rounded-xl px-4 py-2.5 text-xs text-lime-400 font-medium">
+              <div className="bg-accent-400/10 border border-accent-400/20 rounded-xl px-4 py-2.5 text-xs text-accent-400 font-medium">
                 {success}
               </div>
             )}
@@ -197,7 +197,7 @@ export default function AuthPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-lime-400 text-neutral-950 text-sm font-black uppercase tracking-widest hover:bg-lime-300 active:scale-[0.98] transition-all shadow-[0_0_20px_rgba(163,230,53,0.3)] disabled:opacity-60 mt-2"
+              className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-accent-400 text-neutral-950 text-sm font-black uppercase tracking-widest hover:bg-accent-300 active:scale-[0.98] transition-all shadow-[0_0_20px_color-mix(in_oklab,_var(--color-accent-400)_30%,_transparent)] disabled:opacity-60 mt-2"
             >
               {loading ? (
                 <Loader2 size={16} className="animate-spin" />

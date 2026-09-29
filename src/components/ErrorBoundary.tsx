@@ -31,8 +31,8 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBo
             return (
                 this.props.fallback || (
                     <div className="p-8 text-center">
-                        <div className="w-14 h-14 bg-red-400/10 border border-red-400/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <span className="text-red-400 text-xl font-black">!</span>
+                        <div className="w-14 h-14 bg-danger-400/10 border border-danger-400/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <span className="text-danger-400 text-xl font-black">!</span>
                         </div>
                         <p className="text-[15px] font-black text-white mb-1.5 tracking-wide">
                             Something went wrong

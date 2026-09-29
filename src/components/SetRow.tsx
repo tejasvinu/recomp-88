@@ -6,19 +6,19 @@ import { cn } from "../utils";
 import { Check, Minus, Plus } from "lucide-react";
 
 const SET_TYPES: { value: SetType; label: string; short: string; color: string }[] = [
-    { value: "working", label: "Working", short: "W", color: "bg-lime-400/15 text-lime-400 border-lime-400/30" },
+    { value: "working", label: "Working", short: "W", color: "bg-accent-400/15 text-accent-400 border-accent-400/30" },
     { value: "warmup", label: "Warmup", short: "WU", color: "bg-neutral-400/10 text-neutral-400 border-neutral-500/25" },
-    { value: "drop", label: "Drop", short: "D", color: "bg-amber-400/15 text-amber-400 border-amber-400/30" },
-    { value: "failure", label: "Failure", short: "F", color: "bg-red-400/15 text-red-400 border-red-400/30" },
+    { value: "drop", label: "Drop", short: "D", color: "bg-warn-400/15 text-warn-400 border-warn-400/30" },
+    { value: "failure", label: "Failure", short: "F", color: "bg-danger-400/15 text-danger-400 border-danger-400/30" },
 ];
 
 const RPE_VALUES = [6, 7, 7.5, 8, 8.5, 9, 9.5, 10] as const;
 
 const getRpeColor = (rpe: number) => {
-    if (rpe <= 7) return "text-lime-400 bg-lime-400/12 border-lime-400/25";
-    if (rpe <= 8) return "text-amber-300 bg-amber-400/12 border-amber-400/25";
+    if (rpe <= 7) return "text-accent-400 bg-accent-400/12 border-accent-400/25";
+    if (rpe <= 8) return "text-warn-300 bg-warn-400/12 border-warn-400/25";
     if (rpe <= 9) return "text-orange-400 bg-orange-400/12 border-orange-400/25";
-    return "text-red-400 bg-red-400/12 border-red-400/25";
+    return "text-danger-400 bg-danger-400/12 border-danger-400/25";
 };
 
 interface SetRowProps {
@@ -81,7 +81,7 @@ export default memo(function SetRow({
                     isCompleted
                         ? currentSetType === "warmup"
                             ? "bg-neutral-400/5 border-neutral-500/20"
-                            : "bg-lime-400/7 border-lime-400/25"
+                            : "bg-accent-400/7 border-accent-400/25"
                         : "bg-white/3 border-white/5"
                 )}
             >
@@ -136,11 +136,11 @@ export default memo(function SetRow({
                                 }}
                                 onFocus={(e) => e.target.select()}
                                 className={cn(
-                                    "w-full bg-white/6 border text-center font-mono font-medium outline-none rounded-lg py-2 px-1 text-sm transition-all text-white placeholder-neutral-600 focus:ring-1 focus:ring-lime-400/40 focus:bg-white/9",
+                                    "w-full bg-white/6 border text-center font-mono font-medium outline-none rounded-lg py-2 px-1 text-sm transition-all text-white placeholder-neutral-600 focus:ring-1 focus:ring-accent-400/40 focus:bg-white/9",
                                     isPR
                                         ? "border-yellow-400/50 bg-yellow-400/5 focus:border-yellow-400/60"
-                                        : "border-white/8 focus:border-lime-400/30",
-                                    isCompleted && "text-lime-100/90",
+                                        : "border-white/8 focus:border-accent-400/30",
+                                    isCompleted && "text-accent-100/90",
                                     isBwSet && "pl-[22px] text-left"
                                 )}
                                 aria-label={`Weight for set ${setIdx + 1}`}
@@ -172,8 +172,8 @@ export default memo(function SetRow({
                         }
                         onFocus={(e) => e.target.select()}
                         className={cn(
-                            "w-full bg-white/6 border border-white/8 text-center font-mono font-medium outline-none rounded-lg py-2 px-2 text-sm transition-all placeholder-neutral-600 focus:ring-1 focus:ring-lime-400/40 focus:bg-white/9 focus:border-lime-400/30",
-                            isCompleted ? "text-lime-400" : "text-white"
+                            "w-full bg-white/6 border border-white/8 text-center font-mono font-medium outline-none rounded-lg py-2 px-2 text-sm transition-all placeholder-neutral-600 focus:ring-1 focus:ring-accent-400/40 focus:bg-white/9 focus:border-accent-400/30",
+                            isCompleted ? "text-accent-400" : "text-white"
                         )}
                         aria-label={`Reps for set ${setIdx + 1}`}
                     />
@@ -190,7 +190,7 @@ export default memo(function SetRow({
                     className={cn(
                         "w-11 h-9 flex items-center justify-center rounded-xl transition-all duration-200 active:scale-90 border",
                         isCompleted
-                            ? "bg-lime-400 text-neutral-950 border-lime-400 shadow-[0_2px_12px_rgba(163,230,53,0.35)]"
+                            ? "bg-accent-400 text-neutral-950 border-accent-400 shadow-[0_2px_12px_color-mix(in_oklab,_var(--color-accent-400)_35%,_transparent)]"
                             : "bg-white/4 text-neutral-600 border-white/7 hover:bg-white/8 hover:text-white"
                     )}
                     aria-label={isCompleted ? `Unmark set ${setIdx + 1} as complete` : `Mark set ${setIdx + 1} as complete`}

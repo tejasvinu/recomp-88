@@ -134,7 +134,7 @@ export default function WorkoutTab({
             {isMounted && activeDay.primerId && (
                 <button
                     onClick={() => onStartStretching?.(activeDay.primerId!)}
-                    className="w-full active:scale-[0.98] flex items-center justify-center gap-2.5 py-4 rounded-2xl font-black text-[13px] tracking-[0.2em] uppercase transition-all border bg-amber-500/15 hover:bg-amber-500/25 border-amber-500/40 text-amber-500 shadow-[0_0_20px_rgba(245,158,11,0.15)] mt-1 mb-2"
+                    className="w-full active:scale-[0.98] flex items-center justify-center gap-2.5 py-4 rounded-2xl font-black text-[13px] tracking-[0.2em] uppercase transition-all border bg-warn-500/15 hover:bg-warn-500/25 border-warn-500/40 text-warn-500 shadow-[0_0_20px_color-mix(in_oklab,_var(--color-warn-500)_15%,_transparent)] mt-1 mb-2"
                 >
                     <Timer size={18} />
                     Start Session Primer
@@ -178,8 +178,8 @@ export default function WorkoutTab({
                         className={cn(
                             "rounded-[28px] border p-3 shadow-lg",
                             segment.linkType === "superset"
-                                ? "bg-lime-400/5 border-lime-400/20"
-                                : "bg-sky-400/5 border-sky-400/20"
+                                ? "bg-accent-400/5 border-accent-400/20"
+                                : "bg-info-400/5 border-info-400/20"
                         )}
                     >
                         <div className="flex flex-wrap items-center justify-between gap-2 px-1 pb-3">
@@ -188,8 +188,8 @@ export default function WorkoutTab({
                                     className={cn(
                                         "px-2.5 py-1 rounded-full border text-[9px] font-black uppercase tracking-[0.18em]",
                                         segment.linkType === "superset"
-                                            ? "bg-lime-400/12 border-lime-400/25 text-lime-400"
-                                            : "bg-sky-400/12 border-sky-400/25 text-sky-400"
+                                            ? "bg-accent-400/12 border-accent-400/25 text-accent-400"
+                                            : "bg-info-400/12 border-info-400/25 text-info-400"
                                     )}
                                 >
                                     {segment.linkType}
@@ -213,8 +213,8 @@ export default function WorkoutTab({
                                             className={cn(
                                                 "w-6 h-6 rounded-lg border flex items-center justify-center text-[10px] font-black",
                                                 segment.linkType === "superset"
-                                                    ? "border-lime-400/25 bg-lime-400/10 text-lime-400"
-                                                    : "border-sky-400/25 bg-sky-400/10 text-sky-400"
+                                                    ? "border-accent-400/25 bg-accent-400/10 text-accent-400"
+                                                    : "border-info-400/25 bg-info-400/10 text-info-400"
                                             )}
                                         >
                                             {localIndex + 1}
@@ -260,7 +260,7 @@ export default function WorkoutTab({
                 {isMounted && (
                     <button
                         onClick={onOpenJustShowUp}
-                        className="w-full active:scale-[0.98] flex items-center justify-center gap-2.5 py-4 rounded-2xl font-black text-[13px] tracking-[0.2em] uppercase transition-all border bg-lime-400/10 hover:bg-lime-400/20 border-lime-400/25 text-lime-400 shadow-[0_0_20px_rgba(163,230,53,0.1)]"
+                        className="w-full active:scale-[0.98] flex items-center justify-center gap-2.5 py-4 rounded-2xl font-black text-[13px] tracking-[0.2em] uppercase transition-all border bg-accent-400/10 hover:bg-accent-400/20 border-accent-400/25 text-accent-400 shadow-[0_0_20px_color-mix(in_oklab,_var(--color-accent-400)_10%,_transparent)]"
                     >
                         <Zap size={18} />
                         Just Show Up — 15 min
@@ -269,9 +269,9 @@ export default function WorkoutTab({
                 {isMounted && activeDay.preWorkoutStretchId && (
                     <button
                         onClick={() => onStartStretching?.(activeDay.preWorkoutStretchId!)}
-                        className="w-full active:scale-[0.98] flex items-center justify-center gap-2.5 py-4 rounded-2xl font-bold text-[12px] tracking-[0.18em] uppercase transition-all border bg-amber-400/5 hover:bg-amber-400/10 border-amber-400/15 text-white"
+                        className="w-full active:scale-[0.98] flex items-center justify-center gap-2.5 py-4 rounded-2xl font-bold text-[12px] tracking-[0.18em] uppercase transition-all border bg-warn-400/5 hover:bg-warn-400/10 border-warn-400/15 text-white"
                     >
-                        <Timer size={15} className="text-amber-400" />
+                        <Timer size={15} className="text-warn-400" />
                         Start Pre-Workout Warmup
                     </button>
                 )}
@@ -289,7 +289,7 @@ export default function WorkoutTab({
                         onClick={() => onStartStretching?.((activeDay.postWorkoutStretchId || activeDay.stretchingProgramId)!)}
                         className="w-full active:scale-[0.98] flex items-center justify-center gap-2.5 py-4 rounded-2xl font-bold text-[12px] tracking-[0.18em] uppercase transition-all border bg-white/5 hover:bg-white/8 border-white/10 text-white"
                     >
-                        <Timer size={15} className="text-lime-400" />
+                        <Timer size={15} className="text-accent-400" />
                         Start Post-Workout Recovery
                     </button>
                 )}
@@ -298,11 +298,11 @@ export default function WorkoutTab({
                     className={cn(
                         "w-full active:scale-[0.98] flex items-center justify-center gap-2.5 py-4 rounded-2xl font-bold text-[12px] tracking-[0.18em] uppercase transition-all border",
                         progressPercent === 100
-                            ? "bg-lime-400/15 hover:bg-lime-400/22 border-lime-400/40 text-lime-400"
+                            ? "bg-accent-400/15 hover:bg-accent-400/22 border-accent-400/40 text-accent-400"
                             : "bg-white/4 hover:bg-white/7 border-white/9 text-white"
                     )}
                 >
-                    <Save size={15} className="text-lime-400" />
+                    <Save size={15} className="text-accent-400" />
                     Save Workout
                 </button>
                 <p className="text-center text-[10px] text-neutral-600 mt-2.5 px-6 font-medium leading-relaxed">

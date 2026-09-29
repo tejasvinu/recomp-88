@@ -52,7 +52,7 @@ export default function ExerciseRecordsView({
         <div className="space-y-4">
             <div>
                 <div className="flex items-center gap-2 mb-1">
-                    <Trophy size={18} className="text-lime-400 shrink-0" />
+                    <Trophy size={18} className="text-accent-400 shrink-0" />
                     <h2 className="text-lg font-black uppercase tracking-[0.08em] text-white">
                         Exercise records
                     </h2>
@@ -91,7 +91,7 @@ export default function ExerciseRecordsView({
                                 className={cn(
                                     "rounded-full px-2.5 py-1 text-[9px] font-bold uppercase tracking-widest border transition-colors",
                                     sortKey === key
-                                        ? "border-lime-400/35 bg-lime-400/12 text-lime-400"
+                                        ? "border-accent-400/35 bg-accent-400/12 text-accent-400"
                                         : "border-white/10 bg-white/[0.04] text-neutral-500 hover:text-neutral-300",
                                 )}
                             >
@@ -120,7 +120,7 @@ export default function ExerciseRecordsView({
                                             <button
                                                 type="button"
                                                 onClick={() => onOpenExercise(row.name)}
-                                                className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center border border-white/8 bg-white/5 hover:bg-lime-400/15 hover:border-lime-400/25 transition-colors"
+                                                className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center border border-white/8 bg-white/5 hover:bg-accent-400/15 hover:border-accent-400/25 transition-colors"
                                                 title="Exercise info"
                                                 aria-label={`Info for ${row.name}`}
                                             >
@@ -128,7 +128,7 @@ export default function ExerciseRecordsView({
                                             </button>
                                         )}
                                     </div>
-                                    <span className="text-[13px] font-mono font-bold text-lime-400 tabular-nums text-right">
+                                    <span className="text-[13px] font-mono font-bold text-accent-400 tabular-nums text-right">
                                         {formatWeight(row.maxWeight)}
                                         <span className="text-[9px] text-neutral-600 font-bold ml-0.5">
                                             {weightUnit}

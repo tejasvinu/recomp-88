@@ -104,7 +104,7 @@ const hasImportableSyncFields = (
 // ─── Loading spinner ──────────────────────────────────────────────────────
 const Spinner = () => (
   <div className="flex items-center justify-center py-20">
-    <div className="w-6 h-6 border-2 border-lime-400/30 border-t-lime-400 rounded-full animate-spin" />
+    <div className="w-6 h-6 border-2 border-accent-400/30 border-t-accent-400 rounded-full animate-spin" />
   </div>
 );
 
@@ -947,11 +947,11 @@ function AppMain() {
   // ─── Render ────────────────────────────────────────────────────────────
   return (
     <div
-      className="min-h-screen bg-[#080808] text-neutral-200 font-sans selection:bg-lime-400/30 overflow-hidden relative"
+      className="min-h-screen bg-canvas text-neutral-200 font-sans selection:bg-accent-400/30 overflow-hidden relative"
       style={{ ["--bottom-nav-height" as never]: "68px" } as React.CSSProperties}
     >
       {/* Background gradient */}
-      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(163,230,53,0.04),transparent_60%),radial-gradient(ellipse_at_bottom_right,rgba(163,230,53,0.03),transparent_60%)] pointer-events-none" />
+      <div className="fixed inset-0 bg-[radial-gradient(ellipse_at_top_left,color-mix(in_oklab,_var(--color-accent-400)_4%,_transparent),transparent_60%),radial-gradient(ellipse_at_bottom_right,color-mix(in_oklab,_var(--color-accent-400)_3%,_transparent),transparent_60%)] pointer-events-none" />
 
       <ToastContainer toasts={toasts} onDismiss={dismissToast} />
 
@@ -1025,7 +1025,7 @@ function AppMain() {
                   className={cn(
                     "flex-1 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all",
                     progressSubView === "charts"
-                      ? "bg-lime-400 text-neutral-950"
+                      ? "bg-accent-400 text-neutral-950"
                       : "text-neutral-500 hover:text-neutral-300"
                   )}
                 >
@@ -1037,7 +1037,7 @@ function AppMain() {
                   className={cn(
                     "flex-1 py-2 rounded-lg text-[11px] font-black uppercase tracking-widest transition-all",
                     progressSubView === "records"
-                      ? "bg-lime-400 text-neutral-950"
+                      ? "bg-accent-400 text-neutral-950"
                       : "text-neutral-500 hover:text-neutral-300"
                   )}
                 >

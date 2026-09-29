@@ -115,7 +115,7 @@ export function DarkSelect({
                 ref={menuRef}
                 role="listbox"
                 id={id ? `${id}-listbox` : undefined}
-                className="fixed z-[200] overflow-y-auto overscroll-contain rounded-xl border border-white/12 bg-[#141414] py-1 shadow-[0_12px_40px_rgba(0,0,0,0.85)]"
+                className="fixed z-[200] overflow-y-auto overscroll-contain rounded-xl border border-white/12 bg-overlay py-1 shadow-[0_12px_40px_rgba(0,0,0,0.85)]"
                 style={{
                     top: coords.top,
                     left: coords.left,
@@ -132,7 +132,7 @@ export function DarkSelect({
                         className={cn(
                             "flex w-full items-center px-3 py-2.5 text-left text-sm font-semibold transition-colors",
                             option.value === value
-                                ? "bg-lime-400/15 text-lime-300"
+                                ? "bg-accent-400/15 text-accent-300"
                                 : "text-neutral-200 hover:bg-white/8 hover:text-white"
                         )}
                         onClick={() => {
@@ -159,7 +159,7 @@ export function DarkSelect({
                 aria-controls={id ? `${id}-listbox` : undefined}
                 onClick={() => setOpen((previous) => !previous)}
                 className={cn(
-                    "flex w-full items-center justify-between gap-2 rounded-xl border border-white/8 bg-white/5 px-3 py-2.5 text-left text-sm font-semibold text-white outline-none transition-all focus:border-lime-400/20 focus:ring-1 focus:ring-lime-400/30",
+                    "flex w-full items-center justify-between gap-2 rounded-xl border border-white/8 bg-white/5 px-3 py-2.5 text-left text-sm font-semibold text-white outline-none transition-all focus:border-accent-400/20 focus:ring-1 focus:ring-accent-400/30",
                     className
                 )}
             >

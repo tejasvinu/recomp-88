@@ -25,12 +25,12 @@ export default function DayCompleteOverlay({ show, dayName }: DayCompleteOverlay
                     show ? "scale-100 translate-y-0" : "scale-90 translate-y-4"
                 )}
             >
-                <div className="w-20 h-20 bg-lime-400 rounded-full flex items-center justify-center shadow-[0_0_60px_rgba(163,230,53,0.5)]">
+                <div className="w-20 h-20 bg-accent-400 rounded-full flex items-center justify-center shadow-[0_0_60px_color-mix(in_oklab,_var(--color-accent-400)_50%,_transparent)]">
                     <CheckCircle2 size={44} className="text-neutral-950" strokeWidth={2.5} />
                 </div>
                 <div className="text-center">
                     <p className="text-3xl font-black text-white uppercase tracking-widest">Day Done</p>
-                    <p className="text-[13px] text-lime-400 font-bold uppercase tracking-widest mt-1">
+                    <p className="text-[13px] text-accent-400 font-bold uppercase tracking-widest mt-1">
                         {dayName}
                     </p>
                 </div>
