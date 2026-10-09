@@ -12,6 +12,7 @@ import type {
   WorkoutProgress,
   WorkoutSession,
   WorkoutSettings,
+  SyncLedger,
 } from "@/types";
 
 export type CloudSyncSnapshot = AppDataSnapshot & {
@@ -23,6 +24,7 @@ export type SyncPushPayload = AppDataSnapshot & {
 };
 
 export type SanitizedSyncPayload = {
+  syncState?: SyncLedger;
   workoutTemplate?: AppDataSnapshot["workoutTemplate"];
   progress?: WorkoutProgress;
   sessions?: SessionHistory;
@@ -294,6 +296,7 @@ export const sanitizeSessionHistory = (value: unknown): SessionHistory =>
           exercises,
           duration,
         };
+        if (Number.isSafeInteger(sessionValue.version) && (sessionValue.version as number) > 0) session.version = sessionValue.version as number;
 
         if (bodyWeightSnapshot !== undefined) session.bodyWeightSnapshot = bodyWeightSnapshot;
         if (totalTonnage !== undefined) session.totalTonnage = totalTonnage;
@@ -427,6 +430,22 @@ export const sanitizeSyncPayload = (
   if (!isRecord(value)) return null;
 
   const sanitized: SanitizedSyncPayload = {};
+  if (isRecord(value.syncState)) {
+    const state = value.syncState;
+    if (!Number.isSafeInteger(state.epoch) || (state.epoch as number) < 0 || !isRecord(state.tombstones)) return null;
+    const tombstones: Record<string, number> = {};
+    for (const [id, version] of Object.entries(state.tombstones)) {
+      if (!Number.isSafeInteger(version) || (version as number) < 1 || !id || id.length > 200) return null;
+      Object.defineProperty(tombstones, id, { value: version, enumerable: true, writable: true, configurable: true });
+    }
+    sanitized.syncState = { epoch: state.epoch as number, tombstones };
+    if (typeof state.resetId === "string") sanitized.syncState.resetId = state.resetId;
+    if (state.reset !== undefined) {
+      if (!isRecord(state.reset) || typeof state.reset.id !== "string" || !state.reset.id || state.reset.id.length > 200 ||
+          !Number.isSafeInteger(state.reset.baseEpoch) || (state.reset.baseEpoch as number) < 0) return null;
+      sanitized.syncState.reset = { id: state.reset.id, baseEpoch: state.reset.baseEpoch as number };
+    }
+  }
 
   if ("workoutTemplate" in value) {
     const normalizedTemplate = normalizeWorkoutTemplate(value.workoutTemplate);
@@ -540,6 +559,10 @@ export const mergeSessionHistory = (
     const existing = merged.get(session.id);
     if (!existing) {
       merged.set(session.id, session);
+      return;
+    }
+    if ((session.version ?? 0) !== (existing.version ?? 0)) {
+      if ((session.version ?? 0) > (existing.version ?? 0)) merged.set(session.id, session);
       return;
     }
 

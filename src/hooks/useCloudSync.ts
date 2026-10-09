@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { AppDataSnapshot } from "../types";
 import type { CloudSyncSnapshot, SyncPushPayload } from "../lib/sync";
 import { readLocalStorageValue, writeLocalStorageValue } from "../services/storageService";
+import { useAppStore } from "../store/appStore";
 
 type SyncPayload = AppDataSnapshot;
 
@@ -163,7 +164,16 @@ export function useCloudSync() {
           keepalive: options?.keepalive,
         });
         if (!res.ok) throw new Error("Sync failed");
-        const { lastSyncedAt: syncedAt } = await res.json();
+        const { lastSyncedAt: syncedAt, data } = await res.json();
+        if (data?.syncState) {
+          // Acknowledgements clear only the reset that was actually sent.
+          const current = useAppStore.getState().syncState;
+          if (!current.reset || current.reset.id === data.syncState.resetId) {
+            const next = { ...data.syncState, tombstones: { ...data.syncState.tombstones, ...current.tombstones } };
+            writeLocalStorageValue("recomp88-sync-ledger", next);
+            useAppStore.setState({ syncState: next });
+          }
+        }
         if (syncedAt != null) {
           recordLastSyncedAt(new Date(syncedAt));
         }

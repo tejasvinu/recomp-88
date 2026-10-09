@@ -1,186 +1,50 @@
-import { NextRequest, NextResponse } from "next/server";
+﻿import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { connectDB } from "@/lib/mongodb";
-import {
-  hasRemoteChangesSinceBase,
-  mergeBodyWeightEntries,
-  mergeById,
-  mergeExerciseNotes,
-  mergeSessionHistory,
-  mergeSettings,
-  mergeWorkoutProgressWithPreference,
-  sanitizeBodyWeightEntries,
-  sanitizeCustomExercises,
-  sanitizeExerciseNotes,
-  sanitizeSessionHistory,
-  sanitizeSettings,
-  sanitizeSyncPayload,
-  sanitizeWorkoutProgress,
-} from "@/lib/sync";
+import { hasRemoteChangesSinceBase, sanitizeSyncPayload } from "@/lib/sync";
+import { emptySnapshot, mergeLedgerSnapshot } from "@/lib/syncLedger";
 import User from "@/models/User";
 import UserData from "@/models/UserData";
-import { normalizeWorkoutTemplate } from "@/data";
+import type { AppDataSnapshot } from "@/types";
 
-function payloadHasSyncFields(
-  payload: Record<string, unknown>
-): boolean {
-  return (
-    payload.workoutTemplate !== undefined ||
-    payload.progress !== undefined ||
-    payload.sessions !== undefined ||
-    payload.bodyWeightEntries !== undefined ||
-    payload.exerciseNotes !== undefined ||
-    payload.settings !== undefined ||
-    payload.customExercises !== undefined
-  );
+export function storedSnapshot(value: unknown): AppDataSnapshot {
+  const payload = sanitizeSyncPayload(value) ?? {};
+  const defaults = emptySnapshot();
+  return { ...defaults, ...payload, settings: { ...defaults.settings, ...payload.settings } };
 }
 
-// GET /api/sync - fetch user cloud data
 export async function GET() {
   const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const userId = (session.user as { id?: string }).id;
-  if (!userId) return NextResponse.json({ error: "No user id" }, { status: 400 });
-
+  const userId = (session?.user as { id?: string } | undefined)?.id;
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   try {
-    const db = await connectDB();
-    if (!db) return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
+    if (!(await connectDB())) return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
     const data = await UserData.findOne({ userId }).lean();
-    if (!data) {
-      return NextResponse.json({ data: null });
-    }
-
-    return NextResponse.json({
-      data: {
-        workoutTemplate: normalizeWorkoutTemplate(data.workoutTemplate) ?? [],
-        progress: sanitizeWorkoutProgress(data.progress),
-        sessions: sanitizeSessionHistory(data.sessions),
-        bodyWeightEntries: sanitizeBodyWeightEntries(data.bodyWeightEntries),
-        exerciseNotes: sanitizeExerciseNotes(data.exerciseNotes),
-        settings: sanitizeSettings(data.settings),
-        customExercises: sanitizeCustomExercises(data.customExercises),
-        lastSyncedAt: data.lastSyncedAt ?? null,
-      },
-    });
-  } catch (err) {
-    console.error("[sync GET]", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
-  }
+    return NextResponse.json({ data: data ? { ...storedSnapshot(data), lastSyncedAt: data.lastSyncedAt ?? null } : null }, { headers: { "Cache-Control": "no-store" } });
+  } catch { return NextResponse.json({ error: "Internal server error" }, { status: 500 }); }
 }
 
-// POST /api/sync - save/merge user cloud data
-export async function POST(req: NextRequest) {
+export async function POST(req: Request) {
   const session = await auth();
-  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const userId = (session.user as { id?: string }).id;
-  if (!userId) return NextResponse.json({ error: "No user id" }, { status: 400 });
-
+  const userId = (session?.user as { id?: string } | undefined)?.id;
+  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   let body: unknown;
-  try {
-    body = await req.json();
-  } catch (err) {
-    console.error("[sync POST] invalid json", err);
-    return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 });
-  }
-
+  try { body = await req.json(); } catch { return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 }); }
   try {
     const payload = sanitizeSyncPayload(body);
-    if (!payload) {
-      return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+    if (!payload) return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+    if (!(await connectDB())) return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
+    const existing = await UserData.findOne({ userId }).lean();
+    if (Object.keys(payload).every(k => k === "baseLastSyncedAt" || k === "lastSyncedAt")) {
+      return NextResponse.json({ ok: true, noOp: true, lastSyncedAt: existing?.lastSyncedAt ?? null });
     }
-
-    const db = await connectDB();
-    if (!db) return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
-
-    if (!payloadHasSyncFields(payload as Record<string, unknown>)) {
-      const existingOnly = await UserData.findOne({ userId }).lean();
-      return NextResponse.json({
-        ok: true,
-        lastSyncedAt: existingOnly?.lastSyncedAt ?? null,
-        noOp: true,
-      });
-    }
-
-    const existing = await UserData.findOne({ userId });
-    const remoteHasChanged = hasRemoteChangesSinceBase(
-      payload.baseLastSyncedAt,
-      existing?.lastSyncedAt ?? null
-    );
-    const preferIncomingOnConflict = !remoteHasChanged;
-
-    const existingWorkoutTemplate = normalizeWorkoutTemplate(existing?.workoutTemplate) ?? [];
-    const existingProgress = sanitizeWorkoutProgress(existing?.progress);
-    const existingSessions = sanitizeSessionHistory(existing?.sessions);
-    const existingBodyWeightEntries = sanitizeBodyWeightEntries(existing?.bodyWeightEntries);
-    const existingExerciseNotes = sanitizeExerciseNotes(existing?.exerciseNotes);
-    const existingSettings = sanitizeSettings(existing?.settings);
-    const existingCustomExercises = sanitizeCustomExercises(existing?.customExercises);
-
-    const workoutTemplate =
-      payload.workoutTemplate
-        ? preferIncomingOnConflict
-          ? payload.workoutTemplate
-          : existingWorkoutTemplate
-        : existingWorkoutTemplate;
-    const progress = mergeWorkoutProgressWithPreference(
-      existingProgress,
-      payload.progress ?? {},
-      preferIncomingOnConflict
-    );
-    const sessions = mergeSessionHistory(
-      existingSessions,
-      payload.sessions ?? [],
-      preferIncomingOnConflict
-    );
-    const bodyWeightEntries = mergeBodyWeightEntries(
-      existingBodyWeightEntries,
-      payload.bodyWeightEntries ?? [],
-      preferIncomingOnConflict
-    );
-    const exerciseNotes = mergeExerciseNotes(
-      existingExerciseNotes,
-      payload.exerciseNotes ?? {},
-      preferIncomingOnConflict
-    );
-    const settings = mergeSettings(
-      existingSettings,
-      payload.settings ?? {},
-      preferIncomingOnConflict
-    );
-    const customExercises = mergeById(
-      existingCustomExercises,
-      payload.customExercises ?? [],
-      preferIncomingOnConflict
-    );
-
-    const updated = await UserData.findOneAndUpdate(
-      { userId },
-      {
-        userId,
-        workoutTemplate,
-        progress,
-        sessions,
-        bodyWeightEntries,
-        exerciseNotes,
-        settings,
-        customExercises,
-        lastSyncedAt: new Date(),
-      },
-      { upsert: true, new: true, runValidators: true }
-    );
-
-    const wu = settings.weightUnit;
-    if (wu === "kg" || wu === "lbs") {
-      await User.findByIdAndUpdate(userId, { weightUnit: wu }).catch(() => {
-        /* profile mirror is best-effort */
-      });
-    }
-
-    return NextResponse.json({ ok: true, lastSyncedAt: updated.lastSyncedAt });
-  } catch (err) {
-    console.error("[sync POST]", err);
+    const merged = mergeLedgerSnapshot(storedSnapshot(existing), payload,
+      !hasRemoteChangesSinceBase(payload.baseLastSyncedAt, existing?.lastSyncedAt));
+    const updated = await UserData.findOneAndUpdate({ userId }, { $set: { ...merged, lastSyncedAt: new Date() } }, { upsert: true, new: true, runValidators: true });
+    await User.findByIdAndUpdate(userId, { weightUnit: merged.settings.weightUnit }).catch(() => {});
+    return NextResponse.json({ ok: true, lastSyncedAt: updated.lastSyncedAt, data: { ...storedSnapshot(updated.toObject()), lastSyncedAt: updated.lastSyncedAt } });
+  } catch (error) {
+    if (error instanceof Error && error.message === "reset_conflict") return NextResponse.json({ error: "reset_conflict", message: "Fetch the current reset generation before uploading" }, { status: 409 });
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }

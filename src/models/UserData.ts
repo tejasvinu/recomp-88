@@ -6,6 +6,7 @@ import type {
   BodyWeightEntry,
   WorkoutSettings,
   ExerciseWiki,
+  SyncLedger,
 } from "../types";
 
 export interface IUserData extends Document {
@@ -18,6 +19,7 @@ export interface IUserData extends Document {
   settings: WorkoutSettings;
   customExercises: ExerciseWiki[];
   lastSyncedAt: Date;
+  syncState: SyncLedger;
 }
 
 const UserDataSchema = new Schema(
@@ -35,6 +37,7 @@ const UserDataSchema = new Schema(
       weightUnit: { type: String, enum: ["kg", "lbs"], default: "kg" },
     },
     customExercises: { type: Array, default: [] },
+    syncState: { type: Schema.Types.Mixed, default: () => ({ epoch: 0, tombstones: {} }) },
     lastSyncedAt: { type: Date, default: Date.now },
   },
   { timestamps: true }

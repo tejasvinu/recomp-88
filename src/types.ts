@@ -140,6 +140,7 @@ export interface SessionExercise {
 
 export interface WorkoutSession {
     id: string;
+    version?: number;
     date: string; // ISO 8601 date string
     dayId: string;
     dayName: string;
@@ -165,6 +166,7 @@ export interface WorkoutSettings {
 }
 
 export interface AppDataSnapshot {
+    syncState?: SyncLedger;
     workoutTemplate: WorkoutTemplate;
     progress: WorkoutProgress;
     sessions: SessionHistory;
@@ -172,4 +174,11 @@ export interface AppDataSnapshot {
     exerciseNotes: Record<string, string>;
     settings: WorkoutSettings;
     customExercises: ExerciseWiki[];
+}
+
+export interface SyncLedger {
+    epoch: number;
+    tombstones: Record<string, number>;
+    resetId?: string;
+    reset?: { id: string; baseEpoch: number };
 }

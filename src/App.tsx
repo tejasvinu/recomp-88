@@ -14,6 +14,7 @@ import { useToast } from "./hooks/useToast";
 import { useRestTimer } from "./hooks/useRestTimer";
 import { useWorkoutTimer } from "./hooks/useWorkoutTimer";
 import { useCloudSync } from "./hooks/useCloudSync";
+import { mergeLedgerSnapshot } from "./lib/syncLedger";
 import {
   hasRemoteChangesSinceBase,
   mergeBodyWeightEntries,
@@ -116,6 +117,7 @@ function AppMain() {
   const setProgress = useAppStore((s) => s.setProgress);
   const sessions = useAppStore((s) => s.sessions);
   const setSessions = useAppStore((s) => s.setSessions);
+  const syncState = useAppStore((s) => s.syncState);
   const bodyWeightEntries = useAppStore((s) => s.bodyWeightEntries);
   const setBodyWeightEntries = useAppStore((s) => s.setBodyWeightEntries);
   const exerciseNotes = useAppStore((s) => s.exerciseNotes);
@@ -138,6 +140,7 @@ function AppMain() {
   // Derived / memoised from the store
   const safeWorkoutTemplate = useAppStore((s) => s.workoutTemplate);
   const currentSnapshot = useMemo((): AppDataSnapshot => ({
+    syncState,
     workoutTemplate: safeWorkoutTemplate,
     progress,
     sessions,
@@ -150,7 +153,7 @@ function AppMain() {
       weightUnit,
     },
     customExercises,
-  }), [safeWorkoutTemplate, progress, sessions, bodyWeightEntries, exerciseNotes, strengthRestDuration, hypertrophyRestDuration, soundEnabled, weightUnit, customExercises]);
+  }), [syncState, safeWorkoutTemplate, progress, sessions, bodyWeightEntries, exerciseNotes, strengthRestDuration, hypertrophyRestDuration, soundEnabled, weightUnit, customExercises]);
 
   // Keep a stable ref of the snapshot for callbacks that need stale-proof reads
   const currentSnapshotRef = useRef(currentSnapshot);
@@ -328,6 +331,7 @@ function AppMain() {
         const remoteWorkoutTemplate = normalizeWorkoutTemplate(data.workoutTemplate);
         const cloudWorkoutTemplate = remoteWorkoutTemplate ?? localSnapshot.workoutTemplate;
         const cloudSnapshot: AppDataSnapshot = {
+          syncState: data.syncState,
           workoutTemplate: cloudWorkoutTemplate,
           progress: pruneProgressForWorkoutTemplate(data.progress ?? {}, cloudWorkoutTemplate),
           sessions: data.sessions ?? [],
@@ -353,7 +357,7 @@ function AppMain() {
             ? remoteWorkoutTemplate
             : localSnapshot.workoutTemplate;
 
-        const mergedSnapshot: AppDataSnapshot = {
+        let mergedSnapshot: AppDataSnapshot = {
           workoutTemplate: nextWorkoutTemplate,
           progress: pruneProgressForWorkoutTemplate(
             mergeWorkoutProgressWithPreference(localSnapshot.progress, data.progress ?? {}, preferCloudOnConflict),
@@ -371,6 +375,14 @@ function AppMain() {
           ),
           customExercises: mergeById(localSnapshot.customExercises, data.customExercises ?? [], preferCloudOnConflict),
         };
+        if (localSnapshot.syncState?.reset) {
+          // Keep a pending reset local until the server acknowledges it.
+          mergedSnapshot = localSnapshot;
+        } else if ((data.syncState?.epoch ?? 0) > (localSnapshot.syncState?.epoch ?? 0)) {
+          mergedSnapshot = cloudSnapshot;
+        } else {
+          mergedSnapshot = mergeLedgerSnapshot(cloudSnapshot, { ...mergedSnapshot, syncState: localSnapshot.syncState }, true);
+        }
 
         cancelScheduledPush();
         applyCloudSnapshot(mergedSnapshot);
@@ -932,8 +944,8 @@ function AppMain() {
     restTimer.dismissTimer();
     workoutTimer.reset();
     setShowSettings(false);
-    if (isLoggedIn) void pushToCloud({ workoutTemplate: createDefaultWorkoutTemplate(), progress: {}, sessions: [], bodyWeightEntries: [], exerciseNotes: {}, settings: { strengthRestDuration: 120, hypertrophyRestDuration: 90, soundEnabled: true, weightUnit: "kg" }, customExercises: [] });
-    showToast("All data reset");
+    if (isLoggedIn) void pushToCloud({ syncState: useAppStore.getState().syncState, workoutTemplate: createDefaultWorkoutTemplate(), progress: {}, sessions: [], bodyWeightEntries: [], exerciseNotes: {}, settings: { strengthRestDuration: 120, hypertrophyRestDuration: 90, soundEnabled: true, weightUnit: "kg" }, customExercises: [] });
+    showToast(isLoggedIn ? "Local data reset; cloud reset queued" : "All data reset");
   }, [isLoggedIn, pushToCloud, restTimer, workoutTimer, showToast]);
 
   const openExerciseInfo = useCallback((name: string) => {

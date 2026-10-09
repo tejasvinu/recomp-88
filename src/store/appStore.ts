@@ -3,6 +3,7 @@
 import { create } from 'zustand';
 import { createDefaultWorkoutTemplate, normalizeWorkoutTemplate } from '../data';
 import { readLocalStorageValue, writeLocalStorageValue } from '../services/storageService';
+import { emptySyncLedger } from '../lib/syncLedger';
 import type {
     AppDataSnapshot,
     BodyWeightEntry,
@@ -10,6 +11,7 @@ import type {
     SessionHistory,
     WorkoutProgress,
     WorkoutTemplate as WorkoutTemplateData,
+    SyncLedger,
 } from '../types';
 
 // ─── Storage keys ──────────────────────────────────────────────────────────
@@ -41,6 +43,7 @@ export const DEFAULT_SETTINGS = {
 
 // ─── Store shape ─────────────────────────────────────────────────────────────
 export interface AppState {
+    syncState: SyncLedger;
     // Persisted
     workoutTemplate: WorkoutTemplateData;
     progress: WorkoutProgress;
@@ -110,6 +113,7 @@ const DEFAULT_TEMPLATE = createDefaultWorkoutTemplate();
 // cached" warning (and its downstream infinite-loop / hydration errors).
 // Persisted localStorage values are loaded AFTER mount via `hydrateFromStorage()`.
 const SSR_SAFE_INITIAL = {
+    syncState: emptySyncLedger(),
     workoutTemplate: DEFAULT_TEMPLATE,
     progress: {} as WorkoutProgress,
     sessions: [] as SessionHistory,
@@ -144,6 +148,7 @@ const readPersistedState = () => {
 
     return {
         workoutTemplate,
+        syncState: readLocalStorageValue<SyncLedger>('recomp88-sync-ledger', emptySyncLedger()),
         progress: readLocalStorageValue<WorkoutProgress>('recomp88-progress', {}),
         sessions: readLocalStorageValue<SessionHistory>('recomp88-sessions', []),
         strengthRestDuration: readLocalStorageValue<number>('recomp88-strength-rest', DEFAULT_SETTINGS.strengthRestDuration),
@@ -186,7 +191,20 @@ export const useAppStore = create<AppState>((set, get) => {
         // Persisted setters
         setWorkoutTemplate: makePersistedSetter(set, get, 'workoutTemplate', 'recomp88-workout-template'),
         setProgress: makePersistedSetter(set, get, 'progress', 'recomp88-progress'),
-        setSessions: makePersistedSetter(set, get, 'sessions', 'recomp88-sessions'),
+        setSessions: (updater) => {
+            const current = get();
+            const incoming = typeof updater === 'function' ? updater(current.sessions) : updater;
+            const tombstones = { ...current.syncState.tombstones };
+            const ids = new Set(incoming.map(s => s.id));
+            current.sessions.filter(s => !ids.has(s.id)).forEach(s => {
+                Object.defineProperty(tombstones, s.id, { value: Math.max(s.version ?? 0, tombstones[s.id] ?? 0) + 1, enumerable: true, writable: true, configurable: true });
+            });
+            const sessions = incoming.map(s => ({ ...s, version: Math.max(s.version ?? 1, (tombstones[s.id] ?? 0) + 1) }));
+            const syncState = { ...current.syncState, tombstones };
+            writeLocalStorageValue('recomp88-sync-ledger', syncState);
+            writeLocalStorageValue('recomp88-sessions', sessions);
+            set(() => ({ sessions, syncState }));
+        },
         setStrengthRestDuration: makePersistedSetter(set, get, 'strengthRestDuration', 'recomp88-strength-rest'),
         setHypertrophyRestDuration: makePersistedSetter(set, get, 'hypertrophyRestDuration', 'recomp88-hypertrophy-rest'),
         setExerciseNotes: makePersistedSetter(set, get, 'exerciseNotes', 'recomp88-notes'),
@@ -213,6 +231,8 @@ export const useAppStore = create<AppState>((set, get) => {
         // Bulk snapshot apply (cloud pull / import)
         applySnapshot: (snapshot: AppDataSnapshot) => {
             const s = get();
+            const syncState = snapshot.syncState ?? s.syncState;
+            writeLocalStorageValue('recomp88-sync-ledger', syncState);
             const normalizedTemplate = normalizeWorkoutTemplate(snapshot.workoutTemplate) ?? createDefaultWorkoutTemplate();
 
             writeLocalStorageValue('recomp88-workout-template', normalizedTemplate);
@@ -227,6 +247,7 @@ export const useAppStore = create<AppState>((set, get) => {
             writeLocalStorageValue('recomp88-weight-unit', snapshot.settings.weightUnit);
 
             set(() => ({
+                syncState,
                 workoutTemplate: normalizedTemplate,
                 progress: snapshot.progress,
                 sessions: snapshot.sessions,
@@ -244,10 +265,13 @@ export const useAppStore = create<AppState>((set, get) => {
 
         // Reset to factory defaults
         resetToDefaults: () => {
+            const syncState = { ...get().syncState, reset: { id: crypto.randomUUID(), baseEpoch: get().syncState.epoch } };
+            writeLocalStorageValue('recomp88-sync-ledger', syncState);
             APP_STORAGE_KEYS.forEach((k) => {
                 if (typeof window !== 'undefined') window.localStorage.removeItem(k);
             });
             set(() => ({
+                syncState,
                 workoutTemplate: DEFAULT_TEMPLATE,
                 progress: {},
                 sessions: [],
@@ -275,6 +299,7 @@ export const selectCurrentSettings = (s: AppState) => ({
 });
 
 export const selectCurrentSnapshot = (s: AppState): AppDataSnapshot => ({
+    syncState: s.syncState,
     workoutTemplate: s.workoutTemplate,
     progress: s.progress,
     sessions: s.sessions,
