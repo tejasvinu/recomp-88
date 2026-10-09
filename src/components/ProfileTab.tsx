@@ -6,6 +6,7 @@ import { User, LogOut, LogIn, CloudUpload, CloudOff, Check, Loader2, Edit3, Scal
 import type { SessionHistory, BodyWeightEntry } from "../types";
 import type { SyncStatus } from "../hooks/useCloudSync";
 import { cn, shiftLocalDateKey, toLocalDateKey } from "../utils";
+import ConnectedApps from "./ConnectedApps";
 
 interface ProfileTabProps {
   sessions: SessionHistory;
@@ -271,6 +272,8 @@ export default function ProfileTab({
           )}
         </div>
       )}
+
+      <ConnectedApps />
 
       {/* ── Stats Grid ── */}
       <div>

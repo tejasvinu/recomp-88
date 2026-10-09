@@ -21,6 +21,7 @@ import { cn } from "../utils";
 import { THEMES, applyTheme, getStoredTheme, type ThemeId } from "../theme";
 import { useModalEscape } from "../hooks/useModalEscape";
 import { Sheet, SheetHandle } from "./ui/Sheet";
+import ConnectedApps from "./ConnectedApps";
 
 const REST_STEP = 15;
 const REST_MIN = 30;
@@ -123,6 +124,8 @@ export default function SettingsModal({
             </div>
 
             <div className="p-5 flex flex-col gap-5 overflow-y-auto max-h-[75vh] overscroll-contain">
+                <ConnectedApps />
+
                 {/* Rest Timer Customization */}
                 <div>
                     <p className="text-mini text-neutral-500 font-black uppercase tracking-widest mb-3 flex items-center gap-2">
