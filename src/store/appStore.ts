@@ -43,6 +43,7 @@ export const DEFAULT_SETTINGS = {
 
 // ─── Store shape ─────────────────────────────────────────────────────────────
 export interface AppState {
+    timezone?: string;
     syncState: SyncLedger;
     // Persisted
     workoutTemplate: WorkoutTemplateData;
@@ -148,6 +149,7 @@ const readPersistedState = () => {
 
     return {
         workoutTemplate,
+        timezone: readLocalStorageValue<string>('recomp88-timezone', Intl.DateTimeFormat().resolvedOptions().timeZone),
         syncState: readLocalStorageValue<SyncLedger>('recomp88-sync-ledger', emptySyncLedger()),
         progress: readLocalStorageValue<WorkoutProgress>('recomp88-progress', {}),
         sessions: readLocalStorageValue<SessionHistory>('recomp88-sessions', []),
@@ -199,7 +201,12 @@ export const useAppStore = create<AppState>((set, get) => {
             current.sessions.filter(s => !ids.has(s.id)).forEach(s => {
                 Object.defineProperty(tombstones, s.id, { value: Math.max(s.version ?? 0, tombstones[s.id] ?? 0) + 1, enumerable: true, writable: true, configurable: true });
             });
-            const sessions = incoming.map(s => ({ ...s, version: Math.max(s.version ?? 1, (tombstones[s.id] ?? 0) + 1) }));
+            const sessions = incoming.map(s => {
+                const before = current.sessions.find(previous => previous.id === s.id);
+                const changed = !before || JSON.stringify(before) !== JSON.stringify(s);
+                return { ...s, version: Math.max(s.version ?? 1, (tombstones[s.id] ?? 0) + 1, changed && before ? (before.version ?? 0) + 1 : 1),
+                    updatedAt: changed ? new Date().toISOString() : s.updatedAt };
+            });
             const syncState = { ...current.syncState, tombstones };
             writeLocalStorageValue('recomp88-sync-ledger', syncState);
             writeLocalStorageValue('recomp88-sessions', sessions);
@@ -252,6 +259,7 @@ export const useAppStore = create<AppState>((set, get) => {
             writeLocalStorageValue('recomp88-hypertrophy-rest', snapshot.settings.hypertrophyRestDuration);
             writeLocalStorageValue('recomp88-sound', snapshot.settings.soundEnabled);
             writeLocalStorageValue('recomp88-weight-unit', snapshot.settings.weightUnit);
+            writeLocalStorageValue('recomp88-timezone', snapshot.settings.timezone);
 
             set(() => ({
                 syncState,
@@ -265,6 +273,7 @@ export const useAppStore = create<AppState>((set, get) => {
                 hypertrophyRestDuration: snapshot.settings.hypertrophyRestDuration,
                 soundEnabled: snapshot.settings.soundEnabled,
                 weightUnit: snapshot.settings.weightUnit,
+                timezone: snapshot.settings.timezone,
                 // Clamp day index in case the new template is shorter
                 activeDayIndex: Math.min(s.activeDayIndex, Math.max(normalizedTemplate.length - 1, 0)),
             }));
@@ -299,6 +308,7 @@ export const useAppStore = create<AppState>((set, get) => {
 // ─── Derived selectors (Note: Use with useShallow in components) ──────────
 
 export const selectCurrentSettings = (s: AppState) => ({
+    timezone: s.timezone,
     strengthRestDuration: s.strengthRestDuration,
     hypertrophyRestDuration: s.hypertrophyRestDuration,
     soundEnabled: s.soundEnabled,

@@ -16,7 +16,7 @@ export async function GET(req: Request) {
   try {
     const [user, data] = await Promise.all([
       User.findById(identity.userId).select("weightUnit -_id").lean(),
-      UserData.findOne({ userId: identity.userId }).select("sessions bodyWeightEntries settings.weightUnit -_id").lean(),
+      UserData.findOne({ userId: identity.userId }).select("sessions bodyWeightEntries settings -_id").lean(),
     ]);
     if (!user) return apiJson({ error: "Invalid API token" }, 401);
     return apiJson(mapPublicWorkouts(data, user.weightUnit, window));

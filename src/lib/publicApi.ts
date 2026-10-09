@@ -1,4 +1,6 @@
 import type { WeightUnit } from "@/types";
+import { canonicalTimezone, dateInTimezone } from "./calendar";
+import { convertMass } from "./trainingMath";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 export interface ApiWindow { since: Date; until: Date }
@@ -12,7 +14,7 @@ function validCalendarDate(year: number, month: number, day: number) {
   return month >= 1 && month <= 12 && day >= 1 && day <= days[month - 1];
 }
 
-function parseInstant(value: string): Date | null {
+export function parseInstant(value: string): Date | null {
   // Require a timezone: date-only strings and local datetimes are not instants.
   const match = value.match(/^(\d{4})-(\d{2})-(\d{2})[Tt](\d{2}):(\d{2})(?::(\d{2})(?:\.\d+)?)?([Zz]|[+-](\d{2}):?(\d{2}))$/);
   if (!match || !validCalendarDate(+match[1], +match[2], +match[3]) ||
@@ -40,14 +42,16 @@ function numericLog(value: unknown): number | null {
   return Number.isFinite(number) ? number : null;
 }
 
-function mapExercise(exercise: Record<string, unknown>) {
+function mapExercise(exercise: Record<string, unknown>, sourceUnit?: WeightUnit, outputUnit?: WeightUnit) {
   const sets = Array.isArray(exercise.sets) ? exercise.sets : [];
   let completedSets = 0;
   let topSet: { weight: number; reps: number } | null = null;
   for (const set of sets) {
     if (!isRecord(set) || set.completed !== true) continue;
     completedSets++;
-    const weight = numericLog(set.loggedWeight);
+    const rawWeight = numericLog(set.loggedWeight);
+    const setUnit = set.weightUnit === "kg" || set.weightUnit === "lbs" ? set.weightUnit : sourceUnit;
+    const weight = rawWeight !== null && setUnit && outputUnit ? convertMass(rawWeight, setUnit, outputUnit) : rawWeight;
     const reps = numericLog(set.loggedReps);
     if (weight === null || reps === null) continue;
     if (!topSet || weight > topSet.weight || (weight === topSet.weight && reps > topSet.reps)) {
@@ -61,13 +65,14 @@ function mapExercise(exercise: Record<string, unknown>) {
   };
 }
 
-export function mapPublicSessions(value: unknown, window: ApiWindow) {
+export function mapPublicSessions(value: unknown, window: ApiWindow, outputUnit?: WeightUnit) {
   if (!Array.isArray(value)) return [];
   return value.flatMap((session) => {
     if (!isRecord(session) || typeof session.date !== "string") return [];
-    const timestamp = Date.parse(session.date);
+    const timestamp = Date.parse(typeof session.startedAt === "string" ? session.startedAt : session.date);
     if (!Number.isFinite(timestamp) || timestamp < window.since.getTime() || timestamp >= window.until.getTime()) return [];
-    const exercises = Array.isArray(session.exercises) ? session.exercises.filter(isRecord).map(mapExercise) : [];
+    const sourceUnit = session.weightUnit === "kg" || session.weightUnit === "lbs" ? session.weightUnit : undefined;
+    const exercises = Array.isArray(session.exercises) ? session.exercises.filter(isRecord).map(ex => mapExercise(ex, sourceUnit, outputUnit)) : [];
     return [{
       id: typeof session.id === "string" ? session.id : "",
       startedAt: new Date(timestamp).toISOString(),
@@ -76,28 +81,29 @@ export function mapPublicSessions(value: unknown, window: ApiWindow) {
       exerciseCount: exercises.length,
       completedSets: exercises.reduce((sum, exercise) => sum + exercise.completedSets, 0),
       totalSets: exercises.reduce((sum, exercise) => sum + exercise.totalSets, 0),
-      totalTonnage: typeof session.totalTonnage === "number" && Number.isFinite(session.totalTonnage) ? session.totalTonnage : null,
+      totalTonnage: typeof session.totalTonnage === "number" && Number.isFinite(session.totalTonnage) ? sourceUnit && outputUnit ? convertMass(session.totalTonnage, sourceUnit, outputUnit) : session.totalTonnage : null,
       exercises,
     }];
   }).sort((a, b) => Date.parse(a.startedAt) - Date.parse(b.startedAt)).slice(0, 1000);
 }
 
-export function mapPublicBodyWeight(value: unknown, window: ApiWindow) {
+export function mapPublicBodyWeight(value: unknown, window: ApiWindow, timezone = "UTC", outputUnit?: WeightUnit) {
   if (!Array.isArray(value)) return [];
-  const since = window.since.toISOString().slice(0, 10);
-  const until = window.until.toISOString().slice(0, 10);
+  const since = dateInTimezone(window.since, timezone);
+  const until = dateInTimezone(window.until, timezone);
   return value.flatMap((entry) => {
     if (!isRecord(entry) || typeof entry.date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(entry.date) ||
       !validCalendarDate(+entry.date.slice(0, 4), +entry.date.slice(5, 7), +entry.date.slice(8, 10)) ||
       entry.date < since || entry.date >= until || typeof entry.weight !== "number" || !Number.isFinite(entry.weight)) return [];
-    return [{ date: entry.date, weight: entry.weight }];
+    const sourceUnit = entry.weightUnit === "kg" || entry.weightUnit === "lbs" ? entry.weightUnit : undefined;
+    return [{ date: entry.date, weight: sourceUnit && outputUnit ? convertMass(entry.weight, sourceUnit, outputUnit) : entry.weight }];
   }).sort((a, b) => a.date.localeCompare(b.date));
 }
 
 export interface PublicApiData {
   sessions?: unknown;
   bodyWeightEntries?: unknown;
-  settings?: { weightUnit?: unknown } | null;
+  settings?: { weightUnit?: unknown; timezone?: unknown } | null;
   lastSyncedAt?: Date | string | null;
 }
 
@@ -122,7 +128,7 @@ export function mapPublicWorkouts(data: PublicApiData | null, fallbackUnit: unkn
     schemaVersion: 1,
     weightUnit: publicWeightUnit(data, fallbackUnit),
     since: window.since.toISOString(), until: window.until.toISOString(),
-    sessions: mapPublicSessions(data?.sessions, window),
-    bodyWeight: mapPublicBodyWeight(data?.bodyWeightEntries, window),
+    sessions: mapPublicSessions(data?.sessions, window, publicWeightUnit(data, fallbackUnit)),
+    bodyWeight: mapPublicBodyWeight(data?.bodyWeightEntries, window, canonicalTimezone(data?.settings?.timezone) ?? "UTC", publicWeightUnit(data, fallbackUnit)),
   };
 }

@@ -1,4 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { snapshotPlan, type SessionTiming } from "../lib/sessionMetadata";
+import type { DayRoutine } from "../types";
+import { readLocalStorageValue, writeLocalStorageValue } from "../services/storageService";
 
 interface PersistedWorkoutTimer {
     workoutStartTime: number | null;
@@ -34,6 +37,8 @@ const readPersistedWorkoutTimer = (): PersistedWorkoutTimer => {
 };
 
 export function useWorkoutTimer() {
+    const [metadata, setMetadata] = useState<SessionTiming>(() => readLocalStorageValue("recomp88-session-timing", {}));
+    useEffect(() => { writeLocalStorageValue("recomp88-session-timing", metadata); }, [metadata]);
     const [initialTimer] = useState(readPersistedWorkoutTimer);
     const [workoutStartTime, setWorkoutStartTime] = useState<number | null>(initialTimer.workoutStartTime);
     const [pausedAt, setPausedAt] = useState<number | null>(initialTimer.pausedAt);
@@ -77,8 +82,12 @@ export function useWorkoutTimer() {
         return () => clearInterval(interval);
     }, [workoutStartTime, pausedAt]);
 
-    const start = useCallback(() => {
-        if (workoutStartTime === null) setWorkoutStartTime(Date.now());
+    const start = useCallback((day?: DayRoutine) => {
+        if (workoutStartTime === null) {
+            setWorkoutStartTime(Date.now());
+            setMetadata({ startedAt: new Date().toISOString(), timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                ...(day ? snapshotPlan(day) : {}) });
+        }
     }, [workoutStartTime]);
 
     const pause = useCallback(() => {
@@ -111,6 +120,7 @@ export function useWorkoutTimer() {
     }, [workoutStartTime, pausedAt]);
 
     const reset = useCallback(() => {
+        setMetadata({});
         setWorkoutStartTime(null);
         setPausedAt(null);
         setElapsedSeconds(0);
@@ -119,6 +129,7 @@ export function useWorkoutTimer() {
     const isRunning = workoutStartTime !== null && pausedAt === null;
     const isPaused = pausedAt !== null;
 
-    return { elapsedSeconds, isRunning, isPaused, start, togglePause, getDuration, reset };
+    const getSessionMetadata = useCallback(() => metadata, [metadata]);
+    return { elapsedSeconds, isRunning, isPaused, start, togglePause, getDuration, getSessionMetadata, reset };
 }
 

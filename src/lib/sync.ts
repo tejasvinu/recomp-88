@@ -14,6 +14,8 @@ import type {
   WorkoutSettings,
   SyncLedger,
 } from "@/types";
+import { canonicalTimezone, validLocalDate } from "./calendar";
+import { parseInstant } from "./publicApi";
 
 export type CloudSyncSnapshot = AppDataSnapshot & {
   revision?: number;
@@ -134,6 +136,8 @@ const normalizeSavedSetState = (
     loggedWeight: typeof value.loggedWeight === "string" ? value.loggedWeight : "",
     loggedReps: typeof value.loggedReps === "string" ? value.loggedReps : "",
   };
+  const unit = normalizeWeightUnit(value.weightUnit);
+  if (unit) result.weightUnit = unit;
 
   const rpe = normalizeRpe(value.rpe);
   if (rpe !== undefined) result.rpe = rpe;
@@ -207,6 +211,8 @@ const sanitizeSessionSet = (value: unknown): SessionSet | null => {
     loggedReps: typeof value.loggedReps === "string" ? value.loggedReps : "",
     completed: typeof value.completed === "boolean" ? value.completed : undefined,
   };
+  const unit = normalizeWeightUnit(value.weightUnit);
+  if (unit) result.weightUnit = unit;
 
   if (typeof value.completedAt === "number" && Number.isFinite(value.completedAt)) {
     result.completedAt = value.completedAt;
@@ -300,6 +306,27 @@ export const sanitizeSessionHistory = (value: unknown): SessionHistory =>
           duration,
         };
         if (Number.isSafeInteger(sessionValue.version) && (sessionValue.version as number) > 0) session.version = sessionValue.version as number;
+        const unit = normalizeWeightUnit(sessionValue.weightUnit);
+        if (unit) session.weightUnit = unit;
+        const bodyUnit = normalizeWeightUnit(sessionValue.bodyWeightUnit);
+        if (bodyUnit) session.bodyWeightUnit = bodyUnit;
+        for (const key of ["startedAt", "endedAt", "recordedAt", "updatedAt"] as const) {
+          const raw = sessionValue[key];
+          if (typeof raw === "string" && parseInstant(raw)) session[key] = raw;
+        }
+        if (session.startedAt && session.endedAt && Date.parse(session.startedAt) > Date.parse(session.endedAt)) return [];
+        const timezone = canonicalTimezone(sessionValue.timezone);
+        if (timezone) session.timezone = timezone;
+        if (validLocalDate(sessionValue.localDate)) session.localDate = sessionValue.localDate;
+        if (["observed", "date_only", "recorded_only"].includes(sessionValue.timestampQuality as string)) session.timestampQuality = sessionValue.timestampQuality as WorkoutSession["timestampQuality"];
+        if (typeof sessionValue.planVersion === "string") session.planVersion = sessionValue.planVersion;
+        if (typeof sessionValue.scheduledOccurrenceId === "string") session.scheduledOccurrenceId = sessionValue.scheduledOccurrenceId;
+        if (Array.isArray(sessionValue.plannedSetSnapshot)) {
+          session.plannedSetSnapshot = sessionValue.plannedSetSnapshot.flatMap(p => {
+            if (!isRecord(p) || typeof p.exerciseId !== "string" || typeof p.setId !== "string" || typeof p.targetReps !== "string") return [];
+            return [{ exerciseId: p.exerciseId, setId: p.setId, targetReps: p.targetReps, setType: normalizeSetType(p.setType) ?? "working" }];
+          });
+        }
 
         if (bodyWeightSnapshot !== undefined) session.bodyWeightSnapshot = bodyWeightSnapshot;
         if (totalTonnage !== undefined) session.totalTonnage = totalTonnage;
@@ -321,7 +348,16 @@ export const sanitizeBodyWeightEntries = (value: unknown): BodyWeightEntry[] =>
 
         if (!date || weight === null) return [];
 
-        return [{ date, weight }];
+        const entry: BodyWeightEntry = { date, weight };
+        const unit = normalizeWeightUnit(entryValue.weightUnit);
+        if (unit) entry.weightUnit = unit;
+        const timezone = canonicalTimezone(entryValue.timezone);
+        if (timezone) entry.timezone = timezone;
+        for (const key of ["recordedAt", "updatedAt"] as const) {
+          const raw = entryValue[key];
+          if (typeof raw === "string" && parseInstant(raw)) entry[key] = raw;
+        }
+        return [entry];
       })
     : [];
 
@@ -339,6 +375,8 @@ export const sanitizeSettings = (value: unknown): Partial<WorkoutSettings> => {
   if (!isRecord(value)) return {};
 
   const sanitized: Partial<WorkoutSettings> = {};
+  const timezone = canonicalTimezone(value.timezone);
+  if (timezone) sanitized.timezone = timezone;
 
   if (
     typeof value.strengthRestDuration === "number" &&

@@ -32,6 +32,7 @@ const UserDataSchema = new Schema(
     bodyWeightEntries: { type: Array, default: [] },
     exerciseNotes: { type: Schema.Types.Mixed, default: {} },
     settings: {
+      timezone: { type: String },
       strengthRestDuration: { type: Number, default: 120 },
       hypertrophyRestDuration: { type: Number, default: 90 },
       soundEnabled: { type: Boolean, default: true },

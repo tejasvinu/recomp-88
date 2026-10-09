@@ -22,6 +22,9 @@ import {
     resolvePrimaryFreeWeightAlternative,
 } from '../wikiData';
 import { resolveWeight, getClosestBodyWeight, toLocalDateKey } from '../utils';
+import { snapshotPlan, type SessionTiming } from '../lib/sessionMetadata';
+import { dateInTimezone } from '../lib/calendar';
+import { displayBodyWeight, sessionVolumeKg, convertMass } from '../lib/trainingMath';
 import type {
     WorkoutTemplate,
     WorkoutProgress,
@@ -110,6 +113,7 @@ export function buildWorkoutSession(
     bodyWeightEntries: BodyWeightEntry[],
     weightUnit: 'kg' | 'lbs',
     durationSeconds: number,
+    timing: SessionTiming = {},
 ): WorkoutSession | null {
     if (!dayProgress) return null;
 
@@ -121,24 +125,12 @@ export function buildWorkoutSession(
     );
     if (!hasData) return null;
 
-    const defaultBw = weightUnit === 'lbs' ? 175 : 80;
     const nowIso = new Date().toISOString();
-    const currentBodyWeight = getClosestBodyWeight(nowIso, bodyWeightEntries, defaultBw);
-
-    const totalTonnage = activeDay.exercises.reduce((total, ex) => {
-        return (
-            total +
-            getExerciseSetsWithExtras(ex, dayProgress[ex.id]).reduce((setTotal, set) => {
-                const state = dayProgress[ex.id]?.[set.id];
-                if (state?.completed && state.setType !== 'warmup') {
-                    const weight = resolveWeight(state.loggedWeight, currentBodyWeight);
-                    const reps = parseInt(state.loggedReps) || 0;
-                    return setTotal + weight * reps;
-                }
-                return setTotal;
-            }, 0)
-        );
-    }, 0);
+    const timezone = timing.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const dayKey = dateInTimezone(timing.startedAt ?? nowIso, timezone);
+    const knownEntry = bodyWeightEntries.filter(e => e.date <= dayKey && e.weightUnit)
+        .sort((a,b) => b.date.localeCompare(a.date))[0];
+    const currentBodyWeight = knownEntry ? displayBodyWeight(knownEntry, weightUnit).weight : undefined;
 
     const session: WorkoutSession = {
         id: `${activeDay.id}-${Date.now()}`,
@@ -146,7 +138,15 @@ export function buildWorkoutSession(
         dayId: activeDay.id,
         dayName: activeDay.name,
         bodyWeightSnapshot: currentBodyWeight,
-        totalTonnage: Math.round(totalTonnage * 100) / 100,
+        bodyWeightUnit: currentBodyWeight !== undefined ? weightUnit : undefined,
+        weightUnit,
+        ...snapshotPlan(activeDay),
+        ...timing,
+        timezone,
+        timestampQuality: timing.timestampQuality ?? (timing.startedAt ? 'observed' : 'recorded_only'),
+        endedAt: timing.endedAt ?? nowIso,
+        recordedAt: nowIso,
+        updatedAt: nowIso,
         duration: durationSeconds,
         exercises: activeDay.exercises
             .map((ex) => ({
@@ -157,6 +157,7 @@ export function buildWorkoutSession(
                     .map((set) => {
                         const s = dayProgress[ex.id]?.[set.id];
                         return {
+                            weightUnit: s?.weightUnit ?? weightUnit,
                             setId: set.id,
                             targetReps: set.targetReps,
                             loggedWeight: s?.loggedWeight || '',
@@ -173,6 +174,7 @@ export function buildWorkoutSession(
             .filter((ex) => ex.sets.length > 0),
     };
 
+    session.totalTonnage = convertMass(sessionVolumeKg(session), "kg", weightUnit);
     return session;
 }
 

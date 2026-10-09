@@ -14,6 +14,8 @@ import { useToast } from "./hooks/useToast";
 import { useRestTimer } from "./hooks/useRestTimer";
 import { useWorkoutTimer } from "./hooks/useWorkoutTimer";
 import { useCloudSync } from "./hooks/useCloudSync";
+import { buildWorkoutSession, computeAllTimePRs } from "./services/workoutService";
+import { displaySession, displayBodyWeight, convertWeightLog } from "./lib/trainingMath";
 import { mergeLedgerSnapshot } from "./lib/syncLedger";
 import {
   hasRemoteChangesSinceBase,
@@ -24,7 +26,7 @@ import type {
   ExerciseWiki,
   WorkoutSession,
 } from "./types";
-import { getClosestBodyWeight, resolveWeight, toLocalDateKey } from "./utils";
+import { toLocalDateKey } from "./utils";
 import {
   findWikiEntry,
   isFreeWeightFriendly,
@@ -110,14 +112,17 @@ function AppMain() {
   // ─── Global store (individual selectors for stability) ──────────────────
   const progress = useAppStore((s) => s.progress);
   const setProgress = useAppStore((s) => s.setProgress);
-  const sessions = useAppStore((s) => s.sessions);
+  const storedSessions = useAppStore((s) => s.sessions);
   const setSessions = useAppStore((s) => s.setSessions);
   const syncState = useAppStore((s) => s.syncState);
-  const bodyWeightEntries = useAppStore((s) => s.bodyWeightEntries);
+  const storedBodyWeightEntries = useAppStore((s) => s.bodyWeightEntries);
   const setBodyWeightEntries = useAppStore((s) => s.setBodyWeightEntries);
   const exerciseNotes = useAppStore((s) => s.exerciseNotes);
   const setExerciseNotes = useAppStore((s) => s.setExerciseNotes);
   const weightUnit = useAppStore((s) => s.weightUnit);
+  const timezone = useAppStore((s) => s.timezone);
+  const sessions = useMemo(() => storedSessions.map(s => displaySession(s, weightUnit)), [storedSessions, weightUnit]);
+  const bodyWeightEntries = useMemo(() => storedBodyWeightEntries.map(e => displayBodyWeight(e, weightUnit)), [storedBodyWeightEntries, weightUnit]);
   const setWeightUnit = useAppStore((s) => s.setWeightUnit);
   const customExercises = useAppStore((s) => s.customExercises);
   const setCustomExercises = useAppStore((s) => s.setCustomExercises);
@@ -138,17 +143,18 @@ function AppMain() {
     syncState,
     workoutTemplate: safeWorkoutTemplate,
     progress,
-    sessions,
-    bodyWeightEntries,
+    sessions: storedSessions,
+    bodyWeightEntries: storedBodyWeightEntries,
     exerciseNotes,
     settings: {
       strengthRestDuration,
       hypertrophyRestDuration,
       soundEnabled,
       weightUnit,
+      timezone,
     },
     customExercises,
-  }), [syncState, safeWorkoutTemplate, progress, sessions, bodyWeightEntries, exerciseNotes, strengthRestDuration, hypertrophyRestDuration, soundEnabled, weightUnit, customExercises]);
+  }), [syncState, safeWorkoutTemplate, progress, storedSessions, storedBodyWeightEntries, timezone, exerciseNotes, strengthRestDuration, hypertrophyRestDuration, soundEnabled, weightUnit, customExercises]);
 
   // Keep a stable ref of the snapshot for callbacks that need stale-proof reads
   const currentSnapshotRef = useRef(currentSnapshot);
@@ -221,28 +227,7 @@ function AppMain() {
     return total === 0 ? 0 : Math.round((completed / total) * 100);
   }, [progress, activeDay]);
 
-  const allTimePRs = useMemo(() => {
-    const prs: Record<string, number> = {};
-    const defaultBw = weightUnit === "lbs" ? 175 : 80;
-    safeWorkoutTemplate.forEach((day) => {
-      day.exercises.forEach((exercise) => {
-        let bestWeight = 0;
-        sessions.forEach((session) => {
-          const bw = getClosestBodyWeight(session.date, bodyWeightEntries, defaultBw);
-          session.exercises
-            .filter((se) => se.exerciseId === exercise.id || se.name === exercise.name)
-            .forEach((se) => {
-              se.sets.forEach((set) => {
-                const w = resolveWeight(set.loggedWeight, bw);
-                if (w > bestWeight) bestWeight = w;
-              });
-            });
-        });
-        prs[exercise.id] = bestWeight;
-      });
-    });
-    return prs;
-  }, [bodyWeightEntries, safeWorkoutTemplate, sessions, weightUnit]);
+  const allTimePRs = useMemo(() => computeAllTimePRs(safeWorkoutTemplate, sessions, bodyWeightEntries, weightUnit), [safeWorkoutTemplate, sessions, bodyWeightEntries, weightUnit]);
 
   const lastSessionValues = useMemo(() => {
     const values: Record<string, Record<string, Record<string, { weight: string; reps: string }>>> = {};
@@ -291,6 +276,7 @@ function AppMain() {
       strengthRestDuration: typeof settings.strengthRestDuration === "number" ? settings.strengthRestDuration : fallback.strengthRestDuration,
       hypertrophyRestDuration: typeof settings.hypertrophyRestDuration === "number" ? settings.hypertrophyRestDuration : fallback.hypertrophyRestDuration,
       soundEnabled: typeof settings.soundEnabled === "boolean" ? settings.soundEnabled : fallback.soundEnabled,
+      timezone: settings.timezone ?? fallback.timezone,
       weightUnit: settings.weightUnit === "kg" || settings.weightUnit === "lbs" ? settings.weightUnit : fallback.weightUnit,
     }),
     []
@@ -388,17 +374,20 @@ function AppMain() {
   // ─── Weight unit handler (also persists to profile API) ──────────────
   const handleSetWeightUnit = useCallback(
     (fn: (v: "kg" | "lbs") => "kg" | "lbs") => {
-      setWeightUnit((prev) => {
-        const next = fn(prev);
-        if (isLoggedIn && next !== prev) {
-          void fetch("/api/user/profile", {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ weightUnit: next }),
-          }).catch(() => { });
-        }
-        return next;
-      });
+      const state = useAppStore.getState();
+      const next = fn(state.weightUnit);
+      if (next === state.weightUnit) return;
+      const converted = Object.fromEntries(Object.entries(state.progress).map(([dayId, exercises]) => [dayId,
+        Object.fromEntries(Object.entries(exercises).map(([exId, sets]) => [exId,
+          Object.fromEntries(Object.entries(sets).map(([id, set]) => [id, { ...set,
+            loggedWeight: set.weightUnit ? convertWeightLog(set.loggedWeight, set.weightUnit, next) : set.loggedWeight,
+            weightUnit: set.weightUnit ? next : undefined,
+          }]))
+        ]))
+      ]));
+      state.setProgress(converted);
+      setWeightUnit(next);
+      if (isLoggedIn) void fetch("/api/user/profile", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ weightUnit: next }) }).catch(() => {});
     },
     [isLoggedIn, setWeightUnit]
   );
@@ -433,11 +422,11 @@ function AppMain() {
       });
       if (!wasCompleted) {
         if ("vibrate" in navigator) navigator.vibrate(50);
-        workoutTimer.start();
+        workoutTimer.start(activeDay);
         if (restType !== "other") restTimer.startTimer(restType as "strength" | "hypertrophy");
       }
     },
-    [setProgress, workoutTimer, restTimer]
+    [setProgress, workoutTimer, restTimer, activeDay]
   );
 
   const updateSetData = useCallback(
@@ -446,10 +435,10 @@ function AppMain() {
         const dayP = prev[dayId] || {};
         const exP = dayP[exerciseId] || {};
         const setP = exP[setId] || { completed: false, loggedWeight: "", loggedReps: "" };
-        return { ...prev, [dayId]: { ...dayP, [exerciseId]: { ...exP, [setId]: { ...setP, [field]: value } } } };
+        return { ...prev, [dayId]: { ...dayP, [exerciseId]: { ...exP, [setId]: { ...setP, [field]: value, ...(field === "loggedWeight" ? { weightUnit } : {}) } } } };
       });
     },
-    [setProgress]
+    [setProgress, weightUnit]
   );
 
   const addExtraSet = useCallback(
@@ -615,52 +604,9 @@ function AppMain() {
         getExerciseSetsWithExtras(ex, dayProgress[ex.id]).some((set) => { const s = dayProgress[ex.id]?.[set.id]; return s && (s.loggedWeight || s.loggedReps || s.completed); })
       );
       if (hasData) {
-        const duration = workoutTimer.getDuration();
-        const defaultBw = weightUnit === "lbs" ? 175 : 80;
-        const currentBodyWeight = getClosestBodyWeight(new Date().toISOString(), bodyWeightEntries, defaultBw);
-
-        const totalTonnage = activeDay.exercises.reduce((total, ex) =>
-          total + getExerciseSetsWithExtras(ex, dayProgress[ex.id]).reduce((st, set) => {
-            const state = dayProgress[ex.id]?.[set.id];
-            if (state?.completed && state.setType !== "warmup") {
-              return st + resolveWeight(state.loggedWeight, currentBodyWeight) * (parseInt(state.loggedReps) || 0);
-            }
-            return st;
-          }, 0), 0
-        );
-
-        const session: WorkoutSession = {
-          id: `${activeDay.id}-${Date.now()}`,
-          date: new Date().toISOString(),
-          dayId: activeDay.id,
-          dayName: activeDay.name,
-          bodyWeightSnapshot: currentBodyWeight,
-          totalTonnage: Math.round(totalTonnage * 100) / 100,
-          duration,
-          exercises: activeDay.exercises
-            .map((ex) => ({
-              exerciseId: ex.id,
-              name: ex.name,
-              type: ex.type,
-              sets: getExerciseSetsWithExtras(ex, dayProgress[ex.id])
-                .map((set) => {
-                  const s = dayProgress[ex.id]?.[set.id];
-                  return {
-                    setId: set.id,
-                    targetReps: set.targetReps,
-                    loggedWeight: s?.loggedWeight || "",
-                    loggedReps: s?.loggedReps || "",
-                    completed: s?.completed || false,
-                    ...(s?.completedAt != null ? { completedAt: s.completedAt } : {}),
-                    ...(s?.rpe != null ? { rpe: s.rpe } : {}),
-                    ...(s?.setType ? { setType: s.setType } : {}),
-                    ...(isExtraSetState(set.id, s) ? { isExtra: true } : {}),
-                  };
-                })
-                .filter((s) => s.loggedWeight || s.loggedReps || s.completed),
-            }))
-            .filter((ex) => ex.sets.length > 0),
-        };
+        const session = buildWorkoutSession(activeDay, dayProgress, storedBodyWeightEntries, weightUnit,
+          workoutTimer.getDuration() ?? 0, workoutTimer.getSessionMetadata());
+        if (!session) return;
         addedSessionId = session.id;
         setSessions((prev) => [...prev, session]);
       }
@@ -700,7 +646,7 @@ function AppMain() {
         : undefined
     );
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, [progress, activeDay, workoutTimer, restTimer, setProgress, setSessions, showToast, bodyWeightEntries, weightUnit]);
+  }, [progress, activeDay, workoutTimer, restTimer, setProgress, setSessions, showToast, storedBodyWeightEntries, weightUnit]);
 
   const handleResetTimer = useCallback(() => { workoutTimer.reset(); showToast("Timer reset"); }, [workoutTimer, showToast]);
   const deleteSession = useCallback((id: string) => { setSessions((prev) => prev.filter((s) => s.id !== id)); showToast("Session deleted"); }, [setSessions, showToast]);
@@ -723,10 +669,10 @@ function AppMain() {
     const today = toLocalDateKey();
     setBodyWeightEntries((prev) => {
       const filtered = prev.filter((e) => e.date !== today);
-      return [...filtered, { date: today, weight }].sort((a, b) => a.date.localeCompare(b.date));
+      return [...filtered, { date: today, weight, weightUnit, timezone, recordedAt: new Date().toISOString(), updatedAt: new Date().toISOString() }].sort((a, b) => a.date.localeCompare(b.date));
     });
     showToast("Body weight logged");
-  }, [setBodyWeightEntries, showToast]);
+  }, [setBodyWeightEntries, showToast, weightUnit, timezone]);
 
   const handleNoteChange = useCallback((exerciseId: string, note: string) => {
     setExerciseNotes((prev) => ({ ...prev, [exerciseId]: note }));

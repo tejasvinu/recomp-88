@@ -1,8 +1,10 @@
 'use client';
 
+import { snapshotPlan } from "../lib/sessionMetadata";
+import { convertMass, sessionVolumeKg } from "../lib/trainingMath";
 import { useState, useMemo, useEffect } from "react";
 import { X, DatabaseBackup, Save, FileJson } from "lucide-react";
-import { cn, resolveWeight, getClosestBodyWeight, toLocalDateKey } from "../utils";
+import { cn, toLocalDateKey } from "../utils";
 import { useModalEscape } from "../hooks/useModalEscape";
 import { sanitizeSessionHistory } from "../lib/sync";
 import type { WorkoutTemplate, WorkoutSession, BodyWeightEntry } from "../types";
@@ -98,7 +100,6 @@ export default function AddPastSessionModal({
   const handleSaveManual = () => {
     if (!activeDay) return;
 
-    const defaultBw = weightUnit === "lbs" ? 175 : 80;
     const sessionDate = createLocalNoonFromDateKey(selectedDate);
     if (!sessionDate) {
       setManualError("Choose a valid session date.");
@@ -106,9 +107,8 @@ export default function AddPastSessionModal({
     }
     const dateStr = sessionDate.toISOString();
     const completedAt = sessionDate.getTime();
-    const currentBodyWeight = getClosestBodyWeight(dateStr, bodyWeightEntries, defaultBw);
+    const currentBodyWeight = bodyWeightEntries.filter(e => e.date <= selectedDate && e.weightUnit).sort((a,b) => b.date.localeCompare(a.date))[0]?.weight;
 
-    let totalTonnage = 0;
     const sessionExercises: WorkoutSession["exercises"] = [];
 
     activeDay.exercises.forEach((ex) => {
@@ -128,10 +128,7 @@ export default function AddPastSessionModal({
             completedAt,
           });
 
-          // update tonnage
-          const weight = resolveWeight(s.loggedWeight, currentBodyWeight);
-          const reps = parseFloat(s.loggedReps) || 0;
-          totalTonnage += weight * reps;
+
         }
       });
 
@@ -156,11 +153,19 @@ export default function AddPastSessionModal({
       dayId: activeDay.id,
       dayName: activeDay.name,
       bodyWeightSnapshot: currentBodyWeight,
-      totalTonnage: Math.round(totalTonnage * 100) / 100,
+      weightUnit,
+      bodyWeightUnit: currentBodyWeight !== undefined ? weightUnit : undefined,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      localDate: selectedDate,
+      timestampQuality: "date_only",
+      recordedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      ...snapshotPlan(activeDay),
       duration: parseInt(durationMinutes) * 60 || 0,
       exercises: sessionExercises,
     };
 
+    session.totalTonnage = convertMass(sessionVolumeKg(session), "kg", weightUnit);
     onAddSessions([session]);
     onClose();
   };
@@ -179,7 +184,6 @@ export default function AddPastSessionModal({
       return;
     }
 
-    const defaultBw = weightUnit === "lbs" ? 175 : 80;
     const sessionDate = createLocalNoonFromDateKey(selectedDate);
     if (!sessionDate) {
       setDayJsonError("Choose a valid session date.");
@@ -187,9 +191,8 @@ export default function AddPastSessionModal({
     }
     const dateStr = sessionDate.toISOString();
     const completedAt = sessionDate.getTime();
-    const currentBodyWeight = getClosestBodyWeight(dateStr, bodyWeightEntries, defaultBw);
+    const currentBodyWeight = bodyWeightEntries.filter(e => e.date <= selectedDate && e.weightUnit).sort((a,b) => b.date.localeCompare(a.date))[0]?.weight;
 
-    let totalTonnage = 0;
     const sessionExercises: WorkoutSession["exercises"] = [];
 
     activeDay.exercises.forEach((ex) => {
@@ -212,9 +215,7 @@ export default function AddPastSessionModal({
             completedAt,
           });
 
-          const weightNum = resolveWeight(String(s.weight ?? ""), currentBodyWeight);
-          const repsNum = parseFloat(String(s.reps ?? "")) || 0;
-          totalTonnage += weightNum * repsNum;
+
         }
       });
 
@@ -239,11 +240,19 @@ export default function AddPastSessionModal({
       dayId: activeDay.id,
       dayName: activeDay.name,
       bodyWeightSnapshot: currentBodyWeight,
-      totalTonnage: Math.round(totalTonnage * 100) / 100,
+      weightUnit,
+      bodyWeightUnit: currentBodyWeight !== undefined ? weightUnit : undefined,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      localDate: selectedDate,
+      timestampQuality: "date_only",
+      recordedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      ...snapshotPlan(activeDay),
       duration: parseInt(durationMinutes) * 60 || 0,
       exercises: sessionExercises,
     };
 
+    session.totalTonnage = convertMass(sessionVolumeKg(session), "kg", weightUnit);
     onAddSessions([session]);
     onClose();
   };

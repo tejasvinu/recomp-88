@@ -92,6 +92,11 @@ export default function JustShowUpModal({
             date: new Date().toISOString(),
             dayId: "just-show-up",
             dayName: "Just Show Up",
+            recordedAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            timestampQuality: "recorded_only",
+            plannedSetSnapshot: plan.flatMap(ex => ex.sets.map(s => ({ exerciseId: ex.id, setId: s.id, targetReps: s.targetReps, setType: "working" as const }))),
             exercises: plan
                 .map((ex) => ({
                     exerciseId: ex.id,

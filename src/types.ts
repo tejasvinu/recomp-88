@@ -105,6 +105,7 @@ export type WorkoutTemplate = DayRoutine[];
 
 // How we'll save the user's progress for a set
 export interface SavedSetState {
+    weightUnit?: WeightUnit;
     completed: boolean;
     loggedWeight: string;
     loggedReps: string;
@@ -120,6 +121,7 @@ export type WorkoutProgress = Record<string, Record<string, Record<string, Saved
 
 // ─── Session History ───────────────────────────────────────────────────────
 export interface SessionSet {
+    weightUnit?: WeightUnit;
     setId: string;
     targetReps: string;    // Snapshotted target (e.g., "8-12")
     loggedWeight: string;
@@ -141,6 +143,18 @@ export interface SessionExercise {
 export interface WorkoutSession {
     id: string;
     version?: number;
+    weightUnit?: WeightUnit;
+    bodyWeightUnit?: WeightUnit;
+    startedAt?: string;
+    endedAt?: string;
+    recordedAt?: string;
+    updatedAt?: string;
+    timezone?: string;
+    localDate?: string;
+    timestampQuality?: "observed" | "date_only" | "recorded_only";
+    planVersion?: string;
+    plannedSetSnapshot?: PlannedSet[];
+    scheduledOccurrenceId?: string;
     date: string; // ISO 8601 date string
     dayId: string;
     dayName: string;
@@ -156,9 +170,14 @@ export type SessionHistory = WorkoutSession[];
 export interface BodyWeightEntry {
     date: string; // YYYY-MM-DD
     weight: number;
+    weightUnit?: WeightUnit;
+    timezone?: string;
+    recordedAt?: string;
+    updatedAt?: string;
 }
 
 export interface WorkoutSettings {
+    timezone?: string;
     strengthRestDuration: number;
     hypertrophyRestDuration: number;
     soundEnabled: boolean;
@@ -174,6 +193,13 @@ export interface AppDataSnapshot {
     exerciseNotes: Record<string, string>;
     settings: WorkoutSettings;
     customExercises: ExerciseWiki[];
+}
+
+export interface PlannedSet {
+    exerciseId: string;
+    setId: string;
+    targetReps: string;
+    setType: SetType;
 }
 
 export interface SyncLedger {
