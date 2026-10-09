@@ -1,254 +1,103 @@
 'use client';
 
 import { useSession } from "next-auth/react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { AppDataSnapshot } from "../types";
 import type { CloudSyncSnapshot, SyncPushPayload } from "../lib/sync";
 import { readLocalStorageValue, writeLocalStorageValue } from "../services/storageService";
-import { useAppStore } from "../store/appStore";
-
-type SyncPayload = AppDataSnapshot;
+import { selectCurrentSnapshot, useAppStore } from "../store/appStore";
+import { emptySnapshot, mergeLedgerSnapshot } from "../lib/syncLedger";
+import { CloudSyncGate, SerialTaskQueue } from "../lib/cloudSyncClient";
 
 export type SyncStatus = "idle" | "syncing" | "synced" | "error" | "offline";
-
-const CLOUD_SYNC_METADATA_KEY = "recomp88-cloud-sync-metadata";
-
-type PersistedCloudSyncMetadata = {
-  accountId: string;
-  lastSyncedAt: string | null;
-};
-
-const getAccountId = (user: unknown): string | null => {
-  if (!user || typeof user !== "object") return null;
-  const candidate = user as { id?: unknown; email?: unknown };
-  if (typeof candidate.id === "string" && candidate.id.trim()) return candidate.id;
-  if (typeof candidate.email === "string" && candidate.email.trim()) return candidate.email;
-  return null;
-};
-
-const parseSyncDate = (value: string | Date | null | undefined): Date | null => {
-  if (!value) return null;
-  const date = value instanceof Date ? value : new Date(value);
-  return Number.isFinite(date.getTime()) ? date : null;
-};
-
-const isPersistedCloudSyncMetadata = (value: unknown): value is PersistedCloudSyncMetadata =>
-  typeof value === "object" &&
-  value !== null &&
-  typeof (value as PersistedCloudSyncMetadata).accountId === "string" &&
-  (
-    (value as PersistedCloudSyncMetadata).lastSyncedAt === null ||
-    typeof (value as PersistedCloudSyncMetadata).lastSyncedAt === "string"
-  );
-
-const readPersistedLastSyncedAt = (accountId: string | null): Date | null => {
-  if (!accountId) return null;
-  const metadata = readLocalStorageValue<unknown>(CLOUD_SYNC_METADATA_KEY, null);
-  if (!isPersistedCloudSyncMetadata(metadata) || metadata.accountId !== accountId) return null;
-  return parseSyncDate(metadata.lastSyncedAt);
-};
-
-const writePersistedLastSyncedAt = (accountId: string | null, value: Date | null) => {
-  if (!accountId) return;
-  writeLocalStorageValue<PersistedCloudSyncMetadata>(CLOUD_SYNC_METADATA_KEY, {
-    accountId,
-    lastSyncedAt: value?.toISOString() ?? null,
-  });
-};
+const METADATA = "recomp88-cloud-sync-metadata";
+type Metadata = { accountId: string; lastSyncedAt: string | null; revision?: number };
 
 export function useCloudSync() {
   const { data: session } = useSession();
+  const accountId = (session?.user as { id?: string } | undefined)?.id ?? null;
   const [syncStatus, setSyncStatus] = useState<SyncStatus>("idle");
-  const accountId = getAccountId(session?.user);
-  const persistedLastSyncedAt = useMemo(
-    () => readPersistedLastSyncedAt(accountId),
-    [accountId]
-  );
-  const [lastSyncedState, setLastSyncedState] = useState<{
-    accountId: string | null;
-    value: Date | null;
-  }>({ accountId: null, value: null });
-  const lastSyncedAt =
-    lastSyncedState.accountId === accountId
-      ? lastSyncedState.value
-      : persistedLastSyncedAt;
-  const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const lastSyncedAtRef = useRef<Date | null>(null);
+  const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null);
+  const [gate] = useState(() => new CloudSyncGate());
+  const [queue] = useState(() => new SerialTaskQueue());
+  const generation = gate.switchAccount(accountId);
+  const base = useRef<{ accountId: string | null; at: Date | null; revision: number }>({ accountId: null, at: null, revision: 0 });
+  const debounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const previous = readLocalStorageValue<Metadata | null>(METADATA, null);
+  const switchedAccount = previous?.accountId != null && previous.accountId !== accountId;
+  const isLoggedIn = accountId !== null;
 
-  const isLoggedIn = !!session?.user;
-
-  // Detect whether this device had previously synced with a *different* account.
-  // When true, we must NOT auto-merge this device's local data into the newly
-  // signed-in account (privacy: prevents leaking one user's local data into
-  // another account on a shared device).
-  const persistedAccountId = useMemo(() => {
-    const metadata = readLocalStorageValue<unknown>(CLOUD_SYNC_METADATA_KEY, null);
-    return isPersistedCloudSyncMetadata(metadata) ? metadata.accountId : null;
+  const cancelScheduledPush = useCallback(() => {
+    if (debounce.current) clearTimeout(debounce.current);
+    debounce.current = null;
   }, []);
-  const switchedAccount = persistedAccountId !== null && persistedAccountId !== accountId;
-
-  useEffect(() => {
-    lastSyncedAtRef.current = lastSyncedAt;
-  }, [lastSyncedAt]);
-
-  const recordLastSyncedAt = useCallback(
-    (value: Date | null) => {
-      const next = parseSyncDate(value);
-      lastSyncedAtRef.current = next;
-      setLastSyncedState({ accountId, value: next });
-      writePersistedLastSyncedAt(accountId, next);
-    },
-    [accountId]
-  );
-
-  const getSyncBase = useCallback(
-    () => lastSyncedAtRef.current ?? readPersistedLastSyncedAt(accountId),
-    [accountId]
-  );
-
-  const clearScheduledPush = useCallback(() => {
-    if (debounceTimer.current) {
-      clearTimeout(debounceTimer.current);
-      debounceTimer.current = null;
+  const getSyncBase = useCallback(() => {
+    if (base.current.accountId === accountId) return base.current.at;
+    const saved = readLocalStorageValue<Metadata | null>(METADATA, null);
+    return saved?.accountId === accountId && saved.lastSyncedAt ? new Date(saved.lastSyncedAt) : null;
+  }, [accountId]);
+  const markHydrated = useCallback(() => {
+    gate.hydrate(generation);
+    if (gate.canPush(generation) && accountId) {
+      writeLocalStorageValue<Metadata>(METADATA, { accountId, lastSyncedAt: base.current.at?.toISOString() ?? null, revision: base.current.revision });
     }
-  }, []);
+  }, [accountId, generation, gate]);
 
-  const fetchCloudData = useCallback(async (): Promise<CloudSyncSnapshot | null> => {
-    if (!isLoggedIn) return null;
-    if (typeof navigator !== "undefined" && !navigator.onLine) {
-      setSyncStatus("offline");
-      return null;
-    }
-
+  const fetchCloudData = useCallback(async (): Promise<CloudSyncSnapshot | null> => queue.run(async () => {
+    if (!gate.isCurrent(generation)) return null;
     try {
-      const res = await fetch("/api/sync");
-      if (!res.ok) {
-        setSyncStatus("error");
-        return null;
-      }
-
+      const res = await fetch("/api/sync", { cache: "no-store" });
+      if (!res.ok) throw new Error("Fetch failed");
       const json = await res.json();
-      if (json.data?.lastSyncedAt) {
-        recordLastSyncedAt(new Date(json.data.lastSyncedAt));
-      }
-
+      if (!("data" in json) || (json.data !== null && typeof json.data !== "object")) throw new Error("Invalid snapshot");
+      if (!gate.isCurrent(generation)) return null;
+      const data = json.data ?? { ...emptySnapshot(), revision: 0, lastSyncedAt: null };
+      base.current = { accountId, at: data.lastSyncedAt ? new Date(data.lastSyncedAt) : null, revision: data.revision ?? 0 };
+      setLastSyncedAt(base.current.at);
       setSyncStatus("synced");
-      return json.data as CloudSyncSnapshot | null;
+      return data;
     } catch {
-      setSyncStatus(
-        typeof navigator !== "undefined" && !navigator.onLine ? "offline" : "error"
-      );
+      if (gate.isCurrent(generation)) setSyncStatus(typeof navigator !== "undefined" && !navigator.onLine ? "offline" : "error");
       return null;
     }
-  }, [isLoggedIn, recordLastSyncedAt]);
+  }), [accountId, generation, gate, queue]);
 
-  const pushToCloud = useCallback(
-    async (payload: SyncPayload, options?: { keepalive?: boolean }) => {
-      if (!isLoggedIn) return false;
-      if (typeof navigator !== "undefined" && !navigator.onLine) {
-        setSyncStatus("offline");
-        return false;
-      }
-
-      clearScheduledPush();
-      setSyncStatus("syncing");
-      try {
-        const payloadWithSyncBase: SyncPushPayload = {
-          ...payload,
-          baseLastSyncedAt: getSyncBase()?.toISOString() ?? null,
-        };
-        const res = await fetch("/api/sync", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payloadWithSyncBase),
-          keepalive: options?.keepalive,
-        });
-        if (!res.ok) throw new Error("Sync failed");
-        const { lastSyncedAt: syncedAt, data } = await res.json();
-        if (data?.syncState) {
-          // Acknowledgements clear only the reset that was actually sent.
-          const current = useAppStore.getState().syncState;
-          if (!current.reset || current.reset.id === data.syncState.resetId) {
-            const next = { ...data.syncState, tombstones: { ...data.syncState.tombstones, ...current.tombstones } };
-            writeLocalStorageValue("recomp88-sync-ledger", next);
-            useAppStore.setState({ syncState: next });
-          }
-        }
-        if (syncedAt != null) {
-          recordLastSyncedAt(new Date(syncedAt));
-        }
-        setSyncStatus("synced");
-        return true;
-      } catch {
-        setSyncStatus(
-          typeof navigator !== "undefined" && !navigator.onLine ? "offline" : "error"
-        );
-        return false;
-      }
-    },
-    [clearScheduledPush, getSyncBase, isLoggedIn, recordLastSyncedAt]
-  );
-
-  // Debounced push — call this whenever local data changes
-  const schedulePush = useCallback(
-    (payload: SyncPayload) => {
-      if (!isLoggedIn) return;
-      clearScheduledPush();
-      debounceTimer.current = setTimeout(() => pushToCloud(payload), 3000);
-    },
-    [clearScheduledPush, isLoggedIn, pushToCloud]
-  );
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const handleOnline = () => {
-      setSyncStatus((current) => (current === "offline" ? "idle" : current));
-    };
-
-    const handleOffline = () => {
-      setSyncStatus("offline");
-    };
-
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
-
-    if (!navigator.onLine) {
-      setSyncStatus("offline");
+  const pushToCloud = useCallback((payload: AppDataSnapshot, options?: { keepalive?: boolean }) => queue.run(async () => {
+    if (!gate.canPush(generation)) return false;
+    cancelScheduledPush();
+    setSyncStatus("syncing");
+    try {
+      const outgoing: SyncPushPayload = { ...payload, baseRevision: base.current.revision, baseLastSyncedAt: getSyncBase()?.toISOString() ?? null };
+      const res = await fetch("/api/sync", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(outgoing), keepalive: options?.keepalive });
+      if (!res.ok) throw new Error("Sync failed");
+      const json = await res.json();
+      if (!gate.canPush(generation)) return false;
+      if (!json.ok || !json.data) throw new Error("Invalid acknowledgement");
+      const current = selectCurrentSnapshot(useAppStore.getState());
+      const acknowledged = json.data as CloudSyncSnapshot;
+      // Preserve edits made while the request was in flight. Rebase a pending
+      // reset only when this response acknowledges that same reset operation.
+      const local = current.syncState?.reset?.id === acknowledged.syncState?.resetId
+        ? { ...current, syncState: { ...acknowledged.syncState!, tombstones: { ...acknowledged.syncState!.tombstones, ...current.syncState?.tombstones } } }
+        : current;
+      const next = JSON.stringify(current) === JSON.stringify(payload) ? acknowledged : mergeLedgerSnapshot(acknowledged, local, true);
+      useAppStore.getState().applySnapshot(next);
+      base.current = { accountId, revision: json.revision, at: json.lastSyncedAt ? new Date(json.lastSyncedAt) : null };
+      setLastSyncedAt(base.current.at);
+      markHydrated();
+      setSyncStatus("synced");
+      return true;
+    } catch {
+      if (gate.isCurrent(generation)) setSyncStatus(typeof navigator !== "undefined" && !navigator.onLine ? "offline" : "error");
+      return false;
     }
+  }), [accountId, generation, cancelScheduledPush, getSyncBase, markHydrated, gate, queue]);
 
-    return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (isLoggedIn) return;
-
-    clearScheduledPush();
-    lastSyncedAtRef.current = null;
-    setLastSyncedState({ accountId: null, value: null });
-    setSyncStatus(
-      typeof navigator !== "undefined" && !navigator.onLine ? "offline" : "idle"
-    );
-  }, [clearScheduledPush, isLoggedIn]);
-
-  useEffect(() => {
-    return () => {
-      clearScheduledPush();
-    };
-  }, [clearScheduledPush]);
-
-  return {
-    isLoggedIn,
-    fetchCloudData,
-    pushToCloud,
-    schedulePush,
-    cancelScheduledPush: clearScheduledPush,
-    getSyncBase,
-    syncStatus,
-    lastSyncedAt,
-    switchedAccount,
-  };
+  const schedulePush = useCallback((payload: AppDataSnapshot) => {
+    if (!gate.canPush(generation)) return;
+    cancelScheduledPush();
+    debounce.current = setTimeout(() => { void pushToCloud(payload); }, 3000);
+  }, [cancelScheduledPush, generation, pushToCloud, gate]);
+  useEffect(() => { cancelScheduledPush(); return cancelScheduledPush; }, [accountId, cancelScheduledPush]);
+  return { accountId, isLoggedIn, switchedAccount, fetchCloudData, pushToCloud, schedulePush, cancelScheduledPush, getSyncBase, markHydrated, syncStatus, lastSyncedAt };
 }

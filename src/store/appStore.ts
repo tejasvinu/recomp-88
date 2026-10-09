@@ -231,6 +231,13 @@ export const useAppStore = create<AppState>((set, get) => {
         // Bulk snapshot apply (cloud pull / import)
         applySnapshot: (snapshot: AppDataSnapshot) => {
             const s = get();
+            const prospective = selectCurrentSnapshot({ ...s, ...snapshot,
+                strengthRestDuration: snapshot.settings.strengthRestDuration,
+                hypertrophyRestDuration: snapshot.settings.hypertrophyRestDuration,
+                soundEnabled: snapshot.settings.soundEnabled,
+                weightUnit: snapshot.settings.weightUnit,
+            });
+            if (JSON.stringify(selectCurrentSnapshot(s)) === JSON.stringify(prospective)) return;
             const syncState = snapshot.syncState ?? s.syncState;
             writeLocalStorageValue('recomp88-sync-ledger', syncState);
             const normalizedTemplate = normalizeWorkoutTemplate(snapshot.workoutTemplate) ?? createDefaultWorkoutTemplate();

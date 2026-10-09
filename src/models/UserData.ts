@@ -20,6 +20,7 @@ export interface IUserData extends Document {
   customExercises: ExerciseWiki[];
   lastSyncedAt: Date;
   syncState: SyncLedger;
+  revision: number;
 }
 
 const UserDataSchema = new Schema(
@@ -38,6 +39,7 @@ const UserDataSchema = new Schema(
     },
     customExercises: { type: Array, default: [] },
     syncState: { type: Schema.Types.Mixed, default: () => ({ epoch: 0, tombstones: {} }) },
+    revision: { type: Number, default: 0 },
     lastSyncedAt: { type: Date, default: Date.now },
   },
   { timestamps: true }

@@ -17,12 +17,6 @@ import { useCloudSync } from "./hooks/useCloudSync";
 import { mergeLedgerSnapshot } from "./lib/syncLedger";
 import {
   hasRemoteChangesSinceBase,
-  mergeBodyWeightEntries,
-  mergeById,
-  mergeExerciseNotes,
-  mergeSessionHistory,
-  mergeSettings,
-  mergeWorkoutProgressWithPreference,
   sanitizeSyncPayload,
 } from "./lib/sync";
 import type {
@@ -41,6 +35,7 @@ import {
 import {
   useAppStore,
   hydrateStoreFromStorage,
+  selectCurrentSnapshot,
 } from "./store/appStore";
 
 // ─── New sub-components ────────────────────────────────────────────────────
@@ -161,7 +156,7 @@ function AppMain() {
     currentSnapshotRef.current = currentSnapshot;
   }, [currentSnapshot]);
 
-  const getFreshSnapshot = useCallback((): AppDataSnapshot => currentSnapshotRef.current, []);
+  const getFreshSnapshot = useCallback((): AppDataSnapshot => selectCurrentSnapshot(useAppStore.getState()), []);
 
   const clampedActiveDayIndex = Math.min(activeDayIndex, Math.max(safeWorkoutTemplate.length - 1, 0));
   const activeDay = safeWorkoutTemplate[clampedActiveDayIndex];
@@ -176,6 +171,8 @@ function AppMain() {
   // Hydration guard moved to bottom
   // ─── Cloud sync ─────────────────────────────────────────────────────────
   const {
+    accountId,
+    markHydrated,
     isLoggedIn,
     fetchCloudData,
     schedulePush,
@@ -187,7 +184,7 @@ function AppMain() {
     switchedAccount,
   } = useCloudSync();
 
-  const cloudBootstrapped = useRef(false);
+  const cloudBootstrapped = useRef<string | null>(null);
   const skipNextCloudPushRef = useRef(0);
   const suppressOverlayRef = useRef(false);
   const [canPushCloud, setCanPushCloud] = useState(false);
@@ -314,106 +311,49 @@ function AppMain() {
   const pullAndMergeCloudData = useCallback(
     async (silent = true, options?: { clean?: boolean }) => {
       if (!isLoggedIn) return null;
-      const clean = options?.clean === true;
       const syncBase = getSyncBase();
+      const data = await fetchCloudData();
+      if (!data) { if (!silent) showToast("Cloud data unavailable", "error"); return null; }
       try {
-        const data = await fetchCloudData();
-        if (!data) return null;
-
-        const localSnapshot = currentSnapshotRef.current;
-        const preferCloudOnConflict = hasRemoteChangesSinceBase(syncBase, data.lastSyncedAt);
-        const mergeSummary = data.lastSyncedAt != null
-          ? preferCloudOnConflict
-            ? "Overlapping data was merged using the server copy (the cloud had newer changes than your last sync on this device)."
-            : "Overlapping data was merged using this device's copy (your changes were newer than the last cloud update)."
-          : null;
-
-        const remoteWorkoutTemplate = normalizeWorkoutTemplate(data.workoutTemplate);
-        const cloudWorkoutTemplate = remoteWorkoutTemplate ?? localSnapshot.workoutTemplate;
-        const cloudSnapshot: AppDataSnapshot = {
-          syncState: data.syncState,
-          workoutTemplate: cloudWorkoutTemplate,
-          progress: pruneProgressForWorkoutTemplate(data.progress ?? {}, cloudWorkoutTemplate),
-          sessions: data.sessions ?? [],
-          bodyWeightEntries: data.bodyWeightEntries ?? [],
-          exerciseNotes: pruneExerciseNotesForWorkoutTemplate(data.exerciseNotes ?? {}, cloudWorkoutTemplate),
-          settings: resolveSnapshotSettings(data.settings ?? {}, localSnapshot.settings),
-          customExercises: data.customExercises ?? [],
-        };
-
-        // Account switch (shared device): this device has data from a different
-        // account. Do NOT merge it into the newly signed-in account — take the
-        // cloud as authoritative so one user's local data never leaks into
-        // another user's account.
-        if (clean) {
-          cancelScheduledPush();
-          applyCloudSnapshot(cloudSnapshot);
-          if (!silent) showToast("Cloud data loaded for this account");
-          return { mergedSnapshot: cloudSnapshot, mergeSummary: null };
-        }
-
-        const nextWorkoutTemplate =
-          remoteWorkoutTemplate && (preferCloudOnConflict || !syncBase)
-            ? remoteWorkoutTemplate
-            : localSnapshot.workoutTemplate;
-
-        let mergedSnapshot: AppDataSnapshot = {
-          workoutTemplate: nextWorkoutTemplate,
-          progress: pruneProgressForWorkoutTemplate(
-            mergeWorkoutProgressWithPreference(localSnapshot.progress, data.progress ?? {}, preferCloudOnConflict),
-            nextWorkoutTemplate
-          ),
-          sessions: mergeSessionHistory(localSnapshot.sessions, data.sessions ?? [], preferCloudOnConflict),
-          bodyWeightEntries: mergeBodyWeightEntries(localSnapshot.bodyWeightEntries, data.bodyWeightEntries ?? [], preferCloudOnConflict),
-          exerciseNotes: pruneExerciseNotesForWorkoutTemplate(
-            mergeExerciseNotes(localSnapshot.exerciseNotes, data.exerciseNotes ?? {}, preferCloudOnConflict),
-            nextWorkoutTemplate
-          ),
-          settings: resolveSnapshotSettings(
-            mergeSettings(localSnapshot.settings, data.settings ?? {}, preferCloudOnConflict),
-            localSnapshot.settings
-          ),
-          customExercises: mergeById(localSnapshot.customExercises, data.customExercises ?? [], preferCloudOnConflict),
-        };
-        if (localSnapshot.syncState?.reset) {
-          // Keep a pending reset local until the server acknowledges it.
-          mergedSnapshot = localSnapshot;
-        } else if ((data.syncState?.epoch ?? 0) > (localSnapshot.syncState?.epoch ?? 0)) {
-          mergedSnapshot = cloudSnapshot;
+        const local = getFreshSnapshot();
+        const cloud: AppDataSnapshot = { ...data, settings: resolveSnapshotSettings(data.settings ?? {}, local.settings) };
+        let merged: AppDataSnapshot;
+        if (options?.clean || (cloud.syncState?.epoch ?? 0) > (local.syncState?.epoch ?? 0)) {
+          merged = cloud;
+          restTimer.dismissTimer();
+          workoutTimer.reset();
+        } else if (local.syncState?.reset) {
+          merged = local;
         } else {
-          mergedSnapshot = mergeLedgerSnapshot(cloudSnapshot, { ...mergedSnapshot, syncState: localSnapshot.syncState }, true);
+          merged = mergeLedgerSnapshot(cloud, local, !hasRemoteChangesSinceBase(syncBase, data.lastSyncedAt));
         }
-
         cancelScheduledPush();
-        applyCloudSnapshot(mergedSnapshot);
-
-        const needsUpload = stableStringify(mergedSnapshot) !== stableStringify(cloudSnapshot);
-        if (needsUpload) {
-          const pushed = await pushToCloud(mergedSnapshot);
+        applyCloudSnapshot(merged);
+        markHydrated();
+        setCanPushCloud(true);
+        if (stableStringify(merged) !== stableStringify(cloud)) {
+          const pushed = await pushToCloud(merged);
           if (!silent) showToast(pushed ? "Cloud sync complete" : "Cloud sync failed", pushed ? undefined : "error");
-        } else if (!silent) {
-          showToast("Cloud merge complete");
-        }
-
-        if (mergeSummary) setLastMergeSummary(mergeSummary);
-        return { mergedSnapshot, mergeSummary };
+        } else if (!silent) showToast("Cloud data loaded for this account");
+        return { mergedSnapshot: merged, mergeSummary: null };
       } catch {
         if (!silent) showToast("Cloud sync failed", "error");
         return null;
       }
     },
-    [applyCloudSnapshot, cancelScheduledPush, fetchCloudData, getSyncBase, isLoggedIn, pushToCloud, resolveSnapshotSettings, showToast]
+    // Timer methods change as the timer ticks; they are accessed via the current
+    // closure only when an account/reset needs a clean dataset.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [applyCloudSnapshot, cancelScheduledPush, fetchCloudData, getFreshSnapshot, getSyncBase, isLoggedIn, markHydrated, pushToCloud, resolveSnapshotSettings, showToast]
   );
 
-  // Bootstrap cloud data on login
   useEffect(() => {
-    if (!isLoggedIn) { cloudBootstrapped.current = false; setCanPushCloud(false); return; }
-    if (cloudBootstrapped.current) return;
-    cloudBootstrapped.current = true;
-    let cancelled = false;
-    pullAndMergeCloudData(true, { clean: switchedAccount }).finally(() => { if (!cancelled) setCanPushCloud(true); });
-    return () => { cancelled = true; };
-  }, [isLoggedIn, pullAndMergeCloudData, switchedAccount]);
+    if (!accountId) { cloudBootstrapped.current = null; setCanPushCloud(false); return; }
+    if (cloudBootstrapped.current === accountId) return;
+    setCanPushCloud(false);
+    cloudBootstrapped.current = accountId;
+    void pullAndMergeCloudData(true, { clean: switchedAccount });
+  }, [accountId, pullAndMergeCloudData, switchedAccount]);
 
   // Auto-push on data change
   useEffect(() => {
@@ -442,13 +382,8 @@ function AppMain() {
   }, [isLoggedIn, canPushCloud, pullAndMergeCloudData, cancelScheduledPush, pushToCloud, getFreshSnapshot]);
 
   const handleManualSync = useCallback(async () => {
-    const result = await pullAndMergeCloudData(false);
-    if (!result) {
-      showToast("Could not fetch cloud data, pushing local state...");
-      const pushed = await pushToCloud(getFreshSnapshot());
-      showToast(pushed ? "Cloud sync complete" : "Cloud sync failed", pushed ? undefined : "error");
-    }
-  }, [pushToCloud, pullAndMergeCloudData, showToast, getFreshSnapshot]);
+    await pullAndMergeCloudData(false, { clean: switchedAccount });
+  }, [pullAndMergeCloudData, switchedAccount]);
 
   // ─── Weight unit handler (also persists to profile API) ──────────────
   const handleSetWeightUnit = useCallback(

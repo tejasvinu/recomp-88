@@ -16,14 +16,17 @@ import type {
 } from "@/types";
 
 export type CloudSyncSnapshot = AppDataSnapshot & {
+  revision?: number;
   lastSyncedAt?: string | Date | null;
 };
 
 export type SyncPushPayload = AppDataSnapshot & {
+  baseRevision?: number;
   baseLastSyncedAt?: string | null;
 };
 
 export type SanitizedSyncPayload = {
+  baseRevision?: number;
   syncState?: SyncLedger;
   workoutTemplate?: AppDataSnapshot["workoutTemplate"];
   progress?: WorkoutProgress;
@@ -430,6 +433,10 @@ export const sanitizeSyncPayload = (
   if (!isRecord(value)) return null;
 
   const sanitized: SanitizedSyncPayload = {};
+  if (value.baseRevision !== undefined) {
+    if (!Number.isSafeInteger(value.baseRevision) || (value.baseRevision as number) < 0) return null;
+    sanitized.baseRevision = value.baseRevision as number;
+  }
   if (isRecord(value.syncState)) {
     const state = value.syncState;
     if (!Number.isSafeInteger(state.epoch) || (state.epoch as number) < 0 || !isRecord(state.tombstones)) return null;
