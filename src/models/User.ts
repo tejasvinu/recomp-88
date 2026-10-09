@@ -8,6 +8,9 @@ export interface IUser extends Document {
   image?: string;
   weightUnit: "kg" | "lbs";
   providers: string[]; // e.g. ["credentials"], ["google"], ["credentials","google"]
+  googleAccountId?: string;
+  googleLinkNonce?: string;
+  googleLinkExpiresAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -20,6 +23,9 @@ const UserSchema = new Schema<IUser>(
     image: { type: String },
     weightUnit: { type: String, enum: ["kg", "lbs"], default: "kg" },
     providers: { type: [String], default: [] },
+    googleAccountId: { type: String },
+    googleLinkNonce: { type: String, select: false },
+    googleLinkExpiresAt: { type: Date, select: false },
   },
   { timestamps: true }
 );

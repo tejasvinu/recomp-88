@@ -5,6 +5,8 @@ import bcrypt from "bcryptjs";
 import { connectDB } from "@/lib/mongodb";
 import { getClientIp, signInLimiter } from "@/lib/rateLimit";
 import User from "@/models/User";
+import { cookies } from "next/headers";
+import { GOOGLE_LINK_COOKIE, verifyGoogleLink } from "@/lib/googleLink";
 
 // ─── AUTH_SECRET hardening ───────────────────────────────────────────────
 // Fail fast so a weak/predictable JWT secret is never accepted in production.
@@ -77,8 +79,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   callbacks: {
-    async signIn({ user, account }) {
+    async signIn({ user, account, profile }) {
       if (account?.provider === "google") {
+        if (profile?.email_verified !== true || !user.email || !account.providerAccountId) return false;
         try {
           const db = await connectDB();
           if (!db) return false; // Prevent sign-in to avoid orphaned tokens and future CastErrors
@@ -90,9 +93,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             // merging without the owner's consent.
             const providers = existing.providers ?? [];
             const linkedGoogle = providers.includes("google");
-            const credentialsOnly =
-              !!existing.password && providers.length === 0;
-            if (credentialsOnly && !linkedGoogle) return false;
+            if (existing.googleAccountId && existing.googleAccountId !== account.providerAccountId) return false;
+            if (existing.password && !existing.googleAccountId) {
+              const jar = await cookies();
+              const ticket = verifyGoogleLink(jar.get(GOOGLE_LINK_COOKIE)?.value);
+              if (!ticket || ticket.userId !== existing._id.toString()) return false;
+              const linked = await User.findOneAndUpdate({
+                _id: existing._id, password: existing.password, googleLinkNonce: ticket.nonce,
+                googleLinkExpiresAt: { $gt: new Date() }, googleAccountId: { $exists: false },
+              }, { $set: { googleAccountId: account.providerAccountId }, $addToSet: { providers: "google" },
+                $unset: { googleLinkNonce: "", googleLinkExpiresAt: "" } });
+              jar.delete(GOOGLE_LINK_COOKIE);
+              return !!linked;
+            }
+            existing.googleAccountId = account.providerAccountId;
 
             if (!linkedGoogle) {
               providers.push("google");
@@ -106,6 +120,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               email: user.email!.toLowerCase(),
               image: user.image ?? undefined,
               providers: ["google"],
+              googleAccountId: account.providerAccountId,
             });
           }
         } catch {
