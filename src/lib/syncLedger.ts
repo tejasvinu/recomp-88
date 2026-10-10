@@ -8,13 +8,27 @@ export function emptySnapshot(): AppDataSnapshot {
     settings: { weightUnit: "kg", strengthRestDuration: 120, hypertrophyRestDuration: 90, soundEnabled: true }, syncState: emptySyncLedger() };
 }
 
+export function stripSyncMetadata(snapshot: AppDataSnapshot): AppDataSnapshot {
+  return { syncState: snapshot.syncState, workoutTemplate: snapshot.workoutTemplate, progress: snapshot.progress,
+    sessions: snapshot.sessions, bodyWeightEntries: snapshot.bodyWeightEntries, exerciseNotes: snapshot.exerciseNotes,
+    settings: snapshot.settings, customExercises: snapshot.customExercises };
+}
+
+export function reconcileCloudAcknowledgement(current: AppDataSnapshot, pushed: AppDataSnapshot | null, acknowledged: AppDataSnapshot): AppDataSnapshot {
+  const pending = current.syncState?.reset;
+  if (pending && pending.id !== acknowledged.syncState?.resetId) return current;
+  const local = pending ? { ...current, syncState: { ...acknowledged.syncState!, tombstones: current.syncState!.tombstones } } : current;
+  if (pushed && JSON.stringify(stripSyncMetadata(current)) === JSON.stringify(stripSyncMetadata(pushed))) return stripSyncMetadata(acknowledged);
+  return mergeLedgerSnapshot(acknowledged, local, true);
+}
+
 export function mergeLedgerSnapshot(current: AppDataSnapshot, incoming: SanitizedSyncPayload, preferIncoming: boolean): AppDataSnapshot {
   const remote = current.syncState ?? emptySyncLedger();
   const local = incoming.syncState ?? emptySyncLedger();
   const reset = local.reset;
   if (reset && reset.id !== remote.resetId) {
     if (reset.baseEpoch !== remote.epoch) throw new Error("reset_conflict");
-    return { ...emptySnapshot(), ...incoming, settings: { ...emptySnapshot().settings, ...incoming.settings },
+    return { ...stripSyncMetadata({ ...emptySnapshot(), ...incoming, settings: { ...emptySnapshot().settings, ...incoming.settings } }),
       syncState: { epoch: remote.epoch + 1, resetId: reset.id, tombstones: {} } };
   }
   // A replay of the acknowledged reset is ignored, rather than clearing writes

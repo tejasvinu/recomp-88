@@ -53,4 +53,11 @@ describe("atomic owner sync", () => {
     expect((await POST(request("a"))).status).toBe(401);
     expect(mocks.read).not.toHaveBeenCalled();
   });
+  it("rejects a queued upload whose browser session changed accounts", async () => {
+    const response = await POST(new Request("http://localhost/api/sync", { method: "POST", body: JSON.stringify({ ...emptySnapshot(), accountId: "previous-owner" }) }));
+    expect(response.status).toBe(403);
+    expect(await response.json()).toMatchObject({ error: "account_changed" });
+    expect(mocks.update).not.toHaveBeenCalled();
+    expect(mocks.read).not.toHaveBeenCalled();
+  });
 });

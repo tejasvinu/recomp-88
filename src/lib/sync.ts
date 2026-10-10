@@ -23,11 +23,13 @@ export type CloudSyncSnapshot = AppDataSnapshot & {
 };
 
 export type SyncPushPayload = AppDataSnapshot & {
+  accountId?: string;
   baseRevision?: number;
   baseLastSyncedAt?: string | null;
 };
 
 export type SanitizedSyncPayload = {
+  accountId?: string;
   baseRevision?: number;
   syncState?: SyncLedger;
   workoutTemplate?: AppDataSnapshot["workoutTemplate"];
@@ -471,6 +473,10 @@ export const sanitizeSyncPayload = (
   if (!isRecord(value)) return null;
 
   const sanitized: SanitizedSyncPayload = {};
+  if (value.accountId !== undefined) {
+    if (typeof value.accountId !== "string" || !value.accountId || value.accountId.length > 200) return null;
+    sanitized.accountId = value.accountId;
+  }
   if (value.baseRevision !== undefined) {
     if (!Number.isSafeInteger(value.baseRevision) || (value.baseRevision as number) < 0) return null;
     sanitized.baseRevision = value.baseRevision as number;

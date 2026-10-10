@@ -6,7 +6,7 @@ import type { AppDataSnapshot } from "../types";
 import type { CloudSyncSnapshot, SyncPushPayload } from "../lib/sync";
 import { readLocalStorageValue, writeLocalStorageValue } from "../services/storageService";
 import { selectCurrentSnapshot, useAppStore } from "../store/appStore";
-import { emptySnapshot, mergeLedgerSnapshot } from "../lib/syncLedger";
+import { emptySnapshot, reconcileCloudAcknowledgement } from "../lib/syncLedger";
 import { CloudSyncGate, SerialTaskQueue } from "../lib/cloudSyncClient";
 
 export type SyncStatus = "idle" | "syncing" | "synced" | "error" | "offline";
@@ -49,7 +49,7 @@ export function useCloudSync() {
       const res = await fetch("/api/sync", { cache: "no-store" });
       if (!res.ok) throw new Error("Fetch failed");
       const json = await res.json();
-      if (!("data" in json) || (json.data !== null && typeof json.data !== "object")) throw new Error("Invalid snapshot");
+      if (json.accountId !== accountId || !("data" in json) || (json.data !== null && typeof json.data !== "object")) throw new Error("Invalid account snapshot");
       if (!gate.isCurrent(generation)) return null;
       const data = json.data ?? { ...emptySnapshot(), revision: 0, lastSyncedAt: null };
       base.current = { accountId, at: data.lastSyncedAt ? new Date(data.lastSyncedAt) : null, revision: data.revision ?? 0 };
@@ -67,7 +67,7 @@ export function useCloudSync() {
     cancelScheduledPush();
     setSyncStatus("syncing");
     try {
-      const outgoing: SyncPushPayload = { ...payload, baseRevision: base.current.revision, baseLastSyncedAt: getSyncBase()?.toISOString() ?? null };
+      const outgoing: SyncPushPayload = { ...payload, accountId: accountId!, baseRevision: base.current.revision, baseLastSyncedAt: getSyncBase()?.toISOString() ?? null };
       const res = await fetch("/api/sync", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(outgoing), keepalive: options?.keepalive });
       if (!res.ok) throw new Error("Sync failed");
       const json = await res.json();
@@ -77,10 +77,7 @@ export function useCloudSync() {
       const acknowledged = json.data as CloudSyncSnapshot;
       // Preserve edits made while the request was in flight. Rebase a pending
       // reset only when this response acknowledges that same reset operation.
-      const local = current.syncState?.reset?.id === acknowledged.syncState?.resetId
-        ? { ...current, syncState: { ...acknowledged.syncState!, tombstones: { ...acknowledged.syncState!.tombstones, ...current.syncState?.tombstones } } }
-        : current;
-      const next = JSON.stringify(current) === JSON.stringify(payload) ? acknowledged : mergeLedgerSnapshot(acknowledged, local, true);
+      const next = reconcileCloudAcknowledgement(current, payload, acknowledged);
       useAppStore.getState().applySnapshot(next);
       base.current = { accountId, revision: json.revision, at: json.lastSyncedAt ? new Date(json.lastSyncedAt) : null };
       setLastSyncedAt(base.current.at);

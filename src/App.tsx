@@ -16,7 +16,7 @@ import { useWorkoutTimer } from "./hooks/useWorkoutTimer";
 import { useCloudSync } from "./hooks/useCloudSync";
 import { buildWorkoutSession, computeAllTimePRs } from "./services/workoutService";
 import { displaySession, displayBodyWeight, convertWeightLog } from "./lib/trainingMath";
-import { mergeLedgerSnapshot } from "./lib/syncLedger";
+import { mergeLedgerSnapshot, stripSyncMetadata, reconcileCloudAcknowledgement } from "./lib/syncLedger";
 import {
   hasRemoteChangesSinceBase,
   sanitizeSyncPayload,
@@ -285,7 +285,7 @@ function AppMain() {
   /** Apply a snapshot from cloud into the Zustand store (skipping identical data). */
   const applyCloudSnapshot = useCallback(
     (snapshot: AppDataSnapshot): boolean => {
-      if (stableStringify(currentSnapshotRef.current) === stableStringify(snapshot)) return false;
+      if (stableStringify(selectCurrentSnapshot(useAppStore.getState())) === stableStringify(stripSyncMetadata(snapshot))) return false;
       skipNextCloudPushRef.current += 1;
       suppressOverlayRef.current = true;
       applySnapshot(snapshot);
@@ -302,14 +302,18 @@ function AppMain() {
       if (!data) { if (!silent) showToast("Cloud data unavailable", "error"); return null; }
       try {
         const local = getFreshSnapshot();
-        const cloud: AppDataSnapshot = { ...data, settings: resolveSnapshotSettings(data.settings ?? {}, local.settings) };
+        const cloud: AppDataSnapshot = stripSyncMetadata({ ...data, settings: resolveSnapshotSettings(data.settings ?? {}, local.settings) });
         let merged: AppDataSnapshot;
-        if (options?.clean || (cloud.syncState?.epoch ?? 0) > (local.syncState?.epoch ?? 0)) {
+        if (options?.clean) {
           merged = cloud;
           restTimer.dismissTimer();
           workoutTimer.reset();
         } else if (local.syncState?.reset) {
-          merged = local;
+          merged = reconcileCloudAcknowledgement(local, null, cloud);
+        } else if ((cloud.syncState?.epoch ?? 0) > (local.syncState?.epoch ?? 0)) {
+          merged = cloud;
+          restTimer.dismissTimer();
+          workoutTimer.reset();
         } else {
           merged = mergeLedgerSnapshot(cloud, local, !hasRemoteChangesSinceBase(syncBase, data.lastSyncedAt));
         }

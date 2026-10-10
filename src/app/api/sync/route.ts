@@ -2,7 +2,7 @@
 import { auth } from "@/auth";
 import { connectDB } from "@/lib/mongodb";
 import { hasRemoteChangesSinceBase, sanitizeSyncPayload } from "@/lib/sync";
-import { emptySnapshot, mergeLedgerSnapshot } from "@/lib/syncLedger";
+import { emptySnapshot, mergeLedgerSnapshot, stripSyncMetadata } from "@/lib/syncLedger";
 import User from "@/models/User";
 import UserData from "@/models/UserData";
 import type { AppDataSnapshot } from "@/types";
@@ -10,7 +10,7 @@ import type { AppDataSnapshot } from "@/types";
 function storedSnapshot(value: unknown): AppDataSnapshot {
   const payload = sanitizeSyncPayload(value) ?? {};
   const defaults = emptySnapshot();
-  return { ...defaults, ...payload, settings: { ...defaults.settings, ...payload.settings } };
+  return stripSyncMetadata({ ...defaults, ...payload, settings: { ...defaults.settings, ...payload.settings } });
 }
 
 export async function GET() {
@@ -20,7 +20,7 @@ export async function GET() {
   try {
     if (!(await connectDB())) return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
     const data = await UserData.findOne({ userId }).lean();
-    return NextResponse.json({ data: data ? { ...storedSnapshot(data), revision: data.revision ?? 0, lastSyncedAt: data.lastSyncedAt ?? null } : null }, { headers: { "Cache-Control": "no-store" } });
+    return NextResponse.json({ accountId: userId, data: data ? { ...storedSnapshot(data), revision: data.revision ?? 0, lastSyncedAt: data.lastSyncedAt ?? null } : null }, { headers: { "Cache-Control": "no-store" } });
   } catch { return NextResponse.json({ error: "Internal server error" }, { status: 500 }); }
 }
 
@@ -33,11 +33,12 @@ export async function POST(req: Request) {
   try {
     const payload = sanitizeSyncPayload(body);
     if (!payload) return NextResponse.json({ error: "Invalid payload" }, { status: 400 });
+    if (payload.accountId !== undefined && payload.accountId !== userId) return NextResponse.json({ error: "account_changed" }, { status: 403 });
     if (!(await connectDB())) return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
     for (let attempt = 0; attempt < 5; attempt++) {
       const existing = await UserData.findOne({ userId }).lean();
       const revision = existing?.revision ?? 0;
-      if (Object.keys(payload).every(k => ["baseLastSyncedAt", "lastSyncedAt", "baseRevision"].includes(k))) {
+      if (Object.keys(payload).every(k => ["accountId", "baseLastSyncedAt", "lastSyncedAt", "baseRevision"].includes(k))) {
         return NextResponse.json({ ok: true, noOp: true, revision, lastSyncedAt: existing?.lastSyncedAt ?? null });
       }
       const preferIncoming = payload.baseRevision !== undefined ? payload.baseRevision === revision :

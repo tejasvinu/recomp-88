@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mergeLedgerSnapshot } from "./syncLedger";
+import { mergeLedgerSnapshot, reconcileCloudAcknowledgement } from "./syncLedger";
 import type { AppDataSnapshot, WorkoutSession } from "@/types";
 const session = (version = 1): WorkoutSession => ({ id: "s", version, date: "2026-10-09T12:00:00Z", dayId: "d", dayName: "Push", exercises: [] });
 const snapshot = (): AppDataSnapshot => ({ workoutTemplate: [], progress: {}, sessions: [session()], bodyWeightEntries: [{ date: "2026-10-09", weight: 80 }], exerciseNotes: { e: "note" }, customExercises: [], settings: { weightUnit: "kg", strengthRestDuration: 120, hypertrophyRestDuration: 90, soundEnabled: true } });
@@ -24,5 +24,22 @@ describe("versioned deletion and reset ledger", () => {
   it("keeps higher entity versions regardless of snapshot conflict preference", () => {
     const current = { ...snapshot(), sessions: [session(4)] };
     expect(mergeLedgerSnapshot(current, { sessions: [session(3)] }, true).sessions[0].version).toBe(4);
+  });
+  it("preserves a reset queued while an older push is in flight", () => {
+    const pushed = snapshot();
+    const current = { ...snapshot(), sessions: [], syncState: { epoch: 0, tombstones: {}, reset: { id: "pending", baseEpoch: 0 } } };
+    const next = reconcileCloudAcknowledgement(current, pushed, snapshot());
+    expect(next.syncState?.reset?.id).toBe("pending");
+    expect(next.syncState?.epoch).toBe(0);
+  });
+  it("preserves new writes while clearing only an acknowledged reset", () => {
+    const pushed = { ...snapshot(), sessions: [], syncState: { epoch: 0, tombstones: {}, reset: { id: "done", baseEpoch: 0 } } };
+    const current = { ...pushed, sessions: [session(3)] };
+    const acknowledged = { ...snapshot(), sessions: [], syncState: { epoch: 1, tombstones: {}, resetId: "done" } };
+    const next = reconcileCloudAcknowledgement(current, pushed, acknowledged);
+    expect(next.sessions).toHaveLength(1);
+    expect(next.syncState?.epoch).toBe(1);
+    expect(next.syncState?.reset).toBeUndefined();
+    expect(reconcileCloudAcknowledgement(current, null, acknowledged).sessions).toHaveLength(1);
   });
 });
