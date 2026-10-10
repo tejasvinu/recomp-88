@@ -3,12 +3,12 @@ import { mapPublicWorkouts } from "./publicApi";
 import { buildWorkoutSession } from "@/services/workoutService";
 import type { DayRoutine } from "@/types";
 import { sanitizeSyncPayload } from "./sync";
-import { resolveSetLoad } from "./trainingMath";
+import { resolveSetLoad, displaySession } from "./trainingMath";
 
 describe("historic dates, units and planned denominator", () => {
   it("filters weight dates in the configured owner timezone", () => {
     const data = { settings: { weightUnit: "kg", timezone: "Asia/Kolkata" }, bodyWeightEntries: [
-      { date: "2026-10-02", weight: 80 }, { date: "2026-10-03", weight: 81 }, { date: "2026-10-09", weight: 82 },
+      { date: "2026-10-02", weight: 80, weightUnit: "kg" }, { date: "2026-10-03", weight: 81, weightUnit: "kg" }, { date: "2026-10-09", weight: 82, weightUnit: "kg" },
     ] };
     expect(mapPublicWorkouts(data, "kg", { since: new Date("2026-10-02T18:30Z"), until: new Date("2026-10-09T18:30Z") }).bodyWeight.map(e => e.date)).toEqual(["2026-10-03", "2026-10-09"]);
   });
@@ -37,5 +37,22 @@ describe("historic dates, units and planned denominator", () => {
     const set = { setId: "s", targetReps: "5", loggedWeight: "BW-20", loggedReps: "5", completed: true };
     expect(resolveSetLoad(set, session)).toMatchObject({ loadKg: 60, loadKind: "bodyweight_assisted", volumeKgReps: 300 });
     expect(resolveSetLoad(set, { ...session, weightUnit: undefined })).toMatchObject({ loadKg: null, volumeKgReps: null });
+  });
+  it("uses existing v1 nullable fields for unknown units instead of relabelling history", () => {
+    const data = { settings: { weightUnit: "lbs" }, bodyWeightEntries: [{ date: "2026-10-09", weight: 80 }],
+      sessions: [{ id: "legacy", date: "2026-10-09T12:00:00Z", dayName: "Push", totalTonnage: 200,
+        exercises: [{ name: "Press", type: "strength", sets: [{ loggedWeight: "40", loggedReps: "5", completed: true }] }] }] };
+    const result = mapPublicWorkouts(data, "kg", { since: new Date("2026-10-09T00:00Z"), until: new Date("2026-10-10T00:00Z") });
+    expect(result.sessions[0].totalTonnage).toBeNull();
+    expect(result.sessions[0].exercises[0].topSet).toBeNull();
+    expect(result.sessions[0].completedSets).toBe(1);
+    expect(result.bodyWeight).toEqual([]);
+  });
+  it("does not convert or display an unverified historical load as the selected unit", () => {
+    const legacy = { id: "s", date: "2026-10-09T12:00:00Z", dayId: "d", dayName: "Push", totalTonnage: 200,
+      exercises: [{ exerciseId: "e", name: "Press", type: "strength" as const, sets: [{ setId: "s", loggedWeight: "40", loggedReps: "5", targetReps: "5", completed: true }] }] };
+    expect(displaySession(legacy, "lbs").exercises[0].sets[0].loggedWeight).toBe("");
+    expect(displaySession(legacy, "lbs").totalTonnage).toBeUndefined();
+    expect(legacy.exercises[0].sets[0].loggedWeight).toBe("40");
   });
 });

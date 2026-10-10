@@ -51,6 +51,9 @@ function mapExercise(exercise: Record<string, unknown>, sourceUnit?: WeightUnit,
     completedSets++;
     const rawWeight = numericLog(set.loggedWeight);
     const setUnit = set.weightUnit === "kg" || set.weightUnit === "lbs" ? set.weightUnit : sourceUnit;
+    // V1 can represent an unknown top set as null; never attach the current
+    // display unit to an untagged historical measurement.
+    if (outputUnit && !setUnit) continue;
     const weight = rawWeight !== null && setUnit && outputUnit ? convertMass(rawWeight, setUnit, outputUnit) : rawWeight;
     const reps = numericLog(set.loggedReps);
     if (weight === null || reps === null) continue;
@@ -81,7 +84,7 @@ export function mapPublicSessions(value: unknown, window: ApiWindow, outputUnit?
       exerciseCount: exercises.length,
       completedSets: exercises.reduce((sum, exercise) => sum + exercise.completedSets, 0),
       totalSets: exercises.reduce((sum, exercise) => sum + exercise.totalSets, 0),
-      totalTonnage: typeof session.totalTonnage === "number" && Number.isFinite(session.totalTonnage) ? sourceUnit && outputUnit ? convertMass(session.totalTonnage, sourceUnit, outputUnit) : session.totalTonnage : null,
+      totalTonnage: typeof session.totalTonnage === "number" && Number.isFinite(session.totalTonnage) && (!outputUnit || sourceUnit) ? sourceUnit && outputUnit ? convertMass(session.totalTonnage, sourceUnit, outputUnit) : session.totalTonnage : null,
       exercises,
     }];
   }).sort((a, b) => Date.parse(a.startedAt) - Date.parse(b.startedAt)).slice(0, 1000);
@@ -96,6 +99,8 @@ export function mapPublicBodyWeight(value: unknown, window: ApiWindow, timezone 
       !validCalendarDate(+entry.date.slice(0, 4), +entry.date.slice(5, 7), +entry.date.slice(8, 10)) ||
       entry.date < since || entry.date >= until || typeof entry.weight !== "number" || !Number.isFinite(entry.weight)) return [];
     const sourceUnit = entry.weightUnit === "kg" || entry.weightUnit === "lbs" ? entry.weightUnit : undefined;
+    // V1 has no nullable weight field, so omit unverified-unit readings.
+    if (outputUnit && !sourceUnit) return [];
     return [{ date: entry.date, weight: sourceUnit && outputUnit ? convertMass(entry.weight, sourceUnit, outputUnit) : entry.weight }];
   }).sort((a, b) => a.date.localeCompare(b.date));
 }

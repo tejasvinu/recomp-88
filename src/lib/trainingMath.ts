@@ -30,7 +30,7 @@ export function resolveSetLoad(set: SessionSet, session: WorkoutSession) {
   const external = numericLog(set.loggedWeight);
   const loadKg = body ? bw !== null && offsetKg !== null ? Math.max(0, bw + (body[1] === "-" ? -offsetKg : offsetKg)) : null
     : external !== null && unit ? convertMass(external, unit, "kg") : null;
-  const eligible = set.completed === true && validReps !== null && loadKg !== null;
+  const eligible = set.completed === true && validReps !== null && loadKg !== null && Number.isFinite(loadKg * validReps);
   return { loadKind: kind, loadKg, reps: validReps, offsetKg, eligible,
     volumeKgReps: eligible ? loadKg * validReps : null,
     estimated1RmKg: eligible && validReps <= 15 && kind === "external" && set.setType !== "warmup" ? loadKg * (1 + validReps / 30) : null };
@@ -47,11 +47,11 @@ export function displaySession(session: WorkoutSession, unit: WeightUnit): Worko
   const source = session.weightUnit;
   return { ...session, weightUnit: source ? unit : undefined,
     bodyWeightUnit: session.bodyWeightUnit || source ? unit : undefined,
-    bodyWeightSnapshot: session.bodyWeightSnapshot !== undefined && (session.bodyWeightUnit ?? source) ? convertMass(session.bodyWeightSnapshot, (session.bodyWeightUnit ?? source)!, unit) : session.bodyWeightSnapshot,
-    totalTonnage: session.totalTonnage !== undefined && source ? convertMass(session.totalTonnage, source, unit) : session.totalTonnage,
+    bodyWeightSnapshot: session.bodyWeightSnapshot !== undefined && (session.bodyWeightUnit ?? source) ? convertMass(session.bodyWeightSnapshot, (session.bodyWeightUnit ?? source)!, unit) : undefined,
+    totalTonnage: session.totalTonnage !== undefined && source ? convertMass(session.totalTonnage, source, unit) : undefined,
     exercises: session.exercises.map(ex => ({ ...ex, sets: ex.sets.map(set => ({ ...set,
       weightUnit: set.weightUnit || source ? unit : undefined,
-      loggedWeight: (set.weightUnit ?? source) ? convertWeightLog(set.loggedWeight, (set.weightUnit ?? source)!, unit) : set.loggedWeight,
+      loggedWeight: (set.weightUnit ?? source) ? convertWeightLog(set.loggedWeight, (set.weightUnit ?? source)!, unit) : "",
     })) })),
   };
 }

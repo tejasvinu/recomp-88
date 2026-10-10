@@ -122,7 +122,7 @@ function AppMain() {
   const weightUnit = useAppStore((s) => s.weightUnit);
   const timezone = useAppStore((s) => s.timezone);
   const sessions = useMemo(() => storedSessions.map(s => displaySession(s, weightUnit)), [storedSessions, weightUnit]);
-  const bodyWeightEntries = useMemo(() => storedBodyWeightEntries.map(e => displayBodyWeight(e, weightUnit)), [storedBodyWeightEntries, weightUnit]);
+  const bodyWeightEntries = useMemo(() => storedBodyWeightEntries.filter(e => e.weightUnit).map(e => displayBodyWeight(e, weightUnit)), [storedBodyWeightEntries, weightUnit]);
   const setWeightUnit = useAppStore((s) => s.setWeightUnit);
   const customExercises = useAppStore((s) => s.customExercises);
   const setCustomExercises = useAppStore((s) => s.setCustomExercises);
