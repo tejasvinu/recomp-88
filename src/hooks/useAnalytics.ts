@@ -17,6 +17,7 @@ import type {
     ExerciseWiki,
 } from '../types';
 import { isTrainingDay } from '../data';
+import { sessionVolumeKg, convertMass, resolveSetLoad } from '../lib/trainingMath';
 import { resolveWeight, getClosestBodyWeight, toLocalDateKey } from '../utils';
 import { findWikiEntry } from '../wikiData';
 
@@ -359,14 +360,12 @@ export function useAnalytics({
     // ─── Estimated 1RM ──────────────────────────────────────────────────────
     const estimatedMaxes = useMemo<EstimatedMaxEntry[]>(() => {
         if (!activeDay) return [];
-        const defaultBw = weightUnit === 'lbs' ? 175 : 80;
         const daySessions = sessions
             .filter((s) => s.dayId === activeDay.id)
             .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         if (!daySessions[0]) return [];
 
         const latest = daySessions[0];
-        const bw = getClosestBodyWeight(latest.date, bodyWeightEntries, defaultBw);
 
         return activeDay.exercises
             .filter((ex) => ex.type === 'strength')
@@ -378,17 +377,16 @@ export function useAnalytics({
 
                 let best1RM = 0, bestSet = '';
                 se.sets.forEach((set) => {
-                    const w = resolveWeight(set.loggedWeight, bw);
-                    const r = parseFloat(set.loggedReps) || 0;
-                    if (w > 0 && r > 0) {
-                        const e1rm = calculateEstimatedOneRepMax(w, r);
-                        if (e1rm > best1RM) { best1RM = e1rm; bestSet = `${set.loggedWeight} × ${r}`; }
+                    const load = resolveSetLoad(set, latest);
+                    if (load.estimated1RmKg !== null) {
+                        const e1rm = convertMass(load.estimated1RmKg, 'kg', weightUnit);
+                        if (e1rm > best1RM) { best1RM = e1rm; bestSet = `${set.loggedWeight} × ${load.reps}`; }
                     }
                 });
                 return { exerciseId: exercise.id, name: exercise.name, estimated1RM: roundMetric(best1RM), bestSet };
             })
             .filter((e) => e.estimated1RM > 0);
-    }, [sessions, activeDay, weightUnit, bodyWeightEntries]);
+    }, [sessions, activeDay, weightUnit]);
 
     // ─── Day volume summary ──────────────────────────────────────────────────
     const dayVolumeSummary = useMemo<DayVolumeSummaryEntry[]>(() => {
@@ -413,7 +411,6 @@ export function useAnalytics({
     // ─── PR history ──────────────────────────────────────────────────────────
     const prHistory = useMemo<PRHistoryData | null>(() => {
         if (!activeDay) return null;
-        const defaultBw = weightUnit === 'lbs' ? 175 : 80;
         const daySessions = sessions
             .filter((s) => s.dayId === activeDay.id)
             .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -426,7 +423,6 @@ export function useAnalytics({
 
         const timeline = buildSessionTimeline(daySessions);
         const series: TimelinePoint[] = timeline.map(({ session, dateKey, displayDate }) => {
-            const bw = getClosestBodyWeight(session.date, bodyWeightEntries, defaultBw);
             const point: TimelinePoint = { dateKey, displayDate };
             strengthExercises.forEach((exercise) => {
                 const ex = session.exercises.find(
@@ -435,10 +431,9 @@ export function useAnalytics({
                 if (!ex) { point[exercise.key] = null; return; }
                 let best1RM = 0;
                 ex.sets.forEach((set) => {
-                    const w = resolveWeight(set.loggedWeight, bw);
-                    const r = parseFloat(set.loggedReps) || 0;
-                    if (w > 0 && r > 0) {
-                        const e1rm = calculateEstimatedOneRepMax(w, r);
+                    const load = resolveSetLoad(set, session);
+                    if (load.estimated1RmKg !== null) {
+                        const e1rm = convertMass(load.estimated1RmKg, 'kg', weightUnit);
                         if (e1rm > best1RM) best1RM = e1rm;
                     }
                 });
@@ -451,7 +446,7 @@ export function useAnalytics({
             series.some((p) => typeof p[e.key] === 'number'),
         );
         return populated.length > 0 ? { series, exercises: populated } : null;
-    }, [sessions, activeDay, weightUnit, bodyWeightEntries]);
+    }, [sessions, activeDay, weightUnit]);
 
     // ─── Actual Rep Max history ──────────────────────────────────────────────
     const actualRepMaxHistory = useMemo<PRHistoryData | null>(() => {
@@ -499,19 +494,7 @@ export function useAnalytics({
         const thisStart = getWeekStart(today).getTime();
         const nextStart = thisStart + oneWeekMs;
         const lastStart = thisStart - oneWeekMs;
-        const defaultBw = weightUnit === 'lbs' ? 175 : 80;
-        const vol = (s: SessionHistory[number]) => {
-            const bw = getClosestBodyWeight(s.date, bodyWeightEntries, defaultBw);
-            return s.exercises.reduce(
-                (ea, ex) =>
-                    ea +
-                    ex.sets.reduce((sa, set) => {
-                        if ((set as { setType?: string }).setType === 'warmup') return sa;
-                        return sa + resolveWeight(set.loggedWeight, bw) * (parseFloat(set.loggedReps) || 0);
-                    }, 0),
-                0,
-            );
-        };
+        const vol = (session: SessionHistory[number]) => convertMass(sessionVolumeKg(session), 'kg', weightUnit);
         const thisWeek = sessions.filter((s) => { const t = new Date(s.date).getTime(); return t >= thisStart && t < nextStart; });
         const lastWeek = sessions.filter((s) => { const t = new Date(s.date).getTime(); return t >= lastStart && t < thisStart; });
         const thisVol = Math.round(thisWeek.reduce((a, s) => a + vol(s), 0));
@@ -524,7 +507,7 @@ export function useAnalytics({
             change: lastVol > 0 ? Math.round(((thisVol - lastVol) / lastVol) * 100) : null,
             hasData: sessions.length >= 2,
         };
-    }, [sessions, weightUnit, bodyWeightEntries]);
+    }, [sessions, weightUnit]);
 
     // ─── Recent sessions ─────────────────────────────────────────────────────
     const recentSessions = useMemo(

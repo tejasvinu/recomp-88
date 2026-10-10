@@ -116,7 +116,13 @@ The name and last sync time may be `null`. Accounts without synced data have a z
 
 Bounds must be ISO 8601 instants with a timezone; URL-encode offsets containing `+`. `since` is inclusive and `until` exclusive. Defaults are `until = now` and `since = until − 28 days`. Invalid bounds, `since >= until`, or a range longer than 400 days return `400`. Sessions with unparseable dates are skipped; results are sorted by start time ascending and capped at the first 1000.
 
-Duration is rounded from seconds to minutes, or `null` when absent. Tonnage is the stored value or `null`. Completed sets require `completed === true`. An exercise's top set is its completed set with the highest numeric logged weight and reps (ties use more reps), or `null` if no completed set parses. All weights retain the user's stored unit. Body weight is sorted by date and filtered by date-string comparison against the UTC dates of the bounds (`since` inclusive, `until` exclusive). The API never includes account ids, email, notes, templates or raw progress.
+Duration is rounded from seconds to minutes, or `null` when absent. Tonnage is the stored value or `null`. Completed sets require `completed === true`. An exercise's top set is its completed set with the highest numeric logged weight and reps (ties use more reps), or `null` if no completed set parses. Tagged measurements are converted to the current output unit; legacy measurements lack trustworthy unit metadata. Body weight is sorted by date and filtered by date-string comparison against the synced owner-timezone dates of the bounds (UTC when timezone is absent) (`since` inclusive, `until` exclusive). The API never includes account ids, email, notes, templates or raw progress.
+
+Untagged legacy top sets and tonnage now use the existing `null` values; untagged body-weight rows are omitted. Source numbers remain preserved in storage and backups until the owner confirms their units.
+
+## Version 2 training API
+
+See [docs/api.md](docs/api.md) for read-only training summaries, paginated session and body-weight detail, canonical units, PR calculations, coverage, Atlas consumption, versioned browser sync/reset operations, and authenticated Google linking. Existing personal tokens with `read:workouts` cover these new reads. V1 shapes remain compatible.
 
 ## Scripts
 

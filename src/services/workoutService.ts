@@ -21,10 +21,10 @@ import {
     isFreeWeightFriendly,
     resolvePrimaryFreeWeightAlternative,
 } from '../wikiData';
-import { resolveWeight, getClosestBodyWeight, toLocalDateKey } from '../utils';
+import { toLocalDateKey } from '../utils';
 import { snapshotPlan, type SessionTiming } from '../lib/sessionMetadata';
 import { dateInTimezone } from '../lib/calendar';
-import { displayBodyWeight, sessionVolumeKg, convertMass } from '../lib/trainingMath';
+import { displayBodyWeight, sessionVolumeKg, convertMass, resolveSetLoad } from '../lib/trainingMath';
 import type {
     WorkoutTemplate,
     WorkoutProgress,
@@ -196,28 +196,15 @@ export function computeAllTimePRs(
     weightUnit: 'kg' | 'lbs',
 ): Record<string, number> {
     const prs: Record<string, number> = {};
-    const defaultBw = weightUnit === 'lbs' ? 175 : 80;
-
-    template.forEach((day) => {
-        day.exercises.forEach((exercise) => {
-            let bestWeight = 0;
-            sessions.forEach((session) => {
-                const bw = getClosestBodyWeight(session.date, bodyWeightEntries, defaultBw);
-                session.exercises
-                    .filter(
-                        (se) => se.exerciseId === exercise.id || se.name === exercise.name,
-                    )
-                    .forEach((se) => {
-                        se.sets.forEach((set) => {
-                            const resolved = resolveWeight(set.loggedWeight, bw);
-                            if (resolved > bestWeight) bestWeight = resolved;
-                        });
-                    });
-            });
-            prs[exercise.id] = bestWeight;
-        });
-    });
-
+    void bodyWeightEntries; // Historical PRs depend on the session snapshot only.
+    template.forEach(day => day.exercises.forEach(exercise => {
+        let best = 0;
+        sessions.forEach(session => session.exercises.filter(ex => ex.exerciseId === exercise.id).forEach(ex => ex.sets.forEach(set => {
+            const load = resolveSetLoad(set, session);
+            if (load.eligible && set.setType !== 'warmup' && load.loadKg !== null) best = Math.max(best, convertMass(load.loadKg, 'kg', weightUnit));
+        })));
+        prs[exercise.id] = best;
+    }));
     return prs;
 }
 
@@ -238,14 +225,13 @@ export function computeGlobalExerciseRecords(
     bodyWeightEntries: BodyWeightEntry[],
     weightUnit: 'kg' | 'lbs',
 ): GlobalExerciseRecord[] {
-    const defaultBw = weightUnit === 'lbs' ? 175 : 80;
+    void bodyWeightEntries;
     const byKey = new Map<
         string,
         { displayName: string; maxWeight: number; maxSessionTonnage: number }
     >();
 
     for (const session of sessions) {
-        const bw = getClosestBodyWeight(session.date, bodyWeightEntries, defaultBw);
         for (const ex of session.exercises) {
             const trimmed = ex.name.trim();
             const key = trimmed.toLowerCase();
@@ -254,8 +240,10 @@ export function computeGlobalExerciseRecords(
             let sessionTonnage = 0;
             let maxWSession = 0;
             for (const set of ex.sets) {
-                const w = resolveWeight(set.loggedWeight, bw);
-                const r = parseFloat(set.loggedReps) || 0;
+                const load = resolveSetLoad(set, session);
+                if (!load.eligible || set.setType === 'warmup') continue;
+                const w = convertMass(load.loadKg!, 'kg', weightUnit);
+                const r = load.reps!;
                 if (w > 0 && r > 0) {
                     sessionTonnage += w * r;
                 }
