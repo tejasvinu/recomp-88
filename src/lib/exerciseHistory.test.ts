@@ -354,7 +354,7 @@ describe("exerciseHistory domain math", () => {
         makeSessionSummary("s3", 135, 12, "lbs"),
       ];
 
-      const hint = computeProgressionHint({ history, plannedRepRange, weightUnit: "lbs" });
+      const hint = computeProgressionHint({ history, plannedRepRange });
       expect(hint).toBe("last 3 sessions hit the top of the rep range at 135 lbs → try 140 lbs");
     });
 

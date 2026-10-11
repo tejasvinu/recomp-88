@@ -1,7 +1,7 @@
-import type { Exercise, SessionExercise, SessionSet, WeightUnit, WorkoutSession } from "@/types";
+import type { WeightUnit, WorkoutSession } from "@/types";
 import { dateInTimezone, validLocalDate } from "./calendar";
 import { parseInstant } from "./publicApi";
-import { convertMass, numericLog, resolveSetLoad, roundMetric } from "./trainingMath";
+import { numericLog, resolveSetLoad, roundMetric } from "./trainingMath";
 
 export const EPLEY_MAX_REPS = 12;
 export const ESTIMATE_METHOD = "epley_cap12" as const;
@@ -324,7 +324,6 @@ export interface ProgressionHintOptions {
   history: ExerciseSessionSummary[];
   plannedRepRange: RepRange | null;
   minSessions?: number;
-  weightUnit?: WeightUnit;
 }
 
 /**
@@ -336,7 +335,6 @@ export function computeProgressionHint({
   history,
   plannedRepRange,
   minSessions = 3,
-  weightUnit = "kg",
 }: ProgressionHintOptions): string | null {
   if (!plannedRepRange || minSessions < 1) return null;
   if (history.length < minSessions) return null;

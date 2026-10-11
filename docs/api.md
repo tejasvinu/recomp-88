@@ -31,7 +31,7 @@ for new Atlas evidence and trends.
   "user": { "name": "Example Owner" },
   "authorizedScope": "read:workouts",
   "timezone": "Asia/Calcutta",
-  "capabilities": ["training-summary-v2", "session-details-v2", "body-weight-v2", "revision-bound-pagination"],
+  "capabilities": ["training-summary-v2", "session-details-v2", "body-weight-v2", "revision-bound-pagination", "exercise-history-v2", "exercise-list-v2"],
   "supportedSchemas": [1, 2],
   "calculationVersion": "training-2",
   "revision": 12,
@@ -233,9 +233,155 @@ records. Unverified legacy values are also withheld from display conversion and
 weight trends; their original numbers remain in local/cloud storage and JSON
 backups. Confirm historical units before any owner-directed correction/import.
 
+## Exercise directory and history progression
+
+`GET /api/v2/exercises?timezone=Asia%2FKolkata`
+returns the owner's catalog of exercises discovered across their workout template,
+custom exercise definitions, and completed session history. Exercises include
+planned rep ranges (when configured in templates), session occurrence counts,
+and `lastPerformedDate` (null if never performed), sorted with active exercises first.
+
+```json
+{
+  "schemaVersion": 2,
+  "accountKey": "rcpa_example-opaque-account-key",
+  "revision": 12,
+  "timezone": "Asia/Calcutta",
+  "lastSyncedAt": "2026-10-09T18:42:00.000Z",
+  "exercises": [
+    {
+      "id": "push-1-press",
+      "name": "Barbell Bench Press",
+      "type": "strength",
+      "plannedRepRange": "8-12",
+      "totalSessions": 14,
+      "lastPerformedDate": "2026-10-09",
+      "lastPerformedSessionId": "push-1-1791562800000"
+    }
+  ],
+  "total": 1
+}
+```
+
+`GET /api/v2/exercises/{id}/history?from=2026-09-13&to=2026-10-11&timezone=Asia%2FKolkata&limit=20`
+provides paginated history for a specific exercise ID. History is built strictly
+from completed working sets: warmups and unmeasured sets (non-numeric loads, 0/missing reps)
+are excluded. Stored units are respected (converted to canonical `kg` and `kg_reps`), while
+untagged historical sets remain unknown (`loadKg: null`).
+
+The payload delivers:
+- **Per-session top set**: highest loadKg (tie-broken by reps) for completed working sets.
+- **Working volume**: `totalWorkingVolumeKgReps` (null if any working set was unmeasured;
+  `knownWorkingVolumeKgReps` provides the sum of measurable sets).
+- **Estimated 1RM**: Epley formula `loadKg * (1 + reps/30)` capped strictly at reps ≤ 12.
+  Labelled as an estimate with `isEstimate: true` and `estimateMethod: "epley_cap12"`.
+- **Rep PRs per weight**: rep milestones achieved at each distinct load across eligible cloud history.
+- **Progression hint**: plain language coaching cue (e.g. `"last 3 sessions hit the top of the rep range at 60 kg → try 62.5 kg"`)
+  derived from consecutive sessions at the same load hitting the top of the planned rep range.
+  Returns `null` when insufficient data or no planned range exists.
+- **Coverage and pagination ledger**: identical cursor binding, 2 MB ceiling, and truncation
+  semantics to `/api/v2/training/summary`.
+
+Example exercise history payload:
+
+```json
+{
+  "schemaVersion": 2,
+  "calculationVersion": "training-2",
+  "accountKey": "rcpa_example-opaque-account-key",
+  "revision": 12,
+  "lastSyncedAt": "2026-10-09T18:42:00.000Z",
+  "timezone": "Asia/Calcutta",
+  "from": "2026-09-13",
+  "to": "2026-10-11",
+  "massUnit": "kg",
+  "volumeUnit": "kg_reps",
+  "exercise": {
+    "id": "push-1-press",
+    "name": "Barbell Bench Press",
+    "type": "strength",
+    "plannedRepRange": "8-12"
+  },
+  "history": [
+    {
+      "sessionId": "push-1-1791562800000",
+      "dayId": "push-1",
+      "dayName": "Push",
+      "date": "2026-10-09",
+      "startedAt": "2026-10-09T18:20:00.000Z",
+      "timestampQuality": "observed",
+      "completedWorkingSets": 3,
+      "completedWarmupSets": 1,
+      "unmeasuredWorkingSets": 0,
+      "topSet": {
+        "setId": "set-1",
+        "reps": 12,
+        "loadKg": 60,
+        "loadKind": "external",
+        "sourceWeight": 60,
+        "sourceUnit": "kg"
+      },
+      "knownWorkingVolumeKgReps": 2160,
+      "totalWorkingVolumeKgReps": 2160,
+      "estimated1RmKg": 84,
+      "estimateMethod": "epley_cap12",
+      "isEstimate": true
+    }
+  ],
+  "personalRecords": [
+    {
+      "id": "pr_push-1-1791562800000_push-1-press_set-1_60_12",
+      "exerciseId": "push-1-press",
+      "sessionId": "push-1-1791562800000",
+      "setId": "set-1",
+      "loadKg": 60,
+      "reps": 12,
+      "previousReps": 10,
+      "unit": "kg",
+      "sourceWeight": 60,
+      "sourceUnit": "kg",
+      "achievedAt": "2026-10-09T18:20:00.000Z",
+      "timestampQuality": "observed"
+    }
+  ],
+  "allTimeBestRepPRs": [
+    {
+      "loadKg": 60,
+      "reps": 12,
+      "sourceWeight": 60,
+      "sourceUnit": "kg",
+      "sessionId": "push-1-1791562800000",
+      "achievedAt": "2026-10-09T18:20:00.000Z"
+    }
+  ],
+  "progressionHint": "last 3 sessions hit the top of the rep range at 60 kg → try 62.5 kg",
+  "page": {
+    "limit": 20,
+    "returned": 1,
+    "total": 1,
+    "hasMore": false,
+    "nextCursor": null
+  },
+  "coverage": {
+    "scope": "cloud_ledger_only",
+    "observationCoverage": "unknown",
+    "aggregatesIncludeAllMatchingSessions": true,
+    "personalRecordBaseline": "eligible_cloud_history",
+    "discardedSessionRecords": 0,
+    "invalidDateSessions": 0,
+    "unknownLoadSessions": 0,
+    "unknownPlanSessions": 0,
+    "legacyTimestampSessions": 0,
+    "dateOnlySessions": 0,
+    "detailTruncatedSessionIds": [],
+    "detailPageComplete": true
+  }
+}
+```
+
 ## Atlas consumption
 
-1. Negotiate v2 via `/api/v2/me`; retain the existing v1 connector fallback.
+1. Negotiate v2 via `/api/v2/me`; check `capabilities` for `exercise-history-v2` and `exercise-list-v2`. Retain existing v1 fallback.
 2. Key evidence by accountKey, timezone, calculationVersion and connection
    generation. When revision changes, reconcile cached periods, including old
    weeks affected by deletion/reset. Revision alone is an invalidation hint;
@@ -247,6 +393,9 @@ backups. Confirm historical units before any owner-directed correction/import.
    Keep missing unit/load/plan values unknown; expose sync age and coverage.
 5. Fetch body weight with its own local-date bounds. Keep original timezone,
    precision, units and update provenance.
+6. Consume `GET /api/v2/exercises` to inspect catalog and last performed dates.
+   Query `GET /api/v2/exercises/{id}/history` for progression analysis, top set progression charts,
+   rep PR ledgers, and plain progression hints.
 
 Public validation errors use
 `{schemaVersion:2,error:{code,message,retryable}}`. Cursor conflicts are retryable
