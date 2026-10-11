@@ -21,6 +21,11 @@ import {
   hasRemoteChangesSinceBase,
   sanitizeSyncPayload,
 } from "./lib/sync";
+import {
+  computeProgressionHint,
+  findPlannedRepRange,
+  extractExerciseSessionHistory,
+} from "./lib/exerciseHistory";
 import type {
   AppDataSnapshot,
   ExerciseWiki,
@@ -205,6 +210,7 @@ function AppMain() {
 
   // ─── Local UI state (not global) ─────────────────────────────────────
   const [modalEntry, setModalEntry] = useState<ExerciseWiki | null>(null);
+  const [historyExercise, setHistoryExercise] = useState<{ id?: string; name: string } | null>(null);
   const [showDayComplete, setShowDayComplete] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showWorkoutEditor, setShowWorkoutEditor] = useState(false);
@@ -838,6 +844,28 @@ function AppMain() {
     if (entry) setModalEntry(entry);
   }, []);
 
+  const openExerciseHistory = useCallback((exerciseIdOrName: string, name?: string) => {
+    if (name) {
+      setHistoryExercise({ id: exerciseIdOrName, name });
+    } else {
+      setHistoryExercise({ name: exerciseIdOrName });
+    }
+  }, []);
+
+  const progressionHints = useMemo(() => {
+    if (!activeDay?.exercises) return {};
+    const hints: Record<string, string | null> = {};
+    for (const ex of activeDay.exercises) {
+      const plannedRange = findPlannedRepRange(ex);
+      const history = extractExerciseSessionHistory(sessions, ex.id, timezone);
+      hints[ex.id] = computeProgressionHint({
+        history,
+        plannedRepRange: plannedRange,
+      });
+    }
+    return hints;
+  }, [activeDay, sessions, timezone]);
+
   const handleSaveCustomExercise = useCallback((ex: ExerciseWiki) => {
     setCustomExercises((prev) => [...prev, ex]);
     showToast(`Saved ${ex.name} to library`);
@@ -850,10 +878,11 @@ function AppMain() {
     bwFill: handleBwFill,
     loadLastSession,
     openExerciseInfo,
+    openExerciseHistory,
     noteChange: handleNoteChange,
     addExtraSet,
     removeExtraSet,
-  }), [toggleSet, updateSetData, adjustWeight, handleBwFill, loadLastSession, openExerciseInfo, handleNoteChange, addExtraSet, removeExtraSet]);
+  }), [toggleSet, updateSetData, adjustWeight, handleBwFill, loadLastSession, openExerciseInfo, openExerciseHistory, handleNoteChange, addExtraSet, removeExtraSet]);
 
   // ─── Render ────────────────────────────────────────────────────────────
   return (
@@ -899,6 +928,7 @@ function AppMain() {
                   allTimePRs={allTimePRs}
                   progressPercent={progressPercent}
                   weightUnit={weightUnit}
+                  progressionHints={progressionHints}
                   onSetActiveDayIndex={setActiveDayIndex}
                   onShowFinishConfirm={() => setShowFinishConfirm(true)}
                   onClearCheckmarks={clearCheckmarks}
@@ -941,6 +971,7 @@ function AppMain() {
                     sessions={sessions}
                     customExercises={customExercises}
                     onOpenExercise={openExerciseInfo}
+                    onOpenExerciseHistory={openExerciseHistory}
                     onDeleteSession={deleteSession}
                     bodyWeightEntries={bodyWeightEntries}
                     onLogBodyWeight={logBodyWeight}
@@ -954,6 +985,7 @@ function AppMain() {
                     bodyWeightEntries={bodyWeightEntries}
                     weightUnit={weightUnit}
                     onOpenExercise={openExerciseInfo}
+                    onOpenExerciseHistory={openExerciseHistory}
                   />
                 </Suspense>
               )}
@@ -1002,6 +1034,8 @@ function AppMain() {
         showWorkoutEditor={showWorkoutEditor}
         showAddPastSession={showAddPastSession}
         modalExerciseEntry={modalEntry}
+        historyExercise={historyExercise}
+        sessions={sessions}
         activeDayName={activeDay.name}
         elapsedSeconds={workoutTimer.elapsedSeconds}
         onFinishWorkout={finishWorkout}
@@ -1024,6 +1058,7 @@ function AppMain() {
         onCloseAddPastSession={() => setShowAddPastSession(false)}
         onCloseExerciseDetail={() => setModalEntry(null)}
         onClosePlateCalc={() => setShowPlateCalc(false)}
+        onCloseExerciseHistory={() => setHistoryExercise(null)}
       />
 
       {showJustShowUp && (

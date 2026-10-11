@@ -22,6 +22,7 @@ interface WorkoutTabProps {
     allTimePRs: Record<string, number>;
     progressPercent: number;
     weightUnit: "kg" | "lbs";
+    progressionHints?: Record<string, string | null>;
     onSetActiveDayIndex: (fn: (i: number) => number) => void;
     onShowFinishConfirm: () => void;
     onClearCheckmarks: () => void;
@@ -39,6 +40,7 @@ export default function WorkoutTab({
     allTimePRs,
     progressPercent,
     weightUnit,
+    progressionHints,
     onSetActiveDayIndex,
     onShowFinishConfirm,
     onClearCheckmarks,
@@ -141,6 +143,7 @@ export default function WorkoutTab({
                             lastSessionVals={lastSessionValues[activeDay.id]?.[exercise.id]}
                             prBestWeight={allTimePRs[exercise.id] ?? 0}
                             weightUnit={weightUnit}
+                            progressionHint={progressionHints?.[exercise.id]}
                             onToggleNote={() =>
                                 setExpandedNoteId(expandedNoteId === exercise.id ? null : exercise.id)
                             }
@@ -211,6 +214,7 @@ export default function WorkoutTab({
                                         lastSessionVals={lastSessionValues[activeDay.id]?.[exercise.id]}
                                         prBestWeight={allTimePRs[exercise.id] ?? 0}
                                         weightUnit={weightUnit}
+                                        progressionHint={progressionHints?.[exercise.id]}
                                         onToggleNote={() =>
                                             setExpandedNoteId(expandedNoteId === exercise.id ? null : exercise.id)
                                         }

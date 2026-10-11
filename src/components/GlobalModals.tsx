@@ -1,7 +1,8 @@
 'use client';
 
-import type { ExerciseWiki, WorkoutTemplate } from '../types';
+import type { ExerciseWiki, WorkoutTemplate, SessionHistory } from '../types';
 import ExerciseDetailModal from './ExerciseDetailModal';
+import ExerciseHistoryModal from './ExerciseHistoryModal';
 import PlateCalculator from './PlateCalculator';
 import FinishConfirmModal from './FinishConfirmModal';
 import SettingsModal from './SettingsModal';
@@ -16,6 +17,8 @@ export interface GlobalModalsProps {
     showWorkoutEditor: boolean;
     showAddPastSession: boolean;
     modalExerciseEntry: ExerciseWiki | null;
+    historyExercise?: { id?: string; name: string } | null;
+    sessions?: SessionHistory;
 
     // Workout context
     activeDayName: string;
@@ -50,6 +53,7 @@ export interface GlobalModalsProps {
     // Callbacks — exercise detail / plate calc
     onCloseExerciseDetail: () => void;
     onClosePlateCalc: () => void;
+    onCloseExerciseHistory?: () => void;
 }
 
 /**
@@ -63,6 +67,8 @@ export default function GlobalModals({
     showWorkoutEditor,
     showAddPastSession,
     modalExerciseEntry,
+    historyExercise,
+    sessions,
     activeDayName,
     elapsedSeconds,
     onFinishWorkout,
@@ -85,6 +91,7 @@ export default function GlobalModals({
     onCloseAddPastSession,
     onCloseExerciseDetail,
     onClosePlateCalc,
+    onCloseExerciseHistory,
 }: GlobalModalsProps) {
     const weightUnit = useAppStore((s) => s.weightUnit);
     const strengthRestDuration = useAppStore((s) => s.strengthRestDuration);
@@ -96,7 +103,9 @@ export default function GlobalModals({
     const setStrengthRestDuration = useAppStore((s) => s.setStrengthRestDuration);
     const setHypertrophyRestDuration = useAppStore((s) => s.setHypertrophyRestDuration);
     const setSoundEnabled = useAppStore((s) => s.setSoundEnabled);
-    const sessionCount = useAppStore((s) => s.sessions.length);
+    const storeSessions = useAppStore((s) => s.sessions);
+    const activeSessions = sessions ?? storeSessions;
+    const sessionCount = activeSessions.length;
     const workoutDayCount = workoutTemplate.length;
     return (
         <>
@@ -111,6 +120,17 @@ export default function GlobalModals({
 
             {modalExerciseEntry && (
                 <ExerciseDetailModal entry={modalExerciseEntry} onClose={onCloseExerciseDetail} />
+            )}
+
+            {historyExercise && (
+                <ExerciseHistoryModal
+                    exerciseId={historyExercise.id}
+                    exerciseName={historyExercise.name}
+                    sessions={activeSessions}
+                    workoutTemplate={workoutTemplate}
+                    weightUnit={weightUnit}
+                    onClose={onCloseExerciseHistory || (() => {})}
+                />
             )}
 
             {showPlateCalc && (

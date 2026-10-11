@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import type { BodyWeightEntry, SessionHistory } from "../types";
 import { cn } from "../utils";
 import { computeGlobalExerciseRecords } from "../services/workoutService";
-import { Info, Trophy, ArrowUpDown } from "lucide-react";
+import { Info, Trophy, ArrowUpDown, TrendingUp } from "lucide-react";
 
 type SortKey = "name" | "maxWeight" | "maxSessionTonnage";
 
@@ -13,6 +13,7 @@ interface ExerciseRecordsViewProps {
     bodyWeightEntries: BodyWeightEntry[];
     weightUnit?: "kg" | "lbs";
     onOpenExercise?: (name: string) => void;
+    onOpenExerciseHistory?: (name: string) => void;
 }
 
 export default function ExerciseRecordsView({
@@ -20,6 +21,7 @@ export default function ExerciseRecordsView({
     bodyWeightEntries,
     weightUnit = "kg",
     onOpenExercise,
+    onOpenExerciseHistory,
 }: ExerciseRecordsViewProps) {
     const [sortKey, setSortKey] = useState<SortKey>("name");
 
@@ -113,9 +115,29 @@ export default function ExerciseRecordsView({
                                     className="grid grid-cols-[1fr_auto_auto] gap-x-2 items-center px-3 py-2.5 hover:bg-white/[0.03] transition-colors"
                                 >
                                     <div className="min-w-0 flex items-center gap-2">
-                                        <span className="text-body font-bold text-neutral-100 truncate">
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                onOpenExerciseHistory
+                                                    ? onOpenExerciseHistory(row.name)
+                                                    : onOpenExercise?.(row.name)
+                                            }
+                                            className="text-body font-bold text-neutral-100 truncate hover:text-accent-400 text-left transition-colors cursor-pointer"
+                                            title="View exercise history & PRs"
+                                        >
                                             {row.name}
-                                        </span>
+                                        </button>
+                                        {onOpenExerciseHistory && (
+                                            <button
+                                                type="button"
+                                                onClick={() => onOpenExerciseHistory(row.name)}
+                                                className="shrink-0 w-6 h-6 rounded-full flex items-center justify-center border border-white/8 bg-white/5 hover:bg-accent-400/15 hover:border-accent-400/25 transition-colors"
+                                                title="Exercise history & PRs"
+                                                aria-label={`History for ${row.name}`}
+                                            >
+                                                <TrendingUp size={11} className="text-neutral-500 hover:text-accent-400" />
+                                            </button>
+                                        )}
                                         {onOpenExercise && (
                                             <button
                                                 type="button"

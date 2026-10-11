@@ -3,7 +3,7 @@
 import { memo } from "react";
 import type { Exercise, SavedSetState } from "../types";
 import { cn } from "../utils";
-import { Info, FileText, History, Plus, Trash2 } from "lucide-react";
+import { Info, FileText, History, Plus, Trash2, TrendingUp, Zap } from "lucide-react";
 import { findWikiEntry } from "../wikiData";
 import { getExerciseSetsWithExtras, isExtraSetState } from "../data";
 import SetRow, { SET_ROW_GRID } from "./SetRow";
@@ -20,6 +20,7 @@ interface ExerciseCardProps {
     lastSessionVals: Record<string, { weight: string; reps: string }> | undefined;
     prBestWeight: number;
     weightUnit: "kg" | "lbs";
+    progressionHint?: string | null;
     onToggleNote: () => void;
 }
 
@@ -33,9 +34,18 @@ export default memo(function ExerciseCard({
     lastSessionVals,
     prBestWeight,
     weightUnit,
+    progressionHint,
     onToggleNote,
 }: ExerciseCardProps) {
-    const { noteChange: onNoteChange, bwFill: onBwFill, loadLastSession: onLoadLastSession, openExerciseInfo: onOpenExerciseInfo, addExtraSet: onAddExtraSet, removeExtraSet: onRemoveExtraSet } = useWorkoutActions();
+    const {
+        noteChange: onNoteChange,
+        bwFill: onBwFill,
+        loadLastSession: onLoadLastSession,
+        openExerciseInfo: onOpenExerciseInfo,
+        openExerciseHistory: onOpenExerciseHistory,
+        addExtraSet: onAddExtraSet,
+        removeExtraSet: onRemoveExtraSet,
+    } = useWorkoutActions();
     const hasWikiEntry = !!findWikiEntry(exercise.name);
     const hasLastSession = !!lastSessionVals;
     const hasNote = !!exerciseNote?.trim();
@@ -61,7 +71,10 @@ export default memo(function ExerciseCard({
                     {exIdx + 1}
                 </span>
                 <div className="flex-1 min-w-0">
-                    <h2 className="text-[17px] font-bold text-white tracking-wide leading-snug">
+                    <h2
+                        className="text-[17px] font-bold text-white tracking-wide leading-snug cursor-pointer hover:text-accent-400 transition-colors"
+                        onClick={() => onOpenExerciseHistory?.(exercise.id, exercise.name)}
+                    >
                         {exercise.name}
                     </h2>
                     <div className="flex gap-1.5 mt-1.5 flex-wrap items-center">
@@ -76,6 +89,15 @@ export default memo(function ExerciseCard({
                     </div>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0">
+                    <IconButton
+                        shape="round"
+                        hover="accent"
+                        onClick={() => onOpenExerciseHistory?.(exercise.id, exercise.name)}
+                        aria-label={`View history and PRs for ${exercise.name}`}
+                        title="Exercise history & PRs"
+                    >
+                        <TrendingUp size={14} />
+                    </IconButton>
                     {hasWikiEntry && (
                         <IconButton shape="round" hover="accent" onClick={() => onOpenExerciseInfo(exercise.name)} aria-label={`View info for ${exercise.name}`}>
                             <Info size={15} />
@@ -104,6 +126,14 @@ export default memo(function ExerciseCard({
                     )}
                 </div>
             </div>
+
+            {/* Inline Progression Hint */}
+            {progressionHint && (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-accent-400/10 border border-accent-400/25 text-accent-400 text-caption font-semibold">
+                    <Zap size={13} className="shrink-0 text-accent-400 fill-accent-400/30" />
+                    <span className="leading-snug">{progressionHint}</span>
+                </div>
+            )}
 
             {/* Column Headers */}
             {exercise.type !== "other" && (

@@ -18,6 +18,7 @@ export interface WorkoutActions {
     bwFill: (exerciseId: string) => void;
     loadLastSession: (exerciseId: string) => void;
     openExerciseInfo: (name: string) => void;
+    openExerciseHistory?: (exerciseId: string, name?: string) => void;
     noteChange: (exerciseId: string, note: string) => void;
     addExtraSet: (dayId: string, exerciseId: string) => void;
     removeExtraSet: (dayId: string, exerciseId: string, setId: string) => void;

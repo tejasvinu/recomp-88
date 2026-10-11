@@ -64,6 +64,7 @@ interface ChartsViewProps {
   sessions: SessionHistory;
   customExercises?: ExerciseWiki[];
   onOpenExercise?: (name: string) => void;
+  onOpenExerciseHistory?: (name: string, exerciseId?: string) => void;
   onDeleteSession: (id: string) => void;
   bodyWeightEntries: BodyWeightEntry[];
   onLogBodyWeight: (weight: number) => void;
@@ -95,6 +96,7 @@ export default function ChartsView({
   sessions,
   customExercises = [],
   onOpenExercise,
+  onOpenExerciseHistory,
   onDeleteSession,
   bodyWeightEntries,
   onLogBodyWeight,
@@ -498,7 +500,29 @@ export default function ChartsView({
                       <div key={entry.exerciseId} className="flex items-center justify-between bg-white/4 border border-white/7 rounded-xl p-3.5 hover:bg-white/7 transition-colors">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <p className="text-[14px] font-bold text-white tracking-wide leading-snug truncate">{entry.name}</p>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                onOpenExerciseHistory
+                                  ? onOpenExerciseHistory(entry.name, entry.exerciseId)
+                                  : onOpenExercise?.(entry.name)
+                              }
+                              className="text-[14px] font-bold text-white tracking-wide leading-snug truncate hover:text-accent-400 text-left transition-colors cursor-pointer"
+                              title="View exercise history & PRs"
+                            >
+                              {entry.name}
+                            </button>
+                            {onOpenExerciseHistory && (
+                              <button
+                                type="button"
+                                onClick={() => onOpenExerciseHistory(entry.name, entry.exerciseId)}
+                                className="shrink-0 w-5 h-5 bg-white/5 hover:bg-accent-400/15 rounded-full flex items-center justify-center transition-colors border border-white/6 hover:border-accent-400/30 group"
+                                title="View exercise history & PRs"
+                                aria-label={`History for ${entry.name}`}
+                              >
+                                <TrendingUp size={10} className="text-neutral-500 group-hover:text-accent-400 transition-colors" />
+                              </button>
+                            )}
                             {onOpenExercise && (
                               <button
                                 onClick={() => onOpenExercise(entry.name)}
@@ -745,7 +769,27 @@ export default function ChartsView({
                           <div className="flex flex-col gap-2 mb-3">
                             {session.exercises.map((ex) => (
                               <div key={ex.exerciseId}>
-                                <p className="text-caption font-bold text-neutral-300 mb-1">{ex.name}</p>
+                                <div className="flex items-center gap-1.5 mb-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => onOpenExerciseHistory?.(ex.name, ex.exerciseId)}
+                                    className="text-caption font-bold text-neutral-300 hover:text-accent-400 transition-colors text-left cursor-pointer"
+                                    title="View exercise history & PRs"
+                                  >
+                                    {ex.name}
+                                  </button>
+                                  {onOpenExerciseHistory && (
+                                    <button
+                                      type="button"
+                                      onClick={() => onOpenExerciseHistory(ex.name, ex.exerciseId)}
+                                      className="shrink-0 w-4 h-4 rounded-full flex items-center justify-center text-neutral-500 hover:text-accent-400 transition-colors"
+                                      title="View exercise history & PRs"
+                                      aria-label={`History for ${ex.name}`}
+                                    >
+                                      <TrendingUp size={10} />
+                                    </button>
+                                  )}
+                                </div>
                                 <div className="flex flex-wrap gap-1.5">
                                   {ex.sets.map((set, i) => (
                                     <div key={set.setId} className="bg-white/5 border border-white/8 rounded-lg px-2 py-1">
